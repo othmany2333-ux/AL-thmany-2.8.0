@@ -15,3 +15,7 @@ app/build/
 *.keystore
 keystore.properties
 secrets.properties
+
+apk-output/
+.gradle/
+**/build/
