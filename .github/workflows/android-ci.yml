@@ -69,7 +69,7 @@ jobs:
         run: gradle --no-daemon --stacktrace --configuration-cache assembleDebug
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: al-thmany-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload test and lint reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: quality-reports
           path: |
