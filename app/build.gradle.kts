@@ -11,17 +11,27 @@ android {
         applicationId = "com.althmany.groupmanager"
         minSdk = 26
         targetSdk = 36
-        versionCode = 284
-        versionName = "2.8.4"
+        versionCode = 285
+        versionName = "2.8.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+    }
+
+    signingConfigs {
+        create("stableDebug") {
+            storeFile = rootProject.file("debug-signing/althmany-debug.jks")
+            storePassword = "android"
+            keyAlias = "althmanydebug"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            signingConfig = signingConfigs.getByName("stableDebug")
         }
         release {
             isMinifyEnabled = true

@@ -174,20 +174,28 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         // the freshly started Activity process. Mark this profile-local instance alive immediately;
         // onUnbind/onDestroy still clear the signal, and every event refreshes the heartbeat.
         runtimeConnected = true
-        ProfileAccessibilityRuntime.recordServiceConnected(this)
+        runCatching {
+            ProfileAccessibilityRuntime.recordServiceConnected(this)
+        }
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         liveInstance = this
         runtimeConnected = true
-        ProfileAccessibilityRuntime.recordServiceConnected(this)
-        val connectedProfile = ProfileEnvironment.current(this)
-        RuntimeDiagnosticStore.append(
-            this,
-            "PROFILE_SERVICE_CONNECTED",
-            "profile=${connectedProfile.profileKey}; handle=${connectedProfile.profileHandle}"
-        )
+
+        runCatching {
+            ProfileAccessibilityRuntime.recordServiceConnected(this)
+        }
+
+        runCatching {
+            val connectedProfile = ProfileEnvironment.current(this)
+            RuntimeDiagnosticStore.append(
+                this,
+                "PROFILE_SERVICE_CONNECTED",
+                "profile=${connectedProfile.profileKey}; handle=${connectedProfile.profileHandle}"
+            )
+        }
         pollJob?.cancel()
         if (app.preferences.communityTraversalActive) {
             // Community stage itself is persisted, but elapsedRealtime timestamps are process-local.
