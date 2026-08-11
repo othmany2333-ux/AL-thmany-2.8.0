@@ -1,0 +1,27 @@
+AL-thmany 1.9.0 — Instant Terminal Router
+
+نتيجة التحقق المحلي:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+نتائج الـ micro-benchmark:
+- 5,000 رابط فريد + 500 مكرر: 250.94 ms
+- 20,000 Screen Fingerprints: 268.16 ms
+- 100,000 Idempotency Checks: 39.13 ms
+
+السلوك المستهدف:
+- رابط معاد تعيينه/منتهي/غير صالح/ملغي: Terminal Escape فوري من أول إطار موثوق.
+- مجموعة/مجتمع ممتلئ: انتقال فوري.
+- إزالة/حظر: انتقال فوري.
+- طلب انضمام مرسل/قيد الانتظار: انتقال فوري.
+- عضو بالفعل: انتقال فوري.
+- Loading قديم متزامن مع حالة نهائية محددة: الحالة النهائية تتقدم في الأولوية.
+- تعارض زر قديم مع حالة نهائية محددة: الحالة النهائية تتقدم في الأولوية.
+- زر موافق/OK القياسي في Android يدعم android:id/button1 أيضًا.
+- Terminal Escape يتجاوز تأخير الرابط المختار لأن الانتظار لا يفيد الحالة المنتهية.
+- الرفض العام غير المحدد يبقى على مسار التحقق المحافظ.
+- قيود واتساب توقف الجلسة ولا يتم تجاوزها.
+
+ملاحظة: لم يتم تنفيذ Android Lint/APK build محليًا؛ GitHub Actions هو التحقق النهائي لبيئة Android الكاملة.

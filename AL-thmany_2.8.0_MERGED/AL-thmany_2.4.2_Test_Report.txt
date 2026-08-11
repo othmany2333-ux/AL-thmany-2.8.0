@@ -1,0 +1,31 @@
+AL-thmany 2.4.2 — Accessibility-Like Shizuku Fast Path
+
+Executed locally in the build workspace:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+Runtime micro-benchmark from this run:
+- parse 5,000 unique + 500 duplicate links: 95.38 ms
+- 20,000 screen fingerprints: 119.40 ms
+- 100,000 idempotency checks: 16.84 ms
+
+2.4.2 regression assertions added:
+- high-confidence exact-package Shizuku action -> 1 scan
+- close runner-up/ambiguous action -> 2 scans
+- cross-package action -> 2 scans
+- Shizuku input cooldown -> 180 ms
+- strong post-action surface verification -> 1 stable scan
+
+Safety invariants retained:
+- exact Android user/profile target lock
+- exact WhatsApp package gate
+- safe tap bounds
+- restriction/retry-later hard stop
+- no Knox/DPC bypass
+- ambiguous actions retain multi-scan consensus
+
+Not executed locally:
+- Full Android Gradle/APK build (Android SDK is not installed in this container).
+Use GitHub Actions for the final Android compile, unit/lint checks, and APK artifact.

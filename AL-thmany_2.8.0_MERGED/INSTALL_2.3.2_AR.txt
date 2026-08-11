@@ -1,0 +1,13 @@
+AL-thmany 2.3.2 — تثبيت واختبار Profile Accessibility Fix
+
+1) ثبّت APK داخل نفس Android profile الذي يوجد فيه WhatsApp المستهدف.
+2) افتح نسخة AL-thmany من داخل ذلك الملف نفسه.
+3) افتح الإعدادات داخل AL-thmany واضغط زر Accessibility.
+   الإصدار 2.3.2 يحاول فتح صفحة خدمة AL-thmany المحددة مباشرة بدل الصفحة العامة فقط.
+4) فعّل الخدمة إذا سمح Android/Samsung/مدير العمل بذلك.
+5) ارجع إلى AL-thmany واقرأ Profile Control Diagnostic:
+   - System enabled = نعم
+   - Local service connected = نعم
+6) اختبر رابطًا واحدًا ثم رابطين.
+
+إذا ظهر System enabled = نعم لكن Local service connected = لا، فالخدمة المفعلة ليست متصلة داخل هذا الملف الحالي أو أن النظام/السياسة منعت تشغيلها. لا يحاول AL-thmany تجاوز Knox أو سياسة مدير العمل.

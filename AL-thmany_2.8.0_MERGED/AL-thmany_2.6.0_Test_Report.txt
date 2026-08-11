@@ -1,0 +1,27 @@
+AL-thmany 2.6.0 — Accessibility Parity Fast Path
+
+Scope
+- Source baseline: AL-thmany 2.5.2.
+- Goal: make SHIZUKU_FAST_UI_ACTIVE closer to the Accessibility hot path by removing serialization/traversal overhead while preserving semantic evidence and safety guards.
+
+Implemented
+- Persistent UiAutomation fast snapshots now use a compact node frame instead of XML.
+- Compact frame preserves text, contentDescription, resourceId, className, packageName, clickable, enabled, scrollable, and bounds.
+- Snapshot classification still uses the same ShizukuUiSnapshot / AccessibilityJoinMatcher / AccessibilityScreenClassifier logic.
+- Exact clickable AccessibilityNodeInfo objects are cached in the Shizuku UserService during the scan and reused for ACTION_CLICK before any re-traversal or coordinate fallback.
+- Fast-mode open settle removed; exact-user/package launch lease and target-package node evidence remain required.
+- Requested parity timing preset: Event 14 ms; stable 36 ms; fallback poll 95 ms; watchdog 40 ms; click throttle 68 ms; gesture 18 ms; result fallback 88 ms; retry 120 ms; post-join evidence 35 ms; next-link settle 0 ms.
+- Loading protection remains 20 s. Restriction/Retry Later remains a hard stop.
+
+Local verification
+- SOURCE VALIDATION PASSED.
+- PURE KOTLIN COMPILE PASSED.
+- PURE KOTLIN REGRESSIONS PASSED, including compact-frame action-evidence regression.
+- SMART RUNTIME MICRO-BENCHMARK PASSED.
+  * Parse 5,000 unique + 500 duplicate links: ~237.66 ms on this environment.
+  * 20,000 screen fingerprints: ~229.30 ms.
+  * 100,000 idempotency checks: ~28.34 ms.
+
+Not verified locally
+- Full Android/AIDL compilation and APK build were not run because this source archive does not contain a Gradle wrapper and the container has no system Gradle/Android build environment. GitHub Actions remains the authoritative Android build check.
+- Real-device speed parity cannot be guaranteed from source tests alone; Samsung/Android scheduling and WhatsApp rendering remain external factors. The architectural hot-path overhead has been reduced specifically to narrow that gap.

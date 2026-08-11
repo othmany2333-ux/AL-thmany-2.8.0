@@ -1,0 +1,11 @@
+AL-thmany 2.5.1 — SHIZUKU_FAST_UI_ACTIVE Event-First 2.4.4 Preset
+
+- Event-first persistent UiAutomation: event scan 14ms, stable scan 36ms, fallback poll 95ms.
+- Fast UI click throttle 68ms and gesture duration 18ms.
+- Join/Request retry after 120ms with at most two total action attempts.
+- Joined conversation proof: 35ms minimum, one stable fast scan.
+- Conversation success launches the next deep link directly without waiting for Back.
+- Runtime next-link delay and USER_INSTANT_ADVANCE_SETTLE_MS are 0 while SHIZUKU_FAST_UI_ACTIVE.
+- Post-action watchdog: 40ms checks, 1.2s stable non-loading hard handoff.
+- Stable unknown surface: 2s then UNKNOWN_SCREEN result and next link.
+- Genuine Loading remains protected for 20s. Restriction/Retry Later remains a hard stop with no bypass.

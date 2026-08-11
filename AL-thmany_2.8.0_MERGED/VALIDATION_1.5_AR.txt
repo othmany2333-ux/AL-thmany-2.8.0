@@ -1,0 +1,64 @@
+AL-thmany 1.5.0 — Lightning Resume Compact
+===========================================
+
+الإصدار:
+- versionCode = 109
+- versionName = 1.5.0
+- namespace/applicationId = com.althmany.groupmanager
+
+أهم التصحيحات:
+1) إصلاح التوقف الخاطئ داخل واتساب
+   - لم يعد حدث نافذة عابر أو لوحة مفاتيح أو Resolver يوقف الجلسة فورًا.
+   - الخروج من واتساب يحتاج ثباتًا قصيرًا (320ms) قبل الإيقاف المؤقت.
+   - عند العودة إلى واتساب المحدد، يمكن للاستئناف التلقائي المتابعة من نفس الرابط إذا كان التوقف آليًا.
+
+2) Fast Handoff أسرع
+   - Fast poll fallback = 40ms
+   - Fast minimum scan interval = 8ms
+   - Fast click throttle = 55ms
+   - Fast result inference = 60ms
+   - Fast exit settle = 8ms
+   - user instant advance settle = 0ms عند اختيار الفاصل 0
+   - fast post-Join evidence age = 60ms
+   - Turbo non-invite post-Join confirmation = فحص قوي واحد؛ الوضع العادي يبقى أكثر تحفظًا.
+
+3) الإشعار والتحكم
+   - قناة إشعار جديدة runtime_controls_v2.
+   - إشعار مستمر أثناء التشغيل.
+   - أزرار: إيقاف مؤقت / استئناف / إيقاف الجلسة.
+   - تحديث التقدم بعد النتائج وأثناء التشغيل مع منع تحديثات مفرطة.
+
+4) الاستئناف من آخر نقطة
+   - قائمة SQLite هي المصدر الأساسي للحالة.
+   - زر البدء يتحول إلى «استئناف من حيث توقفت» عند وجود روابط متبقية بعد توقف قابل للاستئناف.
+   - حالات الاستئناف تشمل: نهاية نافذة التشغيل، إيقاف المستخدم، إعادة تشغيل خدمة الوصول، فشل الفتح، Browser fallback، شاشة مجهولة، timeout، circuit breaker.
+   - شاشة التقييد RESTRICTED لا تدخل في الاستئناف التلقائي.
+
+5) واجهة أكثر اختصارًا
+   - تقليل ارتفاع شريط الأدوات والمسافات والـpadding.
+   - تقليل ارتفاع إدخال الروابط.
+   - جعل قائمة اختيار واتساب المثبت هي المسار الأساسي وإخفاء أزرار الهدف القديمة من الواجهة الرئيسية.
+   - إخفاء معلومات مكررة مع بقاء المنطق الداخلي متاحًا.
+
+6) قائمة كبيرة مع ثبات
+   - MAX_LINKS_PER_SESSION = 1,000,000 رابط فريد مخزن على القرص.
+   - BATCH_SIZE = 80 لكل تشغيل صريح.
+   - منع التكرار ما زال مفعّلًا.
+   - لا يتم تجاوز شاشات تقييد واتساب.
+
+7) Work Profile / Secure Folder / نسخ واتساب
+   - اختيار ديناميكي لنسخ واتساب المكتشفة داخل نفس Android profile.
+   - Work Profile وSecure Folder يحتاجان تثبيت AL-thmany وتفعيل Accessibility داخل نفس الملف الشخصي الذي توجد فيه نسخة واتساب؛ Android لا يسمح لخدمة في ملف شخصي بالتحكم المباشر بملف آخر.
+
+التحقق المحلي:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+- XML files = 58
+- Arabic strings = 387
+- English strings = 387
+
+حدود التحقق:
+- Android unit tests / lint / APK build الكامل يحتاج Android SDK، لذلك التحقق النهائي يتم عبر GitHub Actions.
+- الاختبار على الهاتف ضروري للتحقق من سلوك نسخة واتساب المحددة وسرعة الانتقال الفعلية.

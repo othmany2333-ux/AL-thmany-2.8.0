@@ -1,0 +1,14 @@
+AL-thmany 1.7.1 — Complete Repair Hotfix
+
+الإصدار:
+- versionCode = 112
+- versionName = 1.7.1
+
+الإصلاح الرئيسي:
+- تصحيح حزمة Overlay الخاصة بـ 1.7 التي لم تتضمن ForegroundTargetPolicy.kt رغم أن validate_source.py و compile_pure_kotlin.sh يعتمدان عليه.
+- حزمة الإصلاح الكاملة تتضمن app/src/main و app/src/test و scripts و workflow وملفات Gradle اللازمة حتى يمكن تطبيقها فوق مستودع أقدم بدون ملفات ناقصة.
+- لا تغيير في منطق السرعة UltraMotion؛ هذا Hotfix للتغليف واتساق المصدر والاختبارات.
+
+الحماية المستمرة:
+- عدم إيقاف الجلسة بسبب نافذة Android عابرة أو لوحة المفاتيح.
+- إبقاء Loading Guard وContext Guard وConfidence وSingle-flight وIdempotency.

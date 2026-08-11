@@ -1,0 +1,37 @@
+AL-thmany 2.2.0 — Shizuku Hybrid Engine
+
+الإصدار:
+- versionCode = 220
+- versionName = 2.2.0
+
+التطوير:
+- إضافة Shizuku API + Provider 13.1.5 كمحرك اختياري بجانب Accessibility.
+- إضافة Shizuku UserService/AIDL لتشغيل عمليات shell بعد إذن المستخدم.
+- إضافة UIAutomator XML parser دلالي Pure Kotlin يعيد استخدام مصنفات Join/Request/terminal الحالية.
+- إضافة Shizuku foreground automation service مع فحص foreground قبل كل Tap.
+- إضافة Android user/profile resolver يشترط وجود AL-thmany وWhatsApp المحدد في نفس user قبل فتح الرابط.
+- إضافة Probe: Binder + Permission + shell + UI dump قبل الاعتماد على المحرك.
+- إضافة AUTO / ACCESSIBILITY / SHIZUKU engine selector في الإعدادات.
+- منع Accessibility backend من التنفيذ بالتوازي أثناء جلسة Shizuku.
+- Restriction / Retry later يبقى hard stop، ولا يوجد Knox/DPC bypass.
+- حد التشغيل الصريح بقي 150 رابطًا والقائمة 1,000,000 رابط فريد.
+
+التحقق المنفذ محليًا:
+- SOURCE VALIDATION PASSED
+- XML/resource + Arabic/English string parity PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+- Shizuku UI dump parser regressions PASSED
+
+تحسينات الأمان/الثبات:
+- لا يتم Tap إلا إذا كان WhatsApp المقفل هو foreground.
+- لا توجد إحداثيات ثابتة عمياء؛ الضغط مبني على bounds لعقدة semantic آمنة في UI dump.
+- stdout من UserService يُفرغ بالتوازي لتفادي deadlock عند hierarchy كبيرة.
+- إذا فشل UI dump مدة محدودة، يتوقف TARGET_UNSUPPORTED بدل الاستمرار بنقرات مجهولة.
+- Shizuku backend لا يدعي تجاوز Secure Folder؛ نجاحه يتحدد باختبار الجهاز الفعلي.
+
+حدود التحقق:
+- Android Unit Tests / Lint / assemble APK لم تُنفذ محليًا لعدم توفر Android SDK/Gradle الكامل في بيئة الفحص.
+- GitHub Actions (SDK 36) هو مسار الحسم النهائي للبناء.
+- Community subgroup traversal في 2.2.0 ما زال Accessibility-only إلى أن يثبت Probe أن صفوف المجتمع مرئية بأمان عبر UIAutomator على الجهاز المستهدف.

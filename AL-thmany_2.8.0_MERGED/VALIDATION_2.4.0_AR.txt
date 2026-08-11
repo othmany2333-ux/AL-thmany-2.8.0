@@ -1,0 +1,19 @@
+AL-thmany 2.4.0 — Native Multi-Profile Engine
+
+الإصدار:
+- versionCode = 240
+- versionName = 2.4.0
+
+الهدف:
+- اختيار Backend أصلي داخل نفس الملف فقط.
+- دعم Work Profile عبر Policy Controller اختياري عندما يكون AL-thmany Profile Owner.
+- دعم Secure Folder عبر Accessibility المحلية أو Shizuku المحمي دون ادعاء تجاوز Knox.
+
+الحدود الأمنية:
+- لا يمكن للتطبيق الاستيلاء على Work Profile يملكه DPC آخر.
+- Work Controller لا يفعّل Accessibility بنفسه؛ يزيل قيد allowlist فقط عند امتلاك الصلاحية.
+- قيود واتساب / Retry later تبقى توقفًا إلزاميًا.
+
+تحسين Shizuku متعدد الملفات:
+- لم يعد يختار أول user يحتوي نفس أسماء الحزم.
+- يطابق UID الحقيقي لعملية AL-thmany الحالية ثم يشترط وجود واتساب الهدف داخل user نفسه قبل am start --user.

@@ -1,0 +1,14 @@
+AL-thmany 1.6 Precision Fusion
+
+Merged strengths from JoinPilot Nova 12.6 into the newer AL-thmany runtime without restoring 12.6 conservative delays.
+
+Key changes:
+- exact current Arabic reset/removed/request variants
+- group vs community semantic target detection
+- Cancel-request-only screen treated as already-pending request when no fresh Request button exists
+- terminal OK/موافق separated from positive Join/Request actions
+- terminal acknowledgement can dismiss a finished error dialog after the result is persisted
+- existing Loading Guard, Context Guard, Confidence Engine, Single-flight, idempotency and fast handoff retained
+- no stealth/evasion or automatic mass joining of every subgroup in a community
+
+Version: 1.6.0 (110)

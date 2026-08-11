@@ -1,0 +1,26 @@
+name: طلب ميزة
+description: اقتراح تطوير ضمن نطاق المشروع
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: المشكلة أو الحاجة
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: الحل المقترح
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: التوافق مع نطاق المشروع
+      options:
+        - label: لا تتطلب الميزة قراءة شاشة واتساب أو الضغط التلقائي داخله.
+          required: true
+        - label: لا تتطلب إرسال روابط المستخدم إلى خادم خارجي.
+          required: true

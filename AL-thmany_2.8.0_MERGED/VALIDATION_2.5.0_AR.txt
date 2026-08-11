@@ -1,0 +1,17 @@
+AL-thmany 2.5.0 — Persistent UiAutomation Turbo Bridge
+
+الإصدار:
+- versionCode = 250
+- versionName = 2.5.0
+
+التحقق المحلي المنفذ:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+ملاحظات مهمة:
+- تمت إضافة PersistentUiAutomationBridge وواجهات AIDL للـfast snapshot/tap/back.
+- المسار الجديد اختياري ويعود تلقائيًا إلى command UIAutomator إذا منع Android الاتصال الدائم.
+- Android APK compile/lint/unit tests الكاملة يجب أن تُحسم في GitHub Actions مع Android SDK؛ الاختبارات المحلية لا تثبت أن hidden UiAutomation constructor متاح على كل firmware.
+- Restriction/Retry Later ما زالت hard stop ولا يوجد Knox/DPC bypass.

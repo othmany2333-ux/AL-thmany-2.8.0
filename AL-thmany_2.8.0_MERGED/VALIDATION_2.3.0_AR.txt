@@ -1,0 +1,25 @@
+AL-thmany 2.3.0 — Smart Hybrid Runtime
+
+الإصدار:
+- versionCode = 230
+- versionName = 2.3.0
+
+أهم التطويرات:
+- فحص Shizuku كامل قبل استهلاك أي رابط: Binder + Permission + UserService + Android user/profile + shell + display bounds.
+- مطابقة UIAutomator مرتبطة بحزمة واتساب المحددة، مع رفض أي عقدة من تطبيق آخر.
+- إجماع لقطتين متتاليتين قبل Tap لتقليل الضغط الخاطئ أو المكرر.
+- فحص حدود الإحداثيات والشاشة قبل Tap/Swipe/Back مع إعادة فحص foreground package.
+- نجاح Join لا يُستنتج من اختفاء الدعوة وحده؛ يجب ظهور سطح واتساب قوي ومستقر.
+- عند شاشة غامضة/غير مقروءة أو انقطاع Shizuku يُحفظ الرابط الحالي للاستئناف ولا يُسجل فشلًا تخمينيًا.
+- Shizuku Community Traversal محدود: صفوف قروبات دلالية فقط + إجماع لقطتين + dedupe + scroll/back bounded + no-progress guard.
+- لا يوجد تجاوز لقيود WhatsApp أو Knox/DPC؛ Retry later/Restriction يبقى Hard Stop.
+- حد التشغيل الصريح = 150 رابطًا، والصف يبقى حتى 1,000,000 رابط فريد.
+
+التحقق المحلي المنجز:
+- validate_source.py
+- compile_pure_kotlin.sh
+- run_pure_kotlin_regressions.sh
+- run_runtime_benchmarks.sh
+
+ملاحظة:
+- بناء APK/Lint/Android Unit Tests النهائي يتم عبر GitHub Actions لأن بيئة العمل الحالية لا تحتوي Android SDK كامل.

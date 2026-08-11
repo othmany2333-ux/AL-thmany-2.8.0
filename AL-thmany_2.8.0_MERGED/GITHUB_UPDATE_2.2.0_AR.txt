@@ -1,0 +1,20 @@
+AL-thmany 2.2.0 — Shizuku Hybrid Engine
+
+إذا كان مستودع GitHub لديك يحتوي 2.1.0، انسخ Overlay 2.2.0 فوق جذر المستودع ثم نفّذ:
+
+git add -A
+git commit -m "AL-thmany 2.2.0 Shizuku Hybrid Engine"
+git push origin main
+
+بعد push افتح GitHub → Actions → AL-thmany Android CI.
+يجب أن تمر: source validation → pure Kotlin regressions → benchmark → unit tests → lint → assembleDebug.
+ثم حمّل artifact: al-thmany-debug-apk.
+
+بعد التثبيت:
+1) شغّل Shizuku عبر Wireless debugging/ADB.
+2) AL-thmany → Settings → Automation Engine → Shizuku أو Auto.
+3) Grant Shizuku permission.
+4) Test Shizuku ويجب أن يظهر binder ON + permission GRANTED + shell OK + UI_DUMP_OK.
+5) اختبر رابطًا واحدًا أولًا في WhatsApp المستهدف.
+
+مهم: Shizuku لا يتجاوز Knox/DPC. إذا UI dump غير متاح داخل Secure Folder/Work، المحرك يتوقف بأمان ولا ينقر إحداثيات مجهولة.

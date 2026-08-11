@@ -1,0 +1,43 @@
+AL-thmany 2.5.1 — SHIZUKU_FAST_UI_ACTIVE Event-First Preset
+
+Version
+- versionCode: 251
+- versionName: 2.5.1
+
+Implemented fast-path contract (only while SHIZUKU_FAST_UI_ACTIVE)
+- UiAutomation accessibility-event listener: enabled
+- event-trigger scan delay: 14 ms
+- stable-screen scan: 36 ms
+- fallback liveness poll: 95 ms
+- post-action watchdog cadence: 40 ms
+- click throttle: 68 ms
+- injected gesture duration: 18 ms
+- result-analysis fallback deadline: 88 ms
+- same-action retry: 120 ms
+- maximum total Join/Request attempts: 2
+- post-join minimum evidence age: 35 ms
+- post-join stable scans: 1
+- stable non-loading watchdog handoff: 1.2 s with >=2 stable scans
+- stable unknown timeout: 2 s
+- genuine loading timeout: 20 s
+- terminal settle: 42 ms
+- runtime next-link delay: 0 ms
+- USER_INSTANT_ADVANCE_SETTLE_MS: 0 ms
+- joined conversation direct handoff: opens next deep link without waiting for Back
+
+Safety / accuracy invariants retained
+- exact Android-user + WhatsApp package lock remains mandatory.
+- strong unambiguous actionable node can use one scan; ambiguous actions retain consensus.
+- Restriction / Retry Later remains a hard stop; no bypass is attempted.
+- Loading is never force-skipped at 1.2 s; its separate 20-second protection applies.
+- Unverified post-action watchdog handoff is recorded as ACTION_TIMEOUT, never falsely as JOINED/REQUESTED.
+
+Validation executed
+- python3 scripts/validate_source.py: PASSED
+- bash scripts/compile_pure_kotlin.sh: PASSED
+- bash scripts/run_pure_kotlin_regressions.sh: PASSED
+- bash scripts/run_runtime_benchmarks.sh: PASSED
+- XML/source validation: PASSED through validate_source.py
+
+Not executed locally
+- Full Android Gradle/APK build, because this container does not have the project Android SDK/Gradle wrapper environment. GitHub Actions remains the authoritative APK build check.

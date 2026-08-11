@@ -1,0 +1,22 @@
+AL-thmany 2.5.1 — SHIZUKU_FAST_UI_ACTIVE Event-First Preset
+
+الإصدار:
+- versionCode = 251
+- versionName = 2.5.1
+
+المسار السريع عند SHIZUKU_FAST_UI_ACTIVE:
+- Event scan: 14ms
+- Stable scan: 36ms
+- Fallback poll: 95ms
+- Watchdog scan: 40ms
+- Click throttle: 68ms
+- Gesture: 18ms
+- Result fallback: 88ms
+- Retry: 120ms، محاولتان إجمالاً
+- Post-join evidence: 35ms، scan ثابت واحد
+- Stable non-loading watchdog: 1.2s
+- Unknown stable timeout: 2s
+- Loading protection: 20s
+- Next-link runtime delay: 0ms
+- Direct conversation handoff: لا ينتظر Back قبل فتح الرابط التالي.
+- Restriction/Retry Later: توقف إلزامي بدون تجاوز.

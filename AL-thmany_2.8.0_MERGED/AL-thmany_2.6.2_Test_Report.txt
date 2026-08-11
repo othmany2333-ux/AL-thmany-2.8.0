@@ -1,0 +1,29 @@
+AL-thmany 2.6.2 — Request Terminal Direct Handoff
+
+Observed reproduction video: VID-20260810-WA0088.mp4
+- ~4.0s: WhatsApp invite sheet exposes "طلب الانضمام".
+- ~4.5s: request action is pressed and WhatsApp enters loading.
+- ~7.0s: WhatsApp visibly reports "تم إرسال الطلب وفي انتظار موافقة المشرف." and exposes "إلغاء الطلب".
+- Through the end of the ~10s clip, the first invite remains on screen and the next link is not launched.
+
+Diagnosis:
+- The request action succeeds.
+- The stall is post-action terminal recognition / handoff, not Shizuku permission or initial link opening.
+- The pure semantic classifier already recognizes the exact visible Arabic sentence and Cancel-request control.
+- Therefore Work Profile persistent UiAutomation can expose a partial/empty post-request tree even while the UI is visibly updated.
+
+2.6.2 fix:
+- Pending REQUEST + explicit request-sent evidence => REQUESTED + direct next-link handoff.
+- Pending REQUEST + visible Cancel-request control => REQUESTED + direct next-link handoff, even if stale request nodes coexist.
+- If persistent UiAutomation receives a post-request change but returns UNKNOWN/partial/NO_ROOT, perform one bounded request-only command UI dump probe; normal Join hot path stays persistent/event-first.
+- Keep next-link settle at 0 ms.
+- Keep Loading protection and Restriction/Retry-Later hard stop unchanged.
+
+Local checks executed:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- Runtime micro-benchmark sanity PASSED (run separately during development)
+
+Not executed locally:
+- Full Android/Gradle APK compilation; GitHub Actions remains the final Android build check.

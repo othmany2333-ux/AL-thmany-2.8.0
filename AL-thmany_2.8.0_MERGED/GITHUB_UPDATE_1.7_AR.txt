@@ -1,0 +1,18 @@
+AL-thmany 1.7 UltraMotion Precision — تحديث GitHub
+
+بعد رفع ملف Overlay إلى جذر Codespaces:
+
+unzip -o AL-thmany_1.7_UltraMotion_Precision_Overlay.zip -d .
+python3 scripts/validate_source.py
+bash scripts/compile_pure_kotlin.sh
+bash scripts/run_pure_kotlin_regressions.sh
+bash scripts/run_runtime_benchmarks.sh
+git add -A
+git commit -m "Upgrade AL-thmany to 1.7 UltraMotion Precision"
+git pull --rebase origin main
+git push origin main
+
+ملاحظات:
+- سرعة 0 تعني عدم وجود تأخير صناعي بين الروابط.
+- جار التحميل والتقييد يبقيان خارج مسار Turbo ولا يتم تجاوزهما عشوائيا.
+- التمرير السريع داخل دعوة واتساب محدود بمحاولتين لكل رابط لمنع الحلقات.

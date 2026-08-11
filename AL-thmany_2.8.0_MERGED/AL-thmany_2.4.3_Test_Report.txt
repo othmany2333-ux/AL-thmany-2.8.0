@@ -1,0 +1,16 @@
+AL-thmany 2.4.3 — Test Report
+
+Executed in this workspace:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+Runtime micro-benchmark:
+- 5,000 unique + 500 duplicate links parse: 132.92 ms
+- 20,000 screen fingerprints: 116.71 ms
+- 100,000 idempotency checks: 18.14 ms
+
+Important:
+- Full Android APK/unit/lint build was not run locally because this container has no Gradle wrapper/Android SDK. GitHub Actions remains the authoritative Android build.
+- Device verification required: Work Profile Shizuku one-link Join -> Back -> link 2 direct handoff, then 2-link and 10-link runs.

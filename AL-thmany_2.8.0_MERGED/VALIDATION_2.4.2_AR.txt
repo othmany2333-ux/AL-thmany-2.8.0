@@ -1,0 +1,16 @@
+AL-thmany 2.4.2 — Accessibility-Like Shizuku Fast Path
+
+الإصدار:
+- versionCode = 242
+- versionName = 2.4.2
+
+التعديلات الأساسية:
+- High-confidence one-scan action path لزر View/Join/Request.
+- Foreground user/package lease قصير وآمن لتقليل فحوص dumpsys المتكررة.
+- Input cooldown = 180ms.
+- Open settle = 120ms، action settle = 90ms، scan cadence = 80ms.
+- Post-join strong-surface verification من قراءة واحدة بعد 300ms.
+- الحالات الملتبسة والتأكيدات والمجتمعات تبقى على إجماع متعدد القراءات.
+- Restriction/Retry later يبقى hard stop بدون bypass.
+
+التحقق: scripts/validate_source.py + pure Kotlin compile/regressions + runtime benchmark.

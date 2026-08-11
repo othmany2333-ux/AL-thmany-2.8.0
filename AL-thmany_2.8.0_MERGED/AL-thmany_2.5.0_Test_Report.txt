@@ -1,0 +1,22 @@
+AL-thmany 2.5.0 — Test Report
+
+Implemented:
+- Persistent Shizuku UiAutomation bridge with automatic fallback.
+- Direct node-tree snapshot, tap and Back interfaces over AIDL.
+- Exact-package semantic parser remains authoritative.
+- Adaptive 12 ms transition burst / 45 ms stable scan cadence.
+- 32 ms input cooldown and 8 s exact-user foreground lease.
+- Reduced successful-handoff DB queries and throttled notification refresh.
+
+Local checks:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+  - parse 5,000 + 500 duplicates: 121.75 ms
+  - 20,000 fingerprints: 136.59 ms
+  - 100,000 idempotency checks: 22.12 ms
+
+Not locally proven:
+- Full Android compile/lint/unit test (requires Android SDK/GitHub Actions).
+- Availability of the hidden UiAutomation connection constructor on the target Samsung firmware. Runtime automatically falls back if unavailable.

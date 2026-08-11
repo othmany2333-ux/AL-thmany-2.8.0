@@ -1,0 +1,39 @@
+AL-thmany 2.6.4 — Fast Transition & Permission Stability Core
+
+Scope reviewed from the actual 2.6.3 GitHub-ready source:
+- Accessibility permission/start gate
+- Shizuku persistent UiAutomation transition path
+- Shizuku target-package/profile handoff
+- Shizuku result commit and direct next-link handoff
+- Fast cadence / Loading / Restriction guards
+
+Confirmed code issue fixed:
+- In 2.6.3, a healthy persistent UiAutomation snapshot that was still showing AL-thmany/system UI after a deep-link launch incremented fastUiFailureCount.
+- After four rapid transition frames this could fall through to the heavyweight command-based `uiautomator dump` path even though the persistent bridge itself was healthy.
+- Initial NO_ROOT while FastUiMode was UNKNOWN could also reach command-dump fallback before the persistent event path was fully armed.
+
+2.6.4 corrections:
+- Target-hidden healthy frames no longer count as persistent-UI failures.
+- NO_ROOT/target-hidden transition states arm the persistent event-first path and wait for the exact WhatsApp package event/tree.
+- Events that arrive while the fast path is first armed are preserved against the current link launch baseline.
+- After 480 ms of healthy target-hidden transition, the optimistic foreground lease is invalidated so the exact uNN/WhatsApp foreground state is re-proved/reopened.
+- Shizuku terminal result commit is serialized with AtomicBoolean for exactly-once counters/queue advancement.
+- Accessibility setup is prompted only after three consecutive disabled reads; a transient post-update/resume false-negative does not immediately reopen setup.
+- Accessibility local bind wait = 4000 ms, poll = 100 ms.
+- Fast next-link settle remains 0 ms.
+- Fast cadence remains 14/36/95 ms, click throttle 68 ms, result fallback 88 ms.
+- Loading guard remains 20 s.
+- Restriction / Retry Later remains a hard stop; no bypass added.
+
+Executed locally:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+  - parse 5,000 unique + 500 duplicate links: 100.20 ms
+  - 20,000 screen fingerprints: 112.77 ms
+  - 100,000 idempotency checks: 14.91 ms
+
+Not executed locally:
+- Full Android/Gradle APK compilation (source archive has no Gradle wrapper and this environment was not used for Android SDK build).
+- Real-device WhatsApp/Work Profile runtime test. GitHub Actions + device test remain the final verification for Android-specific behavior.

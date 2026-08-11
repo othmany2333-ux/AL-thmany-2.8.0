@@ -1,0 +1,7 @@
+AL-thmany 2.5.2 — Event-Coalesced Node-Action Turbo
+
+- دمج انتظار حدث WhatsApp + Snapshot في Binder call واحدة داخل Shizuku UserService.
+- الضغط المباشر على AccessibilityNodeInfo.ACTION_CLICK للعقدة المطابقة قبل coordinate tap.
+- تقليل المسارات الثقيلة أثناء انتقالات Work/Secure مع الحفاظ على exact-user/package lock.
+- Event coalesce 4ms، event response 6ms، stable 24ms، fallback 72ms، click 36ms، result 60ms، watchdog 1.0s، next 0ms.
+- Loading 20s وRestriction/Retry Later Hard Stop بدون تجاوز.

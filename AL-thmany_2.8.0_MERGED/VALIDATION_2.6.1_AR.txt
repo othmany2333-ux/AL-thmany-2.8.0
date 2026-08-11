@@ -1,0 +1,11 @@
+AL-thmany 2.6.1 — Unstoppable Sequential Continuity
+versionCode = 261
+versionName = 2.6.1
+
+التحسينات:
+- Shizuku continuity state machine.
+- direct conversation event-baseline guard.
+- foreground bounded reacquire + safe advance.
+- NO_ROOT/UI tree/ambiguous/unknown no-stall recovery.
+- repeated input failures stay inside bounded watchdog instead of stopping.
+- restriction remains hard stop.

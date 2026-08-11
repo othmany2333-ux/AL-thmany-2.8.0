@@ -1,0 +1,15 @@
+AL-thmany 2.8.0 MERGED
+======================
+
+الأساس: 2.7.5
+الدمج المستهدف من 2.4.4: استقرار مسار التشغيل وعدم التوقف الصامت عند فتح واتساب.
+
+أهم التغييرات:
+- إعادة بوابة accessibilityBatchRunning / accessibilityPaused قبل معالجة الشاشة.
+- إزالة التوقف الصامت عند اختلاف حزمة نافذة واتساب.
+- إضافة استرداد آمن لقفل Runtime Target في وضع AUTO أو عند تطابق الحزمة المختارة فعلياً.
+- عند الخروج الحقيقي من واتساب يستخدم Debounced Auto-Pause بدلاً من ترك الجلسة معلقة.
+- الإبقاء على ميزات 2.7.5: Visual Join fallback, Continuous Handoff Watchdog, Terminal Escape, Profile runtime diagnostics, Shizuku runtime.
+
+ملاحظة:
+لم يتم تغيير اختيار المستخدم الصريح بين WhatsApp Personal/Business/Clone تلقائياً؛ الاسترداد لا يبدل هدفاً صريحاً إلى تطبيق آخر.

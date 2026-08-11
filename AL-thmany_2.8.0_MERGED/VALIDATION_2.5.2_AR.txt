@@ -1,0 +1,18 @@
+AL-thmany 2.5.2 — Event-Coalesced Node-Action Turbo
+
+الإصدار:
+- versionCode = 252
+- versionName = 2.5.2
+
+التحسينات:
+- event wait + snapshot في round-trip واحدة.
+- direct node ACTION_CLICK مع fallback متدرج.
+- cadence أسرع مع الحفاظ على consensus للحالات الملتبسة وLoading/Restriction guards.
+
+التحقق المحلي:
+- SOURCE VALIDATION
+- PURE KOTLIN COMPILE
+- PURE KOTLIN REGRESSIONS
+- RUNTIME MICRO-BENCHMARK
+
+APK/Android compile النهائي: GitHub Actions.

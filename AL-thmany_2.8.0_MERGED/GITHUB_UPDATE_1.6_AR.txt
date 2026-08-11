@@ -1,0 +1,21 @@
+تحديث AL-thmany إلى 1.6.0 Precision Fusion
+==========================================
+
+بعد رفع ملف Overlay إلى جذر Codespaces نفّذ:
+
+git pull --rebase origin main && unzip -o AL-thmany_1.6_Precision_Fusion_Overlay.zip -d . && source /usr/local/sdkman/bin/sdkman-init.sh 2>/dev/null || true
+
+ثم الفحوصات:
+python3 scripts/validate_source.py
+bash scripts/compile_pure_kotlin.sh
+bash scripts/run_pure_kotlin_regressions.sh
+bash scripts/run_runtime_benchmarks.sh
+
+ثم:
+rm -f AL-thmany_1.6_Precision_Fusion_Overlay.zip
+git add -A
+git commit -m "Upgrade AL-thmany to 1.6 Precision Fusion"
+git pull --rebase origin main
+git push origin main
+
+بعد push راقب GitHub Actions: Unit tests -> Android lint -> Build debug APK.

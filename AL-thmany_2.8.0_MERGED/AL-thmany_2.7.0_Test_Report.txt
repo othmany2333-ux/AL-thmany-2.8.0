@@ -1,0 +1,43 @@
+AL-thmany 2.7.0 — Adaptive 1000-Link Runtime
+
+Scope reviewed from the supplied 2.6.5 GitHub-ready source:
+- Personal-profile Accessibility runtime
+- Work Profile / Secure Folder Shizuku runtime
+- Inter-link timing, sequential queue limits, and continuity
+- Exact Android-user/package security gates
+- WhatsApp semantic matching and result verification
+- Main dashboard visual system and Arabic/English resources
+
+Root cause addressed:
+- Version 2.6.5 initialized Shizuku with FastUiMode.DISABLED, forcing the expensive command-based UIAutomator dump loop in Work/Secure environments.
+- After the first Join, the compatibility path could require another hierarchy dump before recognizing the conversation, creating a long visible pause before the second link.
+
+2.7.0 corrections:
+- Adaptive persistent Shizuku is probed first; unsupported devices fall back automatically to command UIAutomator.
+- Four short, high-confidence ActivityManager probes verify exact package + exact Android user + a known WhatsApp conversation activity after Join. Verified joins hand off directly without Back or a second UI dump.
+- User-selected inter-link delay is shared by Accessibility and Shizuku, stored in milliseconds, and adjustable from 0 to 10,000 ms in 100 ms steps.
+- Accessibility cadence is 14 ms event scan, 36 ms stable scan, 95 ms fallback poll, and 68 ms click throttle in fast mode.
+- Explicit-run limit is 1,000 links; the disk-backed queue remains capped at 1,000,000 unique links.
+- Current Arabic/English request, invalid-link, restriction, composer, and resource-ID matching was expanded.
+- Exact package boundary checks prevent com.whatsapp and com.whatsapp.w4b from being confused; the exact Android user remains mandatory.
+- Restriction / Retry Later remains a hard stop. Unknown or blocked profile UI is preserved or safely advanced without low-confidence taps; no Knox/DPC or WhatsApp restriction bypass was added.
+- Main UI was refreshed with a deep-teal gradient header, white rounded cards, professional teal controls, clearer speed controls, and improved state/result hierarchy.
+
+Executed locally:
+- SOURCE VALIDATION PASSED
+- 59 Android XML resource files parsed successfully
+- Arabic/English string parity: 472 / 472
+- Python source compile and shell-script syntax checks passed
+- PURE KOTLIN COMPILE PASSED with kotlinc-jvm 2.4.10
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+  - parse 5,000 unique + 500 duplicate links: 82.68 ms
+  - 20,000 screen fingerprints: 120.35 ms
+  - 100,000 idempotency checks: 22.01 ms
+
+Not executed locally:
+- Full Android Gradle build, Android Lint, or APK assembly because this environment has no Android SDK/Gradle installation.
+- Real-device WhatsApp, Work Profile, or Samsung Secure Folder test. GitHub Actions and a one-link test in each target Android profile remain required before a large run.
+
+Operational note:
+- The 1,000-link value is the application's explicit-run ceiling, not a bypass of WhatsApp membership, rate, or anti-abuse limits. WhatsApp may still reject or restrict activity, and the runtime intentionally stops when a restriction surface is detected.

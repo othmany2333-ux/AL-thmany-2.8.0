@@ -1,0 +1,11 @@
+تحديث AL-thmany إلى 1.5.0
+========================
+
+1) ارفع ملف Overlay إلى جذر المستودع.
+2) فك الضغط فوق المشروع الحالي.
+3) تحقق من versionCode=109 وversionName=1.5.0.
+4) شغل validate_source + pure Kotlin regressions + runtime benchmark.
+5) اعمل commit ثم push إلى main.
+6) تابع GitHub Actions: unit tests -> lintDebug -> assembleDebug -> upload artifact.
+
+ملاحظة: لا تستخدم force push.

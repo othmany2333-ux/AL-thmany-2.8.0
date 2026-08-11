@@ -1,0 +1,60 @@
+AL-thmany 1.4.1 — Adaptive Multi-WhatsApp Runtime
+تقرير التحقق من المصدر
+
+الإصدار:
+- versionCode = 108
+- versionName = 1.4.1
+
+أهم التطويرات:
+1) Turbo Runtime أسرع:
+   - فحص سريع كل 60ms في وضع Turbo.
+   - أقل فاصل بين المسحات 15ms.
+   - Click throttle سريع 70ms.
+   - استدلال النتيجة السريع 100ms.
+   - تسوية الإغلاق 15ms.
+   - تسليم الرابط التالي عند الفاصل 0 بعد حارس 5ms فقط.
+   - الأزرار القوية غير المتعارضة يمكن تنفيذها من مسح Turbo واحد، بينما الحالات الملتبسة تبقى بحاجة إلى أدلة متكررة.
+   - مهلة الشاشة غير المعروفة في Turbo أصبحت أكثر استجابة، مع إبقاء Loading Guard بميزانية مستقلة.
+
+2) الإيقاف/الاستئناف الذكي:
+   - Auto Resume ظاهر في الصفحة الرئيسية.
+   - Pause تلقائي عند مغادرة تطبيق واتساب المحدد.
+   - Auto Resume عند العودة إلى واتساب فقط إذا كان التوقف تلقائيًا وليس يدويًا.
+   - الإشعار المستمر يحتوي Pause/Resume وStop.
+
+3) اختيار تطبيق واتساب:
+   - قائمة بالتطبيقات المثبتة داخل ملف Android الحالي مع الأيقونة والاسم والحزمة.
+   - اكتشاف التطبيقات التي تعالج chat.whatsapp.com أو التي يظهر اسم/حزمة WhatsApp فيها.
+   - يبقى دعم WhatsApp الرسمي وBusiness وSamsung Dual Messenger.
+
+4) Work Profile / Secure Folder:
+   - التطبيق أصبح Profile-aware ويعرض حالة الملف الحالي.
+   - بسبب حدود Android الأمنية، التحكم عبر الملفات الشخصية غير مسموح لتطبيق عادي.
+   - لتشغيل AL-thmany داخل Work Profile أو Secure Folder يجب تثبيت AL-thmany وتفعيل Accessibility داخل نفس الملف الذي توجد فيه نسخة واتساب المستهدفة.
+
+5) الاستقرار:
+   - Event coalescing وSingle-flight action وIdempotency Guard وContext Guard وLoading Guard وCircuit Breaker بقيت مفعلة.
+   - لوحة التشغيل لا تعيد تحميل كامل الطابور أثناء المسار الساخن.
+   - اكتشاف تطبيقات واتساب مخزن مؤقتًا لفترة قصيرة لتقليل ضغط PackageManager.
+   - عند انتهاء نافذة التشغيل أو اكتمال الطابور يحاول التطبيق العودة إلى Dashboard إذا كان الخيار مفعّلًا.
+
+6) السعة:
+   - السعة العملية أصبحت حتى 250,000 رابط فريد في الجلسة الواحدة.
+   - لا يوجد "غير محدود" حرفيًا على Android لأن الذاكرة والتخزين موارد محدودة؛ تم اختيار حد كبير يحافظ على الاستقرار.
+   - حد التنفيذ لكل تشغيل صريح يبقى 80 رابطًا، والمتبقي محفوظ في SQLite للاستكمال.
+
+التحقق المنفذ:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+- XML parse passed
+- Arabic/English string parity passed: 387 / 387
+
+حدود التحقق:
+- لم يتم إجراء Android assemble/lint محليًا لعدم توفر Android SDK في بيئة العمل الحالية.
+- يجب تشغيل GitHub Actions: testDebugUnitTest ثم lintDebug ثم assembleDebug للتأكد من تكامل Android الكامل.
+- دعم تطبيقات واتساب المعدلة يعتمد على أن تكون مرئية في نفس Android profile وأن تعلن Activity قابلة للتشغيل/معالجة الرابط.
+- لا توجد آلية لتجاوز قيود WhatsApp أو إخفاء الأتمتة، والتقييد يبقى سببًا لإيقاف التشغيل.
+
+- Lint hotfix: UserManager.isManagedProfile is now guarded by API 30 (Android R) while minSdk remains 26.

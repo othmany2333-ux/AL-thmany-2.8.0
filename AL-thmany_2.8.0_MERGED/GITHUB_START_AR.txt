@@ -1,0 +1,22 @@
+AL-thmany 2.1.0 — Profile & Community Core
+
+مستودع جديد:
+1) ارفع AL-thmany_2.1.0_GitHub_Ready_Source.zip إلى جذر Codespaces.
+2) نفذ:
+   unzip -o AL-thmany_2.1.0_GitHub_Ready_Source.zip
+   cp -a AL-thmany_2.1.0_Profile_Community_Core/. .
+   rm -rf AL-thmany_2.1.0_Profile_Community_Core
+   rm -f AL-thmany_2.1.0_GitHub_Ready_Source.zip
+3) تحقق:
+   python3 scripts/validate_source.py
+   bash scripts/compile_pure_kotlin.sh
+   bash scripts/run_pure_kotlin_regressions.sh
+   bash scripts/run_runtime_benchmarks.sh
+4) ارفع التغييرات:
+   git add -A
+   git commit -m "AL-thmany 2.1.0 Profile Community Core"
+   git push origin main
+5) GitHub Actions سيشغّل AL-thmany Android CI تلقائيًا.
+6) بعد النجاح، حمّل Artifact باسم al-thmany-debug-apk، وفيه app-debug.apk.
+
+إذا كان لديك مستودع AL-thmany 2.0.0 موجود بالفعل فاستخدم Overlay 2.1.0 بدل Source الكامل.

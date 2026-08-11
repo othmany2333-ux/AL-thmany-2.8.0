@@ -1,0 +1,21 @@
+AL-thmany 2.6.4 — Fast Transition & Permission Stability Core
+
+الإصدار:
+- versionCode = 264
+- versionName = 2.6.4
+
+التحقق المنفذ محليًا:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+تدقيق المسار السريع:
+- إطارات target-hidden السليمة لا ترفع fastUiFailureCount.
+- NO_ROOT المؤقت لا يسقط مباشرة إلى uiautomator dump.
+- persistent event sequence يحافظ على event الذي يصل أثناء تهيئة الرابط.
+- Result commit في Shizuku محمي exactly-once.
+- Next-link settle في SHIZUKU_FAST_UI_ACTIVE بقي 0ms.
+
+ملاحظة:
+- Android APK/Gradle build الكامل واختبار WhatsApp الحقيقي يجب تأكيدهما عبر GitHub Actions والجهاز.

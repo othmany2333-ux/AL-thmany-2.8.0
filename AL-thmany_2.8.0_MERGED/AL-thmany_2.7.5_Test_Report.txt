@@ -1,0 +1,55 @@
+AL-thmany 2.7.5 — Test Report
+================================
+
+Scope
+-----
+- Accessibility Join/Request fallback when WhatsApp exposes no usable semantic action node.
+- Direct fast exit when an already-joined invitation opens a conversation immediately.
+- Sequential next-link continuity after visual Join/Request, terminal results, and existing chats.
+
+Implemented protections
+-----------------------
+1. Semantic Accessibility Join/Request remains the primary path.
+2. Visual fallback is Android 11+ only and uses AccessibilityService.takeScreenshot.
+3. The service declares android:canTakeScreenshot="true" as required by Android.
+4. No fixed tap coordinate is used. The existing wide WhatsApp-green lower-screen detector is reused.
+5. Visual fallback is disabled on Loading, Restriction, terminal, Home, Conversation and Community-home surfaces.
+6. A visual tap is verified by a fresh screenshot; the same wide action is retried once only.
+7. Screenshot failures are not interpreted as successful button disappearance.
+8. A direct already-member conversation is confirmed across repeated scans, backed out immediately, and handed off to the next link.
+9. Existing WhatsApp restrictions/Retry Later remain stop conditions; no Knox/DPC/WhatsApp limit bypass was added.
+
+Executed checks
+---------------
+- python3 scripts/validate_source.py: PASS
+- scripts/compile_pure_kotlin.sh: PASS
+- scripts/run_pure_kotlin_regressions.sh: PASS
+- scripts/run_runtime_benchmarks.sh: PASS
+- XML/resource validation: PASS
+- Arabic/English string parity: PASS
+
+Environment limitation
+----------------------
+The local environment does not contain Android SDK/Gradle, so a full Android APK compile/Lint cannot be honestly claimed here.
+The included GitHub Actions workflow should run the Android build after the source is pushed.
+
+Device acceptance test
+----------------------
+1. Install 2.7.5 and re-enable AL-thmany Accessibility once so Android reloads the updated service capability.
+2. Select the exact WhatsApp target.
+3. Test two valid links in Personal and two in Work/Profile-local Accessibility.
+4. Include one already-joined group link and one invalid/expired link.
+Expected sequence:
+open -> semantic Join/Request OR protected visual fallback -> verify -> Back/X -> next link.
+For already joined:
+open conversation -> short confirmation -> Back -> next link.
+
+Useful diagnostics
+------------------
+ACCESSIBILITY_VISUAL_ACTION_PROBE
+ACCESSIBILITY_VISUAL_ACTION_TAP
+ACCESSIBILITY_VISUAL_ACTION_RETRY
+ACCESSIBILITY_SCREENSHOT_FAILED
+ACCESSIBILITY_VISUAL_VERIFY_SCREENSHOT_FAILED
+CLICK
+RESULT

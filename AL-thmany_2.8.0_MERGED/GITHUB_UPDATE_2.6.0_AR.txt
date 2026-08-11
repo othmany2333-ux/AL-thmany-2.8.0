@@ -1,0 +1,5 @@
+AL-thmany 2.6.0 — Accessibility Parity Fast Path
+- مسار Shizuku السريع أصبح Compact Node Frame بدل XML في المسار الدائم.
+- الضغط يستخدم Node Cache من نفس Scan قبل أي traversal/fallback.
+- القيم: Event 14ms، Stable 36ms، Poll 95ms، Click 68ms، Gesture 18ms، Result 88ms، Next 0ms.
+- Loading وRestriction protections كما هي.

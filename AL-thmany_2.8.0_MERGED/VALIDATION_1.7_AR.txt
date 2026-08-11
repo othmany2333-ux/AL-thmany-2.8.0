@@ -1,0 +1,42 @@
+AL-thmany 1.7 UltraMotion Precision — تقرير التحقق
+
+الإصدار:
+- versionCode = 111
+- versionName = 1.7.0
+
+تطويرات السرعة:
+- Fast poll interval: 30ms
+- Fast minimum scan interval: 4ms
+- Fast click throttle: 35ms
+- Fast result inference: 45ms
+- Fast gesture duration: 8ms
+- Fast exit settle: 4ms
+- User instant handoff settle: 0ms
+- Post-join evidence age in Turbo: 45ms
+- Recent-loading settle in Turbo: 80ms
+- Home-surface Turbo recovery: 1 stable scan + 250ms
+- Bounded semantic invitation scroll: 2 attempts per link
+
+حواجز الثبات التي بقيت مفعلة:
+- Loading Guard
+- restriction stop
+- single-flight action executor
+- idempotency guard
+- screen fingerprint
+- confidence/context conflict guards
+- no automatic same-link relaunch
+- bounded scrolling and bounded action retries
+
+نتائج التحقق المحلي:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+Micro-benchmark (بيئة التطوير الحالية):
+- parse 5,000 unique + 500 duplicate links: 279.77 ms
+- 20,000 screen fingerprints: 320.47 ms
+- 100,000 idempotency checks: 62.37 ms
+
+ملاحظة:
+لم يتم تشغيل Android unit/lint/APK build محليًا في هذه البيئة. التحقق النهائي يتم عبر GitHub Actions ثم جهاز Android فعلي.

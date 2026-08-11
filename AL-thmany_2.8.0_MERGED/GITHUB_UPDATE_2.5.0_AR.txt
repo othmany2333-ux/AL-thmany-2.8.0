@@ -1,0 +1,9 @@
+AL-thmany 2.5.0 — Persistent UiAutomation Turbo Bridge
+
+- جلسة UiAutomation دائمة اختيارية داخل Shizuku UserService لقراءة شجرة الواجهة مباشرة.
+- ضغط وBack مباشر عبر UiAutomation عند توفره، مع fallback تلقائي إلى UIAutomator/input.
+- Burst سريع 12ms أثناء التحولات و45ms عند الاستقرار لتقليل التأخير واستهلاك المعالج.
+- input cooldown = 32ms، وforeground exact-user lease = 8s.
+- حذف استعلامات قاعدة بيانات زائدة من كل handoff، وتخفيف تحديث الإشعارات.
+- الدقة محفوظة: المسار أحادي القراءة فقط للأزرار عالية الثقة والحزمة المطابقة، والحالات الملتبسة تبقى متعددة التحقق.
+- لا تجاوز لقيود WhatsApp أو Knox/DPC.

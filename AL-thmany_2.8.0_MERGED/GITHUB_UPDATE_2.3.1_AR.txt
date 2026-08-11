@@ -1,0 +1,19 @@
+AL-thmany 2.3.1 — تحديث المستودع من 2.3.0
+
+1) فك Overlay 2.3.1 فوق جذر المشروع.
+2) تحقق:
+   grep -E "versionCode|versionName" app/build.gradle.kts
+   python3 scripts/validate_source.py
+   bash scripts/compile_pure_kotlin.sh
+   bash scripts/run_pure_kotlin_regressions.sh
+   bash scripts/run_runtime_benchmarks.sh
+3) ارفع:
+   git add -A
+   git commit -m "AL-thmany 2.3.1 Continuity Recovery Core"
+   git push origin main
+4) حمّل APK من أحدث GitHub Action فقط.
+
+اختبار الجهاز:
+- الوضع الشخصي: اختر Accessibility أولًا واختبر رابطًا واحدًا.
+- إذا Shizuku غير جاهز وAccessibility متاح، يجب أن تسقط الجولة تلقائيًا إلى Accessibility بدل التوقف.
+- Secure Folder/Work بدون Accessibility يبقى معتمدًا على نجاح Shizuku الفعلي على الجهاز؛ لا يوجد تجاوز Knox.

@@ -1,0 +1,9 @@
+AL-thmany 2.3.3 — Work Profile Settings & Policy Probe
+
+- ثلاث مسارات مستقلة لإعداد Accessibility: تفاصيل خدمة AL-thmany، قائمة خدمات Accessibility، ومعلومات نسخة التطبيق في الملف الحالي.
+- فحص ظهور مكوّن خدمة AL-thmany داخل الملف الحالي.
+- فحص read-only لإعداد enabled_accessibility_services داخل المستخدم/الملف الحالي عند توفره.
+- فحص Device Policy آمن: يقرأ allowlist فقط إذا كان التطبيق نفسه مالك الجهاز/الملف؛ وإلا يصرّح أن Android لا يسمح لتطبيق عادي بقراءة القائمة بدل تخمين الحظر.
+- تشخيص جديد لحالات PARENT_ACCESSIBILITY_TOGGLE_REQUIRED و ENABLED_SETTING_PRESENT_BUT_MANAGER_DISABLED وغيرها.
+- لا يتم تجاوز Knox أو سياسات Work Profile، ولا يتم تمكين Accessibility آليًا.
+- تصحيح عنوان الإصدار في الصفحة الرئيسية ليعرض BuildConfig الحالي بدل النص القديم 1.5.

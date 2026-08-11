@@ -1,0 +1,35 @@
+AL-thmany 2.4.0 — Native Multi-Profile Engine
+Test Report
+Date: 2026-08-10
+
+Scope implemented
+- Profile-aware native engine router for OWNER / MANAGED_WORK / SAMSUNG_ISOLATED / SECONDARY.
+- Local Accessibility remains first choice when the service is connected in the same profile.
+- Guarded Shizuku is the native fallback when available; its existing package/foreground/UI-dump/tap guards remain enforced.
+- Shizuku Android-user resolution now locks to the exact UID of the currently running AL-thmany process before requiring the target WhatsApp package in that same user. It no longer selects the first user that merely contains both package names.
+- Optional WorkProfileAdminReceiver / WorkProfileController added. It can adjust the permitted Accessibility package allowlist only when Android has actually provisioned AL-thmany as Profile Owner or Device Owner.
+- Existing Work Profiles owned by another DPC are never adopted or bypassed.
+- Work Controller does not programmatically enable Accessibility; Android/user activation is still required.
+- Secure Folder / Knox is not bypassed. If neither local Accessibility nor a successful Shizuku runtime is available, the run is not guessed or forced cross-profile.
+- WhatsApp restriction/retry-later hard stop is preserved.
+
+Validation executed in this environment
+1. Python source/resource validation: PASSED
+2. XML parse of AndroidManifest.xml and all app/src/main/res XML files: PASSED
+3. Pure Kotlin domain compile: PASSED
+4. Pure Kotlin regression scenarios: PASSED
+5. Smart Runtime micro-benchmark sanity checks: PASSED
+6. Kotlin syntax parse smoke check for modified Android-facing sources: no syntax-parser errors detected; unresolved Android references are expected because this container has no Android SDK classpath.
+
+Runtime benchmark sample
+- Parse 5,000 unique + 500 duplicate links: ~97 ms
+- 20,000 screen fingerprints: ~121 ms
+- 100,000 idempotency checks: ~17 ms
+
+Not executed locally
+- Android unit-test/lint/assembleDebug with full Android SDK. These remain authoritative in GitHub Actions.
+
+Expected GitHub build identity
+- versionCode = 240
+- versionName = 2.4.0
+- debug variant = 2.4.0-debug

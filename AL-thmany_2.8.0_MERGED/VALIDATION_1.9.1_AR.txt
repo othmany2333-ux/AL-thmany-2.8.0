@@ -1,0 +1,20 @@
+AL-thmany 1.9.1 — 150-Link Explicit Run
+
+الإصدار:
+- versionCode = 117
+- versionName = 1.9.1
+
+التعديل:
+- رفع حد التشغيل الصريح من 80 إلى 150 رابطًا.
+- سعة القائمة بقيت 1,000,000 رابط فريد.
+- إزالة التكرار، حفظ التقدم، Pause/Resume، Instant Terminal Router والتوقف عند قيود واتساب بقيت كما هي.
+
+التحقق المنفذ:
+- SOURCE VALIDATION PASSED
+- XML PARSE PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+ملاحظة:
+- Android Unit Tests / Lint / APK build يجب أن تُحسم نهائيًا عبر GitHub Actions المزود بـ Android SDK الكامل.

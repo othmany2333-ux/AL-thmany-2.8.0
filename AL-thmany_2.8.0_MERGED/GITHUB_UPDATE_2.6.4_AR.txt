@@ -1,0 +1,9 @@
+AL-thmany 2.6.4 — Fast Transition & Permission Stability Core
+
+التطوير:
+- إصلاح انتقال Shizuku في Work Profile: إطارات الانتقال التي ما زالت تعرض AL-thmany أو واجهة النظام لا تُحسب فشلًا ولا تُسقط المحرك إلى uiautomator dump الثقيل.
+- تفعيل المسار الدائم Event-first حتى عند NO_ROOT المؤقت، وانتظار حدث/شجرة WhatsApp الصحيحة.
+- بعد 480ms من بقاء الجذر خارج WhatsApp يتم إسقاط foreground lease وإعادة إثبات نافذة WhatsApp لنفس Android user بدل الانتظار على جذر خاطئ.
+- حماية exactly-once لنتيجة الرابط والعداد والانتقال للرابط التالي في Shizuku.
+- بوابة Accessibility أصبحت تحتاج 3 قراءات متتالية تؤكد أن الخدمة غير مفعلة قبل إظهار نافذة التهيئة؛ القراءة السلبية العابرة بعد تحديث APK لا تعيد طلب الصلاحية.
+- الفاصل بين الروابط في Fast UI بقي 0ms، وحماية Loading وRestriction بقيت كما هي.

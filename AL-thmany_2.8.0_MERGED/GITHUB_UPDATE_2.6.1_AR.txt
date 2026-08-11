@@ -1,0 +1,6 @@
+AL-thmany 2.6.1 — Unstoppable Sequential Continuity
+- تسلسل مستمر بين الروابط بدون توقف على المحادثات أو Unknown/Ambiguous العادية.
+- استعادة foreground مرتين ثم انتقال آمن للرابط التالي.
+- Direct conversation يعتمد فقط بعد Event جديد بعد فتح الرابط لمنع اعتبار المحادثة القديمة نتيجة للرابط الجديد.
+- NO_ROOT / UI tree failure / input failure تستخدم recovery وsafe advance بدل إنهاء التشغيل.
+- Restriction / Retry Later يبقى Hard Stop ولا يتم تجاوزه.

@@ -1,0 +1,36 @@
+AL-thmany 2.5.2 — Event-Coalesced Node-Action Turbo
+===================================================
+
+Version
+- versionCode: 252
+- versionName: 2.5.2
+
+Hot-path changes
+- Event wait + UiAutomation snapshot combined into one Shizuku UserService Binder call (waitAndSnapshot).
+- Event tree coalescing: 4 ms.
+- Event response budget: 6 ms.
+- Stable scan: 24 ms.
+- Fallback poll: 72 ms.
+- Direct AccessibilityNodeInfo.ACTION_CLICK on exact-package clickable node before coordinate injection.
+- Fast click throttle: 36 ms.
+- Coordinate-gesture fallback: 12 ms.
+- Result-analysis fallback: 60 ms.
+- Join/Request retry: 96 ms, bounded attempts retained.
+- Verified joined-conversation evidence: 28 ms, one strong stable scan.
+- Non-loading watchdog: 1.0 s.
+- Unknown stable timeout: 1.6 s.
+- True Loading protection: 20 s unchanged.
+- Direct next-link settle: 0 ms.
+- Restriction / Retry Later remains a hard stop.
+- Hot-path runtime diagnostics moved off the automation coroutine; fast preset log emitted once per service run.
+
+Local verification
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+- XML/source integrity checks in validate_source.py PASSED
+
+Important build note
+- A complete Android APK compile was not run in this container because a full Android SDK/Gradle wrapper environment is not available here.
+- GitHub Actions remains the authoritative Android/AIDL compile and APK build check.

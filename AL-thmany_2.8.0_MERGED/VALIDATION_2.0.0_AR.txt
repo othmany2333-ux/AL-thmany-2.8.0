@@ -1,0 +1,24 @@
+AL-thmany 2.0.0 — Adaptive Recovery Core
+
+الإصدار:
+- versionCode = 200
+- versionName = 2.0.0
+
+التطوير:
+- Event-first adaptive cadence بدل busy-loop شديد.
+- Root self-recovery.
+- Recoverable Accessibility interruption with Auto Resume.
+- Stable post-action handoff with fingerprint evidence.
+- Actionable stalled-screen watchdog.
+- Auto-pause outside WhatsApp disabled by default on new installs.
+- 150 links per explicit run remains unchanged.
+- WhatsApp restriction remains a mandatory hard stop.
+
+التحقق المنفذ محليًا:
+- SOURCE VALIDATION PASSED
+- XML PARSE PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+Android Unit Tests / Lint / APK build still require the Android SDK workflow in GitHub Actions.

@@ -1,0 +1,54 @@
+AL-thmany 2.7.4 — Test Report
+================================
+
+Scope
+-----
+- Personal Accessibility direct Join/Request execution.
+- Per-attempt idempotency and alternate gesture/node retry.
+- Samsung Work/Secure screenshot compatibility action detection.
+- Protected action disappearance/retry and result-surface close.
+- Direct sequential next-link handoff.
+
+Implemented regression protections
+----------------------------------
+1. Explicit runs self-disable restored Shadow observation mode in both runtimes.
+2. Accessibility positive actions use a real dispatchGesture first; the bounded retry uses
+   node ACTION_CLICK and is not suppressed by the first attempt's idempotency record.
+3. Shizuku positive semantic actions prefer direct input injection over node ACTION_CLICK.
+4. If the exact-user WhatsApp activity is foreground but its semantic tree remains hidden,
+   a screenshot detector accepts only a wide lower-screen WhatsApp-green control.
+5. The visual detector rejects small floating buttons and wide non-green controls.
+6. The visual input is retried once only if the same wide action remains visible.
+7. Joined conversations and request/result sheets are closed before opening the next link.
+8. Non-loading fast liveness is bounded at 1,000 ms; real Loading remains protected at 20 s.
+
+Executed checks
+---------------
+- python3 scripts/validate_source.py: PASS
+- scripts/compile_pure_kotlin.sh: PASS
+- scripts/run_pure_kotlin_regressions.sh: PASS
+- XML/resource catalog validation: PASS
+- Arabic/English string parity: PASS
+- Pure visual detector synthetic Join-button test: PASS
+- Floating-action-button rejection test: PASS
+- Non-green wide-control rejection test: PASS
+- Existing parser, terminal, request, continuity and queue regressions: PASS
+
+Packaging checks are executed after generating the deliverables:
+- ZIP integrity
+- sequential 2.7.3 -> 2.7.4 overlay validation
+- complete-source validation
+- SHA-256 verification
+
+Environment limitation
+----------------------
+The current local environment does not include Android SDK/Gradle, so a full Android compile,
+Lint and APK build cannot be honestly claimed locally. The repository's GitHub Actions workflow
+must run the Android build after push. Pure Kotlin and source/resource validations passed locally.
+
+Device acceptance test
+----------------------
+Install the 2.7.4 APK and test two valid links in Personal, then two in Work. Expected sequence:
+open -> Join/Request input -> surface close/back -> next link. If a device-specific failure remains,
+share the runtime diagnostic lines containing CLICK, SHIZUKU_VISUAL_ACTION_*,
+SHIZUKU_RESULT_SURFACE_CLOSE and SHIZUKU_DIRECT_HANDOFF.

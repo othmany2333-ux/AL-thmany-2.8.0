@@ -1,0 +1,9 @@
+AL-thmany 2.4.2 — Accessibility-Like Shizuku Fast Path
+
+- تسريع محرك Shizuku ليقترب من إحساس وآلية Accessibility في الاستجابة، مع بقاء UIAutomator هو مصدر الشجرة.
+- Join / Request / Preview عالي الثقة ينفذ من قراءة UI واحدة بدل قراءتين.
+- الحالات الملتبسة والتأكيدات وصفوف المجتمعات تبقى على إجماع متعدد القراءات.
+- Foreground Lease قصير بعد إثبات user + package لتجنب تكرار dumpsys قبل كل ضغطة.
+- خفض Input cooldown من 800ms إلى 180ms، Open settle إلى 120ms، Action settle إلى 90ms، Scan cadence إلى 80ms.
+- التحقق بعد Join يبدأ من سطح WhatsApp قوي واحد بعد 300ms.
+- لا تجاوز لقيود WhatsApp أو Knox/DPC، ولا ضغط إذا لم تتطابق الحزمة والمستخدم والحدود.

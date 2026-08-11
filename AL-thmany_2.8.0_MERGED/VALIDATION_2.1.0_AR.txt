@@ -1,0 +1,30 @@
+AL-thmany 2.1.0 — Profile & Community Core
+
+الإصدار:
+- versionCode = 210
+- versionName = 2.1.0
+
+التطوير:
+- ProfileEnvironment يميز owner / Work-managed / Samsung isolated / secondary.
+- WhatsAppLauncher يكتشف تطبيقات واتساب القابلة لفتح الدعوات داخل نفس Android profile فقط ويستخدم explicit package intents.
+- داخل Secure Folder / Work Profile لا يبدأ AUTO بدون هدف صريح محفوظ، ولا توجد عودة صامتة إلى Browser أو واتساب الملف الشخصي.
+- Runtime lock يربط كل تشغيل بـ packageName + profileKey، ويمنع خدمة Accessibility من قبول أحداث نسخة واتساب أخرى أثناء الجلسة.
+- Scheduled run يتحقق من الهدف قبل استهلاك أي رابط.
+- زر اختبار الهدف يفتح تطبيق واتساب المحدد نفسه بدون إرسال رسالة أو فتح دعوة.
+- CommunityTraversalPolicy/Matcher يضيف مسارًا محدودًا للقروبات الظاهرة دلاليًا داخل المجتمع مع checkpoint وdedupe وحدود 256 قروبًا و40 scroll و3 Back.
+- Join/Request/terminal logic لقروبات المجتمع يعيد استخدام محرك الدعوات الحالي ولا يستهلك رابط المجتمع الخارجي لكل قروب فرعي.
+- Restriction / Retry later يبقى hard stop ولا توجد محاولة لتجاوز قيود واتساب أو Knox/DPC.
+
+التحقق المنفذ محليًا:
+- SOURCE VALIDATION PASSED
+- XML PARSE PASSED (58 XML files)
+- Arabic/English string parity PASSED (396 / 396)
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+- Kotlin source structure probe PASSED للملفات المعدلة؛ android.jar غير متوفر في بيئة الفحص المحلية.
+
+حدود التحقق:
+- Android Unit Tests / Lint / assemble APK لم تُنفذ محليًا لأن Android SDK/Gradle غير متوفر في البيئة الحالية.
+- GitHub Actions المزود بـ Android SDK 36 هو مسار الحسم النهائي للبناء.
+- Secure Folder وWork Profile يعتمدان على سياسة الجهاز/Knox/DPC؛ لا يمكن للتطبيق تجاوز منع Accessibility أو القيود بين الملفات الشخصية، لذلك يلزم اختبار فعلي على الجهاز المستهدف.

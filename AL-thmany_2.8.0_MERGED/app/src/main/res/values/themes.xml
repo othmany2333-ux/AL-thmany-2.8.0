@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.GroupLinkManager" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/nebula_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/nebula_mint</item>
+        <item name="colorSurface">@color/surface_soft</item>
+        <item name="colorSurfaceContainer">@color/surface_card</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/aurora_navy</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+        <item name="colorOutline">@color/aurora_border</item>
+        <item name="materialButtonStyle">@style/Widget.Material3.Button</item>
+    </style>
+
+    <style name="TextAppearance.ALthmany.Toolbar.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">27sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <style name="TextAppearance.ALthmany.Toolbar.Subtitle" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/aurora_text_soft</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+</resources>

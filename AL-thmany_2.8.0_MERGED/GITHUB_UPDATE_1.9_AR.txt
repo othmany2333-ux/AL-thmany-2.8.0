@@ -1,0 +1,9 @@
+AL-thmany 1.9.0 — Instant Terminal Router
+
+1) ارفع Overlay إلى جذر المستودع.
+2) فك الضغط فوق المشروع.
+3) تحقق من versionCode 116 و versionName 1.9.0.
+4) شغل validate_source.py و pure Kotlin compile/regressions.
+5) Commit + push ثم اترك GitHub Actions ينفذ Unit/Lint/APK.
+
+التغيير الأساسي: الحالات النهائية المحددة تنتقل من أول إطار موثوق دون انتظار تكرار الفحص أو تأخير الرابط، بينما قيود واتساب توقف الجلسة.

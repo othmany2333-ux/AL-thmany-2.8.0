@@ -1,0 +1,12 @@
+AL-thmany 2.4.1 — Profile-Aware Foreground Fix
+
+الإصدار:
+- versionCode = 241
+- versionName = 2.4.1
+
+الإصلاح:
+- إصلاح SHIZUKU_FOREGROUND_TIMEOUT داخل Work Profile/Secure profiles.
+- إلغاء الاعتماد على أول mCurrentFocus فقط.
+- التحقق من mResumedActivity/topResumedActivity مع user token مثل u10 وحزمة واتساب المقفلة.
+- لا يتم تخفيف exact-user lock ولا يتم قبول package-only focus كإذن للضغط.
+- إضافة probe تشخيصي عند timeout.

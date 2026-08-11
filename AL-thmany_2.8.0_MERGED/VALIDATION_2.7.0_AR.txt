@@ -1,0 +1,34 @@
+AL-thmany 2.7.0 — تقرير التحقق
+
+الإصدار:
+- versionCode = 270
+- versionName = 2.7.0
+
+التحقق المنفذ محليًا:
+- SOURCE VALIDATION PASSED
+- XML PARSE PASSED: عدد 59 ملفًا، دون أخطاء.
+- تطابق موارد النصوص: 472 عربي + 472 إنجليزي.
+- PYTHON SOURCE COMPILE PASSED.
+- SHELL SCRIPT SYNTAX PASSED.
+- PURE KOTLIN COMPILE PASSED باستخدام kotlinc-jvm 2.4.10.
+- PURE KOTLIN REGRESSIONS PASSED.
+- SMART RUNTIME MICRO-BENCHMARK PASSED.
+
+نتيجة اختبار الأداء المحلي:
+- تحليل 5000 رابط فريد + 500 مكرر: 82.68ms.
+- حساب 20000 بصمة شاشة: 120.35ms.
+- تنفيذ 100000 فحص idempotency: 22.01ms.
+
+تدقيق التغييرات الحساسة:
+- الجولة الصريحة = 1000 رابط.
+- تأخير الانتقال = 0..10000ms بخطوة 100ms.
+- Shizuku يبدأ Adaptive Persistent UI ثم يعود تلقائيًا للمسار المتوافق عند الحاجة.
+- إثبات Join يتطلب الحزمة الدقيقة وAndroid user الدقيق ونشاط محادثة معروف.
+- الانتقال بعد المحادثة المثبتة لا ينتظر Back.
+- التقييد وRetry Later ما زالا توقفًا إلزاميًا ولا توجد محاولة تجاوز Knox/DPC.
+
+غير منفذ في هذه البيئة:
+- Android Gradle build وAndroid Lint وAPK كامل لعدم توفر Android SDK/Gradle محليًا.
+- اختبار حقيقي على WhatsApp داخل Work Profile وSamsung Secure Folder.
+
+GitHub Actions المرفق يشغّل Unit Tests وLint وassembleDebug. يلزم نجاحه ثم اختبار رابط واحد على الجهاز قبل تشغيل قائمة كبيرة.

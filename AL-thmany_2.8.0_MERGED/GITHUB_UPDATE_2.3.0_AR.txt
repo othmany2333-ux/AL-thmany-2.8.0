@@ -1,0 +1,23 @@
+AL-thmany 2.3.0 — رفعه إلى مستودع GitHub جديد
+
+1) ارفع محتويات مجلد المصدر إلى جذر المستودع.
+2) نفذ:
+   python3 scripts/validate_source.py
+   bash scripts/compile_pure_kotlin.sh
+   bash scripts/run_pure_kotlin_regressions.sh
+   bash scripts/run_runtime_benchmarks.sh
+3) ثم:
+   git add -A
+   git commit -m "AL-thmany 2.3.0 Smart Hybrid Runtime"
+   git push origin main
+4) افتح GitHub Actions وانتظر نجاح AL-thmany Android CI.
+5) حمّل artifact: al-thmany-debug-apk
+
+اختبار Shizuku المقترح قبل تشغيل دفعة:
+- شغّل Shizuku.
+- امنح AL-thmany الصلاحية.
+- افتح واتساب الهدف في نفس البيئة.
+- نفّذ Test Shizuku وتأكد أن shell/UI target ظاهرين.
+- اختبر رابطًا واحدًا أولًا.
+
+لا تعتبر نجاح Shizuku خارج Secure Folder دليلًا على أنه يرى واجهة Knox داخله؛ الاختبار الفعلي على الجهاز هو الفيصل.

@@ -1,0 +1,18 @@
+AL-thmany 2.3.1 — Continuity Recovery Core
+
+الإصدار:
+- versionCode = 231
+- versionName = 2.3.1
+
+الإصلاح الجذري:
+- أعيد مسار Accessibility المستقر ليكون فعالًا ولا يتعطل بسبب runtime backend قديم من Shizuku.
+- إذا كان Shizuku محددًا لكنه غير جاهز وكان Accessibility متاحًا، تنتقل الجولة الحالية تلقائيًا إلى Accessibility بدون استهلاك الرابط الحالي.
+- Shizuku يبقى محركًا مستقلًا للبيئات التي لا تملك Accessibility، ولا يوجد أي ادعاء بتجاوز Knox/DPC.
+- بعد Join داخل محادثة: Back سريع اختياري ثم فتح الرابط التالي فورًا؛ نجاح Back ليس شرطًا للاستمرار.
+- بعد Request submitted: خروج سريع من سطح الطلب ثم فتح الرابط التالي.
+- target lock أصبح يتحقق من profileKey وقت فتح كل دعوة.
+- تقييد WhatsApp / Retry later يبقى hard stop ولا تتم محاولة تجاوزه.
+
+ملاحظة حول Link Scanner Overlay المرفق من المستخدم:
+- تم استخدام تغييرات الاستمرارية الموجودة في QuickJoinAccessibilityService كمرجع للإصلاح.
+- وضع Link Scanner نفسه مصمم للقراءة فقط ولا يضغط Join/Request، لذلك لم يتم خلط وضع الفحص مع وضع الانضمام.

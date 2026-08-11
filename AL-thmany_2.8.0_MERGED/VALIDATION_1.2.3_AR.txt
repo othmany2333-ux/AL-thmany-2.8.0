@@ -1,0 +1,26 @@
+AL-thmany 1.2.3 Fast Handoff Core - تقرير التحقق
+
+الهدف: تقليل زمن الانتقال المخفي بين نتيجة الرابط وفتح الرابط التالي، مع إبقاء انتظار التحميل والتحقق من الحالة منفصلين عن سرعة المستخدم.
+
+الإصدار:
+versionCode = 105
+versionName = 1.2.3
+
+أهم تعديلات السرعة في الوضع السريع:
+- FAST_POLL_INTERVAL_MS = 140ms
+- FAST_MIN_SCAN_INTERVAL_MS = 50ms
+- FAST_CLICK_THROTTLE_MS = 150ms
+- FAST_RESULT_INFERENCE_DELAY_MS = 220ms
+- FAST_POST_JOIN_MIN_EVIDENCE_AGE_MS = 220ms
+- FAST_EXIT_SETTLE_MS = 50ms
+- USER_INSTANT_ADVANCE_SETTLE_MS = 20ms
+- عند اختيار 0 ثانية يتم تفعيل fastHandsFreeMode تلقائيا.
+- حالة جار التحميل ما زالت تستخدم حارسا مستقلا ولا تُعامل كفشل بسبب السرعة.
+
+نتائج التحقق المحلية:
+SOURCE VALIDATION PASSED
+PURE KOTLIN COMPILE PASSED
+PURE KOTLIN REGRESSIONS PASSED
+SMART RUNTIME MICRO-BENCHMARK PASSED
+
+ملاحظة: بناء APK الكامل واختبار السلوك على هاتف Android يتمان عبر GitHub Actions ثم الاختبار الفعلي على الجهاز.

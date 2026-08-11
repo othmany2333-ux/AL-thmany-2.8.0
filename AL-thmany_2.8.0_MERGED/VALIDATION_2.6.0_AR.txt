@@ -1,0 +1,5 @@
+AL-thmany 2.6.0 — Accessibility Parity Fast Path
+versionCode = 260
+versionName = 2.6.0
+
+التحسين الأساسي: إزالة XML parse/serialize وإعادة traversal من SHIZUKU_FAST_UI_ACTIVE hot path مع الحفاظ على نفس الأدلة الدلالية.

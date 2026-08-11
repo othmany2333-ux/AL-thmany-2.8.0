@@ -1,0 +1,10 @@
+AL-thmany 1.2.1 Unit Test Compatibility Hotfix
+
+سبب الإصلاح:
+SmartRuntimeProTest كان يستدعي RuntimeIntelligencePolicy.assessAction بدون candidateScoreMargin بعد إضافة هذا الوسيط في 1.2.
+
+الإصلاح:
+candidateScoreMargin أصبح وسيطاً متوافقاً للخلف بقيمة افتراضية آمنة 0، بينما محرك Accessibility الفعلي ما زال يمرر هامش التقييم الحقيقي.
+
+versionCode=103
+versionName=1.2.1

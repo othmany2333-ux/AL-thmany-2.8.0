@@ -1,0 +1,51 @@
+AL-thmany 2.7.2 — Test & Repair Report
+======================================
+
+Reference reviewed
+------------------
+- AL-thmany 2.5.1 GitHub-ready source and Event-First Fast-UI patch/report.
+- Preserved proven event-first timing: 14ms event, 36ms stable, 95ms fallback, 40ms watchdog, 68ms click throttle, 18ms gesture, 120ms retry, 35ms post-Join evidence, 0ms next-link settle.
+
+Root causes addressed
+---------------------
+1. Personal mode could report Accessibility configured while the current app process had no connected QuickJoinAccessibilityService.
+2. A persisted developer Shadow flag could classify Join at confidence 100 but intentionally suppress every click.
+3. Shizuku trusted only the shell exit code even though ActivityManager can print a semantic launch error with exit code 0.
+4. A failed package-only deep link could leave Launcher/SystemUI in front until a continuity timeout.
+
+Implemented repair
+------------------
+- Accessibility readiness now uses an in-process live service connection flag set by onServiceConnected and cleared by onUnbind/onDestroy.
+- AccessibilityManager or a live callback can establish configured state; a stale Settings.Secure entry can no longer establish local readiness.
+- The direct Accessibility details route now passes the flattened component string used by Android's own AccessibilityManagerService.
+- One-time 2.7.2 migration clears persisted Shadow mode; every explicit Start clears it again before backend selection.
+- Added ShizukuLaunchPolicy to reject exit failures, Error, SecurityException, Permission Denial, unable-to-resolve, missing activity, and no-handler launch results.
+- Failed deep-link launches retry once through Android's exact resolved WhatsApp VIEW activity.
+- A recovered exact activity is cached for later links while exact user/package locking stays mandatory.
+- Existing bounded 1.1s foreground recovery, 1.2s no-root advance, 1.6s UI-tree advance, 2s unknown guard, 20s Loading guard, and Restriction hard stop remain active.
+
+Automated checks run
+--------------------
+PASS  python3 scripts/validate_source.py
+PASS  scripts/compile_pure_kotlin.sh
+PASS  scripts/run_pure_kotlin_regressions.sh
+PASS  scripts/run_runtime_benchmarks.sh
+
+Benchmark snapshot from this build environment
+----------------------------------------------
+- Parsed 5,000 unique + 500 duplicate links in 103.86ms.
+- Calculated 20,000 screen fingerprints in 125.77ms.
+- Completed 100,000 idempotency checks in 22.48ms.
+
+Build boundary
+--------------
+- The scratch environment did not include a local Android SDK/Gradle executable, so APK compilation, Android lint, and Android unit tests are delegated to the included GitHub Action.
+- The workflow runs source validation, pure Kotlin compile/regressions/benchmark, testDebugUnitTest, lintDebug, and assembleDebug before publishing the APK artifact.
+- Device-level WhatsApp UI behavior still requires the supplied 3-link acceptance test on the exact Samsung firmware and in each Android profile. The update does not claim to bypass Work Profile, Knox, Shizuku, Android Accessibility, or WhatsApp restrictions.
+
+Expected acceptance evidence
+----------------------------
+- Personal profile diagnostic includes PROFILE_SERVICE_CONNECTED for OWNER:0 and contains no repeated SHADOW suppression after Start.
+- Work profile diagnostic identifies MANAGED_WORK/secondary profile rather than OWNER:0.
+- Shizuku path logs SHIZUKU_DIRECT_LAUNCH; semantic launch failures log SHIZUKU_OPEN_FAILED and advance instead of silently waiting.
+- Joined/Requested/terminal results commit once and the next unique invitation opens according to the selected 0–10,000ms interval.

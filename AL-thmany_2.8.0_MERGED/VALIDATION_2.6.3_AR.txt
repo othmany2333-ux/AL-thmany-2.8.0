@@ -1,0 +1,13 @@
+AL-thmany 2.6.3 — Accessibility Permission Gate Fix
+
+الإصدار:
+- versionCode = 263
+- versionName = 2.6.3
+
+التحقق المنفذ محليًا:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+ملاحظة:
+- Android APK/Gradle build الكامل يجب تأكيده عبر GitHub Actions/Android SDK.

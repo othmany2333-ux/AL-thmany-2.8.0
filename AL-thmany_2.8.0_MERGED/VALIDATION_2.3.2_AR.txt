@@ -1,0 +1,29 @@
+AL-thmany 2.3.2 — Profile Accessibility Fix
+
+الإصدار:
+- versionCode = 232
+- versionName = 2.3.2
+
+الهدف العملي:
+- معالجة حالة Work Profile / Samsung isolated profile التي ينجح فيها فتح أول رابط داخل واتساب لكن لا يوجد ضغط Join/Request بسبب عدم اتصال Accessibility داخل نفس Android profile.
+
+التغييرات التي تم التحقق منها:
+- Profile-local Accessibility heartbeat مستقل لكل Android user/profile.
+- عدم اعتبار system-enabled وحده كافيًا لبدء Accessibility automation.
+- فتح صفحة تفاصيل خدمة AL-thmany المحددة عبر ComponentName مع fallback آمن للإعدادات العامة.
+- Profile Control Diagnostic يعرض profileKey والاتصال المحلي وآخر package event وحالة UI tree بدون تخزين محادثات أو روابط أو أسماء أشخاص.
+- إذا بقي rootInActiveWindow غير متاح داخل Work/Samsung isolated profile، تتوقف الجولة مع حفظ الرابط الحالي بدل استهلاكه بدون ضغط.
+- مسار الشخصي يبقى محافظًا على سلوك الاسترداد السابق.
+- شاشات WhatsApp Restriction / Retry later تبقى hard stop؛ لا يوجد تجاوز Knox/MDM أو سياسات النظام.
+
+التحقق المنفذ محليًا:
+- SOURCE VALIDATION PASSED
+- XML PARSE PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+ملاحظة مهمة:
+- لم يتم تنفيذ Android APK build محليًا لعدم توفر Android SDK/Gradle الكامل في بيئة العمل الحالية.
+- GitHub Actions في المشروع هو الحكم النهائي لـ testDebugUnitTest / lintDebug / assembleDebug.
+- نجاح 2.3.2 في Secure Folder أو Work Profile يعتمد على سماح Samsung/مدير الملف بتشغيل AccessibilityService داخل ذلك الملف؛ الإصدار لا يحاول تجاوز هذه السياسة.

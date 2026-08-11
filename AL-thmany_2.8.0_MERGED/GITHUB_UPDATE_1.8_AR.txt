@@ -1,0 +1,13 @@
+AL-thmany 1.8.0 Continuous Handoff - GitHub Update
+==================================================
+
+بعد رفع ملف Overlay إلى جذر المشروع نفذ الأمر التالي:
+
+ZIP="$(find . -maxdepth 1 -type f -name 'AL-thmany_1.8*Overlay*.zip' -print -quit)" && test -n "$ZIP" && unzip -o "$ZIP" -d . && rm -f "$ZIP" && source /usr/local/sdkman/bin/sdkman-init.sh && python3 scripts/validate_source.py && bash scripts/compile_pure_kotlin.sh && bash scripts/run_pure_kotlin_regressions.sh && bash scripts/run_runtime_benchmarks.sh && git add -A -- . ':(exclude)*.zip' ':(exclude)*.apk' ':(exclude)*.aab' && (git diff --cached --quiet || git commit -m "Upgrade AL-thmany to 1.8 Continuous Handoff") && GIT_PAGER=cat git pull --rebase --autostash origin main && git push origin main
+
+بعد push افتح GitHub > Actions وتأكد من:
+Validate source and resources
+Pure Kotlin regressions
+Unit tests
+Android lint
+Build debug APK

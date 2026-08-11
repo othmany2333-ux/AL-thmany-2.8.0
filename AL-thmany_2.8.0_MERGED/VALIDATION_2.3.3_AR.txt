@@ -1,0 +1,20 @@
+AL-thmany 2.3.3 — Work Profile Settings & Policy Probe
+
+الإصدار:
+- versionCode = 233
+- versionName = 2.3.3
+
+الهدف:
+- تحسين تشخيص وتوجيه تفعيل Accessibility في Work Profile وSamsung isolated profiles بدون تجاوز عزل Android/Knox.
+
+التعديلات:
+- 3 مسارات إعداد مستقلة: service details / Accessibility list / current-profile app info.
+- ProfileAccessibilityPolicyInspector لفحص ظهور الخدمة، enabled-services setting، حالة AccessibilityManager، والاتصال المحلي.
+- Device Policy probe آمن وصريح بشأن حدود صلاحيات التطبيق العادي.
+- حالات تشخيص جديدة لتحديد الحاجة إلى التفعيل من الملف الرئيسي أو فشل الربط المحلي.
+- عنوان الإصدار الرئيسي أصبح ديناميكيًا من BuildConfig.
+
+حدود مهمة:
+- Android لا يسمح لتطبيق عادي بتمكين Accessibility لنفسه تلقائيًا.
+- getPermittedAccessibilityServices متاح لمالك الجهاز/الملف فقط؛ لذلك لا يتم ادعاء BLOCKED_BY_POLICY إلا عندما تكون السياسة قابلة للقراءة رسميًا.
+- لا يوجد تجاوز لـ Knox أو Device Policy.

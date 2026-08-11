@@ -1,0 +1,39 @@
+AL-thmany 1.6.0 — Precision Fusion
+===================================
+
+الإصدار:
+- versionCode = 110
+- versionName = 1.6.0
+- namespace/applicationId = com.althmany.groupmanager
+
+الدمج المنفذ:
+- دمج دقة مطابقة حالات الدعوات من JoinPilot Nova 12.6 داخل محرك AL-thmany الأحدث.
+- الإبقاء على محرك السرعة والاستقرار الحديث وعدم استرجاع تأخيرات 12.6 المحافظة.
+- إضافة تمييز دلالي GROUP / COMMUNITY للتشخيص والسياق.
+- إضافة الصيغ العربية الحالية للرابط المعاد تعيينه وحالة الإزالة «حيث قد تمت إزالتك منها».
+- إلغاء الطلب لا يتم ضغطه؛ إذا ظهر بدون Request جديد فيعامل كطلب موجود مسبقًا.
+- فصل زر موافق/OK في الشاشات النهائية عن Join/Request حتى لا يسبب تعارضًا كاذبًا.
+- بعد حفظ نتيجة نهائية يمكن إغلاق النافذة عبر X، ثم موافق/OK الآمن، ثم Back، ثم fallback المحمي.
+- Loading Guard مستمر: لا يتم إغلاق أو تخطي شاشة «جار التحميل» قبل استقرارها.
+- Context Guard / Confidence Engine / Single-flight / Idempotency / Auto Resume / Notification controls محفوظة.
+
+حدود التشغيل الحالية:
+- Queue مخزنة على SQLite حتى 1,000,000 رابط فريد.
+- حد التشغيل الصريح: 80 رابطًا.
+- التوقف عند قيود WhatsApp محفوظ؛ لا توجد آلية تجاوز أو إخفاء للتشغيل.
+- لا يوجد انضمام تلقائي شامل لكل المجموعات الفرعية داخل المجتمع.
+
+التحقق المنفذ محليًا:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- PRECISION FUSION TARGETED REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+Micro-benchmark في بيئة التطوير:
+- parse 5,000 unique + 500 duplicate links: 321.25 ms
+- 20,000 screen fingerprints: 314.12 ms
+- 100,000 idempotency checks: 61.50 ms
+
+ملاحظة:
+- Android Unit Tests / Lint / Debug APK النهائي يتم التحقق منها عبر GitHub Actions لأن بيئة العمل المحلية هنا ليست بيئة Android SDK كاملة.

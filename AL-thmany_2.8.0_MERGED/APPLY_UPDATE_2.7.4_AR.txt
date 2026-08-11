@@ -1,0 +1,46 @@
+AL-thmany 2.7.4 — تعليمات تطبيق تحديث الضغط والتسلسل
+=====================================================
+
+هذا الملف مناسب عندما يكون المستودع الحالي على الإصدار 2.7.3.
+
+1) ارفع الملف التالي إلى جذر المستودع داخل Codespaces:
+   AL-thmany_2.7.3_to_2.7.4_Direct_Join_Sequence_Repair.zip
+
+2) نفّذ الأوامر التالية من جذر المستودع:
+
+   unzip -o AL-thmany_2.7.3_to_2.7.4_Direct_Join_Sequence_Repair.zip -d .
+   python3 scripts/validate_source.py
+   git status --short
+   git add -A
+   git commit -m "Fix direct Join Request and sequential handoff in 2.7.4"
+   git pull --rebase origin main
+   git push origin main
+
+3) افتح GitHub > Actions وانتظر نجاح test-lint-build، ثم نزّل debug APK من Artifacts.
+
+4) بعد تثبيت APK الجديد:
+
+   - تأكد أن الإصدار الظاهر داخل التطبيق هو 2.7.4.
+   - في الشخصي: أوقف خدمة AL-thmany Accessibility ثم شغّلها مرة واحدة.
+   - في العمل: شغّل Shizuku وامنح AL-thmany الإذن، ثم اختر محرك Shizuku.
+   - اترك «وضع المراقبة بدون ضغط» متوقفًا؛ الإصدار يطفئه تلقائيًا عند بدء تشغيل فعلي.
+   - ابدأ أول اختبار برابطين صالحين فقط، ثم ارفع العدد بعد التأكد.
+
+التسلسل المتوقع:
+
+فتح الرابط -> كشف Join أو Request -> لمسة مباشرة -> تحقق من اختفاء الزر ->
+إغلاق سطح الطلب/المحادثة -> فتح الرابط التالي حسب الفاصل المحدد.
+
+سجلات النجاح الجديدة:
+
+   CLICK | Executed JOIN/REQUEST
+   SHADOW_AUTO_DISABLED
+   SHIZUKU_VISUAL_ACTION_PROBE
+   SHIZUKU_VISUAL_ACTION_TAP
+   SHIZUKU_RESULT_SURFACE_CLOSE أو SHIZUKU_VISUAL_SURFACE_CLOSE
+   SHIZUKU_DIRECT_HANDOFF
+
+ملاحظة مهمة:
+المسار البصري للعمل لا يستخدم إحداثية ثابتة. لا يعمل إلا بعد إثبات Android user وحزمة
+واتساب في الواجهة الأمامية، ثم يطلب زرًا أخضر عريضًا في الجزء السفلي ويرفض الزر العائم.
+لا يتجاوز Knox أو سياسة CloudDPC، ولا يتجاوز قيود WhatsApp/Retry Later.

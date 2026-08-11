@@ -1,0 +1,33 @@
+AL-thmany 2.6.1 — Unstoppable Sequential Continuity
+
+Scope
+- Base: AL-thmany 2.6.0 Accessibility Parity Fast Path.
+- Target backend: SHIZUKU_FAST_UI_ACTIVE in Work Profile / secondary Android users.
+- Goal: keep the explicit queue moving sequentially through conversations, unknown/ambiguous UI, foreground loss, transient missing root, UI-tree failures and repeated input failures without low-confidence taps.
+
+Implemented continuity behavior
+- Zero-delay direct next-link handoff remains enabled.
+- Post-Join conversation still verifies success and launches the next deep link directly.
+- Direct conversation without a pending Join is accepted as ALREADY_MEMBER only after a new target-package UiAutomation event newer than that link's launch baseline; this avoids treating the previous chat as the new link result.
+- Foreground loss: exact-user deep link reacquisition is attempted twice; after the bounded budget the current link is recorded UNKNOWN_SCREEN and the queue advances.
+- Persistent NO_ROOT: current link is advanced safely after the continuity budget instead of hanging indefinitely.
+- Command UI-tree failure: bounded safe advance instead of terminating the run.
+- Ambiguous action exhaustion: no guessed tap; current link is recorded UNKNOWN_SCREEN and the queue advances.
+- STOP_UNKNOWN: converted to safe continuity advance.
+- Repeated input failures: service stays alive; bounded retry/watchdog logic remains authoritative.
+- Temporary Shizuku disconnect: current link is preserved while the service waits for reconnect.
+- Genuine Loading remains protected by its separate 20-second timeout.
+- Restriction / Retry Later remains a hard stop and is not bypassed.
+- User Stop/Pause, session completion, invalid profile/target lock and unrecoverable repository/session faults remain structural stop conditions.
+
+Validation executed in this environment
+- python3 scripts/validate_source.py: PASSED
+- bash scripts/compile_pure_kotlin.sh: PASSED
+- bash scripts/run_pure_kotlin_regressions.sh: PASSED
+- bash scripts/run_runtime_benchmarks.sh: PASSED
+  * parse 5,000 unique + 500 duplicate links: 336.63 ms
+  * 20,000 screen fingerprints: 282.47 ms
+  * 100,000 idempotency checks: 40.33 ms
+
+Important build note
+- Full Android/Gradle APK compilation was not executed in this container because the project package does not include a Gradle Wrapper. GitHub Actions with the Android SDK remains the final compile/build test.

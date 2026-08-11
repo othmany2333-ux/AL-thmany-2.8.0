@@ -1,0 +1,39 @@
+AL-thmany 1.8.0 - Continuous Handoff
+====================================
+
+الهدف
+-----
+منع توقف التشغيل المتسلسل بعد الضغط على الانضمام أو طلب الانضمام، خصوصًا عندما يفتح واتساب محادثة المجموعة أو عندما تصبح شاشة طلب الانضمام ساكنة ولا ترسل Accessibility events إضافية.
+
+التغييرات الرئيسية
+------------------
+1. إضافة ContinuousHandoffPolicy بمهلة حيوية مستقلة عن مهلة التحميل.
+2. إضافة scheduleContinuousHandoffWatchdog بعد JOIN و REQUEST و CONFIRM.
+3. في Turbo: عند اكتشاف محادثة المجموعة، يفتح الرابط التالي مباشرة دون جعل زر Back شرطًا لاستمرار السلسلة.
+4. شاشة الطلب المرسل / إلغاء الطلب تُسجل كطلب معلّق ثم تنتقل للرابط التالي مباشرة؛ إلغاء الطلب لا يتم الضغط عليه.
+5. إذا بقيت حالة غير قابلة للتحقق بدون Loading أو Restriction أكثر من 1500ms في Turbo، تسجل ACTION_TIMEOUT وتنتقل للرابط التالي بدل التوقف على الشاشة.
+6. Loading لا يتم تخطيه بالقوة، وRestriction ما زال يوقف التشغيل فورًا.
+7. Circuit Breaker أصبح تشخيصيًا أثناء التشغيل الصريح: يسجل المشكلة ويصفّر عداد الأعطال بدل إيقاف السلسلة.
+8. إضافة exactly-once result commit guard لمنع سباق Scanner/Inference/Watchdog من مضاعفة عداد النتائج.
+9. الإبقاء على حد التشغيل الصريح 80 رابطًا، وقائمة SQLite حتى 1,000,000 رابط فريد.
+
+الإصدار
+-------
+versionCode = 113
+versionName = 1.8.0
+
+التحقق المنفذ
+-------------
+SOURCE VALIDATION PASSED
+PURE KOTLIN COMPILE PASSED
+PURE KOTLIN REGRESSIONS PASSED
+SMART RUNTIME MICRO-BENCHMARK PASSED
+
+آخر Benchmark في بيئة التحقق:
+- parse 5,000 unique + 500 duplicate links: 306.02 ms
+- 20,000 screen fingerprints: 363.98 ms
+- 100,000 idempotency checks: 45.39 ms
+
+ملاحظة
+------
+لم يتم الادعاء بنجاح Android lint أو APK build محليًا لأن بيئة العمل هنا لا تحتوي Android SDK كاملًا. GitHub Actions يبقى التحقق النهائي لـ testDebugUnitTest + lintDebug + assembleDebug.

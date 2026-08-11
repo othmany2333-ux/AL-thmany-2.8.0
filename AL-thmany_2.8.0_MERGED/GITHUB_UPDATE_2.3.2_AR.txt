@@ -1,0 +1,25 @@
+AL-thmany 2.3.2 — Profile Accessibility Fix
+
+الهدف:
+- معالجة حالة Work Profile / Secure Folder التي تفتح الرابط الأول لكن لا تضغط Join ولا تنتقل.
+- منع اعتبار Accessibility الشخصية كأنها خدمة محلية داخل ملف العمل/البيئة المعزولة.
+
+بعد فك Overlay 2.3.2 فوق جذر المشروع:
+1) تحقق من الإصدار:
+   grep -E "versionCode|versionName" app/build.gradle.kts
+   المتوقع: versionCode = 232 و versionName = "2.3.2"
+
+2) تحقق من المصدر:
+   python3 scripts/validate_source.py
+
+3) الاختبارات (إذا كان kotlinc متاحًا محليًا):
+   bash scripts/compile_pure_kotlin.sh
+   bash scripts/run_pure_kotlin_regressions.sh
+   bash scripts/run_runtime_benchmarks.sh
+
+4) الرفع:
+   git add -A
+   git commit -m "AL-thmany 2.3.2 Profile Accessibility Fix"
+   git push origin main
+
+GitHub Actions يبني APK عبر Android SDK الكامل.

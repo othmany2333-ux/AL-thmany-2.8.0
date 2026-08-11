@@ -1,0 +1,44 @@
+AL-thmany 2.3.3 — Work Profile Settings & Policy Probe
+Test report — 2026-08-09
+
+Implemented:
+- versionCode 233 / versionName 2.3.3.
+- Three safe Accessibility settings routes:
+  1) exact AL-thmany Accessibility service details,
+  2) general Accessibility services list,
+  3) current-profile AL-thmany app-info page.
+- ProfileAccessibilityPolicyInspector:
+  - current-profile service visibility,
+  - enabled_accessibility_services read-only probe when readable,
+  - AccessibilityManager enabled state,
+  - profile-local heartbeat/binding state,
+  - best-effort Device Policy visibility.
+- Exact permitted-accessibility allowlist is queried only when Android grants owner-level access.
+  Normal apps report QUERY_NOT_AVAILABLE_TO_STANDARD_APP instead of guessing.
+- New activation classifications including:
+  PARENT_ACCESSIBILITY_TOGGLE_REQUIRED,
+  ENABLED_SETTING_PRESENT_BUT_MANAGER_DISABLED,
+  SERVICE_COMPONENT_NOT_VISIBLE,
+  LOCAL_SERVICE_NOT_CONNECTED.
+- Main toolbar version is now taken from BuildConfig instead of stale hard-coded 1.5 text.
+- No Knox / Work Profile / Device Policy bypass and no silent Accessibility enablement.
+
+Validation executed in the build workspace:
+- SOURCE VALIDATION PASSED
+- PURE KOTLIN COMPILE PASSED
+- PURE KOTLIN REGRESSIONS PASSED
+- SMART RUNTIME MICRO-BENCHMARK PASSED
+
+Runtime benchmark sample:
+- parse 5,000 unique + 500 duplicate links: 96.48 ms
+- 20,000 screen fingerprints: 113.99 ms
+- 100,000 idempotency checks: 17.61 ms
+
+Not executed locally:
+- Full Android Gradle/APK build (no complete Android SDK/Gradle environment in this container).
+- Real Samsung Work Profile / Knox runtime activation. This must be verified on-device after GitHub Actions builds the APK.
+
+Important platform limitation:
+- Android does not allow a normal app to enable its own AccessibilityService silently.
+- DevicePolicyManager.getPermittedAccessibilityServices is restricted to device/profile owners.
+  Therefore BLOCKED_BY_POLICY is reported only when that policy is actually readable.

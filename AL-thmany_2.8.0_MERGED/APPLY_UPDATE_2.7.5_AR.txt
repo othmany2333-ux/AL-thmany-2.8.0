@@ -1,0 +1,33 @@
+AL-thmany 2.7.5 — تعليمات تطبيق تحديث Accessibility Visual Join
+===============================================================
+
+هذه الحزمة مصدر كامل ويمكن رفعها مباشرة إلى المستودع.
+
+أهم ما تغير:
+- إضافة ضغط بصري احتياطي لمسار Accessibility عندما يظهر زر Join/Request على الشاشة لكن واتساب لا يعرّفه في شجرة Accessibility.
+- إضافة صلاحية canTakeScreenshot إلى تعريف خدمة Accessibility.
+- خروج مباشر عند فتح رابط لمجموعة أنت منضم فيها مسبقًا.
+- استمرار الانتقال التلقائي للرابط التالي بعد النتيجة.
+
+بعد الرفع إلى GitHub/Codespaces:
+
+  python3 scripts/validate_source.py
+  bash scripts/compile_pure_kotlin.sh
+  bash scripts/run_pure_kotlin_regressions.sh
+  git status --short
+  git add -A
+  git commit -m "Add Accessibility visual join fallback and fast existing-chat handoff"
+  git push
+
+ثم افتح GitHub Actions وتأكد من نجاح Android build، ونزّل APK الناتج.
+
+بعد تثبيت APK 2.7.5:
+- أوقف خدمة AL-thmany Accessibility ثم فعّلها مرة أخرى حتى يعيد Android تحميل canTakeScreenshot.
+- اختر نسخة واتساب المطلوبة بدقة.
+- اختبر أولًا 2-4 روابط فقط.
+- إذا كان المسار الدلالي متاحًا سيبقى هو الأسرع؛ المسار البصري يعمل فقط عندما لا يظهر زر دلالي صالح.
+
+التسلسل المتوقع:
+فتح الرابط -> Join/Request -> تحقق -> خروج -> الرابط التالي.
+الرابط المنتهي -> إغلاق -> الرابط التالي.
+منضم مسبقًا -> فتح المحادثة -> Back سريع -> الرابط التالي.

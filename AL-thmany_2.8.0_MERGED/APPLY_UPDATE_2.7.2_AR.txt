@@ -1,0 +1,53 @@
+تحديث AL-thmany 2.7.2 — Live Service & Reliable Launch Repair
+============================================================
+
+هذه حزمة UPDATE ONLY. فكها داخل جذر مستودع AL-thmany الحالي، بحيث تستبدل app/ وscripts/ مباشرة ولا تنشئ مجلدًا إضافيًا حول المشروع.
+
+1) قبل فك التحديث داخل Codespaces:
+
+git status
+git pull --rebase origin main
+
+2) فك الملف في جذر المستودع:
+
+unzip -o AL-thmany_2.7.1_to_2.7.2_Live_Runtime_Update.zip -d .
+
+3) تحقق من النسخة والمصدر:
+
+grep -n "versionCode\|versionName" app/build.gradle.kts
+python3 scripts/validate_source.py
+
+يجب أن يظهر:
+- versionCode = 272
+- versionName = "2.7.2"
+- SOURCE VALIDATION PASSED
+
+4) ارفع التحديث:
+
+git add -A
+git commit -m "Update AL-thmany to 2.7.2"
+git pull --rebase origin main
+git push origin main
+
+إذا ظهر Everything up-to-date فتأكد أولًا أن versionName أصبح 2.7.2 وأن git status عرض الملفات المعدلة قبل commit.
+
+5) بعد نجاح GitHub Action، نزّل artifact باسم al-thmany-debug-apk وثبت app-debug.apk.
+
+مهم بعد تثبيت APK
+------------------
+
+- افتح AL-thmany 2.7.2 واضغط «بدء». التحديث يطفئ Shadow Mode تلقائيًا قبل التشغيل الحقيقي.
+- إذا فتح التطبيق صفحة Accessibility، عطّل ثم فعّل خدمة:
+  AL-thmany — المحرك السريع للقروبات والمجتمعات
+  الخاصة بنفس نسخة التطبيق الحالية، ثم ارجع إلى AL-thmany. سيبدأ التشغيل المنتظر تلقائيًا بعد وصول الاتصال الحي.
+- لا يكفي ظهور اسم الخدمة في إعداد Android؛ يجب أن يعرض التطبيق أن الخدمة متصلة وجاهزة.
+- للشخصي: افتح نسخة AL-thmany الموجودة في الملف الشخصي OWNER مع واتساب الشخصي، ويفضل المحرك «تلقائي».
+- للعمل: يجب تثبيت وفتح AL-thmany داخل ملف العمل نفسه الذي توجد فيه نسخة واتساب العمل، ثم تفعيل خدمة AL-thmany داخل ذلك الملف. لقطة OWNER:0 ليست نسخة ملف العمل.
+- إذا اخترت Shizuku صراحة، يجب أن تكون خدمة Shizuku شغالة وأن تمنح AL-thmany الإذن في نفس البيئة قبل البدء. وضع «تلقائي» يستخدم Accessibility المحلية أولًا عندما تكون متصلة.
+- اختبر أولًا بثلاثة روابط فريدة. بعد نجاح Join والانتقال بينها استخدم حتى 1000 رابط في التشغيل الصريح.
+- الفاصل 0ms يعني انتقالًا مباشرًا بعد إثبات النتيجة، ولا يلغي انتظار Loading الحقيقي أو توقف Restriction/Retry Later.
+
+ملاحظة توقيع APK
+----------------
+
+إذا رفض Android تثبيت debug APK كتحديث بسبب اختلاف توقيع GitHub runner، لا يمكن تجاوز حماية التوقيع. استخدم مفتاح توقيع ثابتًا في GitHub للمشاريع الدائمة، أو أزل نسخة debug القديمة ثم ثبت الجديدة وأعد تفعيل Accessibility في كل ملف. لا ترفع مفتاح التوقيع الخاص إلى مستودع عام.

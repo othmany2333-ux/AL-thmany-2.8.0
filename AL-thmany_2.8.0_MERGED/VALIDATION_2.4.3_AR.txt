@@ -1,0 +1,17 @@
+AL-thmany 2.4.3 — Accessibility-Like Direct Handoff
+
+الهدف:
+- جعل مسار Shizuku يتصرف سلوكيًا مثل Accessibility بعد نجاح Join: Back سريع ثم Commit ثم فتح الرابط التالي مباشرة.
+- إزالة التأخيرات غير الضرورية بين الروابط.
+
+التعديلات الرئيسية:
+- versionCode = 243 / versionName = 2.4.3
+- Direct next-link handoff داخل ShizukuAutomationService بدون انتظار دورة polling التالية.
+- am start بدون -W مع exact-user/package lock.
+- foreground launch lease قصير ثم UI dump يثبت الحزمة.
+- Result mirror كل 10 نتائج بدل كل رابط.
+- Input cooldown = 70ms، POST_JOIN_MIN = 120ms، settle أقصر.
+- Restriction/Retry Later يبقى hard stop ولا يوجد تجاوز Knox/DPC.
+
+ملاحظة تقنية:
+- السلوك أصبح مماثلًا لمسار Accessibility في التسلسل والـhandoff، لكن زمن UIAutomator لا يمكن ضمان مطابقته حرفيًا لزمن Accessibility لأنه يعتمد على snapshots وليس event callbacks.
