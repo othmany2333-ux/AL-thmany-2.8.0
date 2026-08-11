@@ -30,6 +30,7 @@ import com.althmany.groupmanager.BuildConfig
 import com.althmany.groupmanager.GroupManagerApp
 import com.althmany.groupmanager.R
 import com.althmany.groupmanager.accessibility.AccessibilityStatus
+import com.althmany.groupmanager.accessibility.QuickJoinAccessibilityService
 import com.althmany.groupmanager.data.AppPreferences
 import com.althmany.groupmanager.databinding.ActivityMainBinding
 import com.althmany.groupmanager.domain.AutomationPolicy
@@ -138,11 +139,18 @@ class MainActivity : AppCompatActivity() {
         viewModel.refresh()
         renderRuntimeState()
 
+        if (!app.preferences.accessibilityBatchRunning &&
+            app.preferences.automationStopReason == AutomationStopReason.SESSION_COMPLETE
+        ) {
+            lastAutomaticInputHash = null
+        }
+
         if (pendingAutoStartAfterSettings) {
             val continueQueuedBatch = pendingQueueContinuationAfterSettings
             val readiness = AccessibilityStatus.readiness(this@MainActivity)
             when {
-                ProfileControlPolicy.mayStartWhileServiceBinds(readiness.systemEnabled) -> {
+                ProfileControlPolicy.mayStartWhileServiceBinds(readiness.systemEnabled) &&
+                    readiness.localServiceConnected -> {
                     pendingAutoStartAfterSettings = false
                     pendingQueueContinuationAfterSettings = false
                     // Do not deadlock on Samsung's delayed service callback. The enabled service
@@ -810,7 +818,7 @@ class MainActivity : AppCompatActivity() {
             val backend = resolveAutomationBackendForStart() ?: return
             if (backend == AutomationBackend.ACCESSIBILITY) {
                 val readiness = AccessibilityStatus.readiness(this@MainActivity)
-                if (!readiness.systemEnabled) {
+                if (!readiness.systemEnabled || !readiness.localServiceConnected) {
                     pendingAutoStartAfterSettings = true
                     pendingQueueContinuationAfterSettings = true
                     app.preferences.accessibilityQuickJoin = true
@@ -875,7 +883,7 @@ class MainActivity : AppCompatActivity() {
         }
         if (backend == AutomationBackend.ACCESSIBILITY) {
             val readiness = AccessibilityStatus.readiness(this@MainActivity)
-            if (!readiness.systemEnabled) {
+            if (!readiness.systemEnabled || !readiness.localServiceConnected) {
                 pendingAutoStartAfterSettings = true
                 pendingQueueContinuationAfterSettings = false
                 app.preferences.accessibilityQuickJoin = true
@@ -1041,6 +1049,9 @@ class MainActivity : AppCompatActivity() {
 
         if (supported) {
             app.preferences.markAutomationLaunched()
+            if (app.preferences.runtimeAutomationBackend == AutomationBackend.ACCESSIBILITY) {
+                QuickJoinAccessibilityService.requestImmediateScan()
+            }
             viewModel.onLaunchResult(event.linkId, success = true, browserFallback = false)
             return
         }
@@ -1303,6 +1314,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleControlIntent(intent: Intent?) {
+        val finishReason = intent?.getStringExtra("automation_finish_reason")
+        if (!finishReason.isNullOrBlank()) {
+            lastAutomaticInputHash = null
+            pendingAutoStartAfterSettings = false
+            pendingQueueContinuationAfterSettings = false
+            accessibilityReconnectJob?.cancel()
+            intent.removeExtra("automation_finish_reason")
+        }
+
         when (intent?.action) {
             QuickJoinNotification.ACTION_STOP_AUTOMATION -> stopAutomationFromUi()
             QuickJoinNotification.ACTION_TOGGLE_PAUSE_AUTOMATION -> toggleAutomationPause()

@@ -169,6 +169,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
     override fun onCreate() {
         super.onCreate()
+        liveInstance = this
         // Samsung may instantiate the enabled service before delivering onServiceConnected() to
         // the freshly started Activity process. Mark this profile-local instance alive immediately;
         // onUnbind/onDestroy still clear the signal, and every event refreshes the heartbeat.
@@ -178,6 +179,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        liveInstance = this
         runtimeConnected = true
         ProfileAccessibilityRuntime.recordServiceConnected(this)
         val connectedProfile = ProfileEnvironment.current(this)
@@ -429,12 +431,14 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         runtimeConnected = false
+        if (liveInstance === this) liveInstance = null
         ProfileAccessibilityRuntime.markDisconnected(this)
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
         runtimeConnected = false
+        if (liveInstance === this) liveInstance = null
         ProfileAccessibilityRuntime.markDisconnected(this)
         RuntimeDiagnosticStore.append(this, "PROFILE_SERVICE_DISCONNECTED", ProfileEnvironment.current(this).profileKey)
         pollJob?.cancel()
@@ -3645,9 +3649,22 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
     companion object {
         @Volatile private var runtimeConnected = false
+        @Volatile private var liveInstance: QuickJoinAccessibilityService? = null
 
         /** True only after Android has connected this exact installed service in this app process. */
         fun isRuntimeConnected(): Boolean = runtimeConnected
+
+        /**
+         * Same-process kick used after an explicit ACTION_VIEW launch.
+         * This makes a second/third run independent of whether WhatsApp emits a fresh event.
+         */
+        fun requestImmediateScan(): Boolean {
+            val instance = liveInstance ?: return false
+            if (!runtimeConnected) return false
+            instance.lastScanAt = 0L
+            instance.requestScan()
+            return true
+        }
 
         private const val MAX_NODES = 1_200
         private const val MIN_ACTION_WIDTH_DP = 48

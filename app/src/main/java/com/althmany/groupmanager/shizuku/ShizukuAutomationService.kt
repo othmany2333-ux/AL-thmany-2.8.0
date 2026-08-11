@@ -444,11 +444,12 @@ class ShizukuAutomationService : Service() {
                 "SHIZUKU_DIRECT_CONVERSATION_HANDOFF",
                 "launchAgeMs=$launchAgeMs; stable=$stableSnapshotScans; eventAfterLaunch=true; advancing immediately"
             )
+            dismissKnownResultSurface(targetPackage, current, snapshot)
             completeCurrent(
                 current,
                 LinkStatus.JOINED,
                 LinkResultCode.ALREADY_MEMBER,
-                "Invite deep link resolved directly to a stable group conversation after a new WhatsApp event; treated as already a member and advanced immediately"
+                "Invite deep link resolved directly to a stable group conversation after a new WhatsApp event; exited the conversation before direct handoff"
             )
             return false
         }
@@ -593,11 +594,12 @@ class ShizukuAutomationService : Service() {
                             snapshot.inviteTarget != AccessibilityInviteTarget.COMMUNITY &&
                             probeJoinedConversationActivity(targetPackage, current)
                         ) {
+                            exitConversationBeforeDirectHandoff(targetPackage, current)
                             completeCurrent(
                                 current,
                                 LinkStatus.JOINED,
                                 LinkResultCode.JOIN_ACTION_COMPLETED,
-                                "Exact-user WhatsApp Conversation activity verified after Join; next invitation opened directly"
+                                "Exact-user WhatsApp Conversation activity verified after Join; exited before next invitation"
                             )
                         }
                     }
@@ -1259,7 +1261,7 @@ class ShizukuAutomationService : Service() {
             )
         if (!subgroup) {
             if (snapshot.inviteContext || snapshot.conversationSurface) {
-                dismissKnownResultSurface(targetPackage, current)
+                dismissKnownResultSurface(targetPackage, current, snapshot)
             }
             completeCurrent(current, status, resultCode, detail)
             return
@@ -1278,21 +1280,160 @@ class ShizukuAutomationService : Service() {
         if (!snapshot.communityHomeSurface) sendBack(targetPackage, current, "COMMUNITY_RESULT_RETURN")
     }
 
-    /** Close the confirmed request sheet / joined conversation before launching the next link. */
-    private suspend fun dismissKnownResultSurface(targetPackage: String, current: GroupLink): Boolean {
+    /**
+     * Work/Secure parity with Accessibility:
+     * X when present -> Back on conversation -> verify -> one bounded second Back -> next link.
+     */
+    private fun findResultSafeCloseNode(
+        snapshot: ShizukuUiSnapshot,
+        targetPackage: String
+    ): ShizukuUiNode? {
+        val semantic = snapshot.nodes.asSequence()
+            .filter { node ->
+                node.enabled && node.bounds?.valid == true && node.belongsTo(targetPackage)
+            }
+            .filter { node -> node.labels().any(AccessibilityJoinMatcher::isSafeClose) }
+            .sortedWith(
+                compareByDescending<ShizukuUiNode> { it.clickable }
+                    .thenBy { it.bounds?.top ?: Int.MAX_VALUE }
+                    .thenByDescending { it.bounds?.centerX ?: 0 }
+            )
+            .firstOrNull()
+        if (semantic != null) return semantic
+
+        // Some Work-profile WhatsApp sheets expose the X as an unlabeled clickable image.
+        // Geometry fallback is allowed only on a verified invitation surface.
+        if (!snapshot.inviteContext || displayWidth <= 0 || displayHeight <= 0) return null
+        return snapshot.nodes.asSequence()
+            .filter { node ->
+                node.enabled && node.clickable && node.bounds?.valid == true &&
+                    node.belongsTo(targetPackage)
+            }
+            .filter { node ->
+                val b = node.bounds ?: return@filter false
+                val w = b.right - b.left
+                val h = b.bottom - b.top
+                val nearTopRight = b.centerX >= displayWidth * 72 / 100 &&
+                    b.centerY <= displayHeight * 32 / 100
+                val compact = w in 1..(displayWidth * 18 / 100).coerceAtLeast(1) &&
+                    h in 1..(displayHeight * 12 / 100).coerceAtLeast(1)
+                val roughlySquare = w <= h * 2 && h <= w * 2
+                nearTopRight && compact && roughlySquare
+            }
+            .minByOrNull { node ->
+                val b = node.bounds!!
+                (displayWidth - b.centerX).coerceAtLeast(0) + b.centerY.coerceAtLeast(0)
+            }
+    }
+
+    private suspend fun quickResultSnapshot(targetPackage: String): ShizukuUiSnapshot? {
+        val fast = ShizukuBridge.fastSnapshot(this, targetPackage, FAST_UI_MAX_NODES)
+        if (!fast.success) return null
+        val snapshot = ShizukuUiDumpParser.parse(fast.xml)
+        if (snapshot.nodes.none { it.packageName == targetPackage }) return null
+        return snapshot
+    }
+
+    private suspend fun pressResultBack(
+        targetPackage: String,
+        current: GroupLink,
+        purpose: String
+    ): Boolean {
         if (!isTargetForeground(targetPackage, forceProbe = true)) return false
         waitInputCooldown()
         val persistent = ShizukuBridge.fastBack(this)
-        val shell = if (!persistent) ShizukuBridge.execute(this, "input keyevent 4", 2_500) else null
+        val shell = if (!persistent) {
+            ShizukuBridge.execute(this, "input keyevent 4", 2_500)
+        } else null
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true
         runtimeDiagnostic(
             current,
-            "SHIZUKU_RESULT_SURFACE_CLOSE",
-            "success=$success; persistent=$persistent; exit=${shell?.exitCode ?: -1}; nextDirect=true"
+            "SHIZUKU_RESULT_BACK",
+            "$purpose; success=$success; persistent=$persistent; exit=${shell?.exitCode ?: -1}"
         )
-        if (success && ACTION_SETTLE_MS > 0L) delay(ACTION_SETTLE_MS)
+        if (success) armFastBurst(FAST_ACTION_BURST_MS)
         return success
+    }
+
+    private suspend fun dismissKnownResultSurface(
+        targetPackage: String,
+        current: GroupLink,
+        initialSnapshot: ShizukuUiSnapshot
+    ): Boolean {
+        if (!isTargetForeground(targetPackage, forceProbe = true)) return false
+        var snapshot = initialSnapshot
+
+        // 1) Prefer WhatsApp's actual X/Close.
+        val close = findResultSafeCloseNode(snapshot, targetPackage)
+        if (close?.bounds != null) {
+            val closed = tapNode(close.bounds, targetPackage, current, "RESULT_SAFE_CLOSE")
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_RESULT_X",
+                "found=true; clicked=$closed; semantic=${close.labels().any(AccessibilityJoinMatcher::isSafeClose)}"
+            )
+            if (closed) {
+                delay(ShizukuFastUiPolicy.TERMINAL_ESCAPE_SETTLE_MS)
+                val after = quickResultSnapshot(targetPackage)
+                if (after == null) return true
+                snapshot = after
+                if (!snapshot.inviteContext && !snapshot.conversationSurface) return true
+            }
+        }
+
+        // 2) Conversation/result fallback: at most two verified Back attempts.
+        repeat(2) { attempt ->
+            if (!snapshot.inviteContext && !snapshot.conversationSurface) return true
+            if (!pressResultBack(targetPackage, current, "RESULT_EXIT_${attempt + 1}")) return false
+
+            val settle = if (fastUiMode == FastUiMode.ACTIVE) {
+                ShizukuFastUiPolicy.STABLE_SCAN_MS
+            } else {
+                maxOf(ACTION_SETTLE_MS, ShizukuFastUiPolicy.NORMAL_EXIT_SETTLE_MS)
+            }
+            if (settle > 0L) delay(settle)
+
+            val after = quickResultSnapshot(targetPackage)
+            if (after == null) return true
+            snapshot = after
+            if (!snapshot.inviteContext && !snapshot.conversationSurface) return true
+        }
+
+        runtimeDiagnostic(
+            current,
+            "SHIZUKU_RESULT_EXIT_BOUNDED",
+            "surface remained after X/Back recovery; next exact-user deep link will replace it"
+        )
+        return false
+    }
+
+    private suspend fun exitConversationBeforeDirectHandoff(
+        targetPackage: String,
+        current: GroupLink
+    ): Boolean {
+        repeat(2) { attempt ->
+            if (!pressResultBack(targetPackage, current, "CONVERSATION_EXIT_${attempt + 1}")) return false
+
+            val settle = if (fastUiMode == FastUiMode.ACTIVE) {
+                ShizukuFastUiPolicy.STABLE_SCAN_MS
+            } else {
+                maxOf(ACTION_SETTLE_MS, ShizukuFastUiPolicy.NORMAL_EXIT_SETTLE_MS)
+            }
+            if (settle > 0L) delay(settle)
+
+            val after = quickResultSnapshot(targetPackage)
+            if (after != null && !after.conversationSurface && !after.inviteContext) return true
+
+            if (after == null && !probeJoinedConversationActivity(targetPackage, current)) return true
+        }
+
+        runtimeDiagnostic(
+            current,
+            "SHIZUKU_CONVERSATION_EXIT_BOUNDED",
+            "conversation remained after two Back attempts; direct next-link launch remains armed"
+        )
+        return false
     }
 
     private suspend fun finishCommunityTraversal(current: GroupLink, detail: String) {
