@@ -22,6 +22,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Restore stable debug signing key
+        shell: bash
+        env:
+          ALTHMANY_DEBUG_KEYSTORE_B64: ${{ secrets.ALTHMANY_DEBUG_KEYSTORE_B64 }}
+        run: |
+          mkdir -p debug-signing
+          printf '%s' "$ALTHMANY_DEBUG_KEYSTORE_B64" | base64 --decode > debug-signing/althmany-debug.jks
+          test -s debug-signing/althmany-debug.jks
+          echo "Stable debug signing key restored"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
