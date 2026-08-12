@@ -42,12 +42,39 @@ object NativeProfileEnginePolicy {
     ): NativeEngineDecision {
         if (requested == AutomationBackend.ACCESSIBILITY) {
             if (accessibilityLocalReady) {
-                return NativeEngineDecision(AutomationBackend.ACCESSIBILITY, NativeEngineSetupAction.NONE, "ACCESSIBILITY_LOCAL_READY")
+                return NativeEngineDecision(
+                    AutomationBackend.ACCESSIBILITY,
+                    NativeEngineSetupAction.NONE,
+                    "ACCESSIBILITY_LOCAL_READY"
+                )
             }
-            if (profileClass == NativeProfileClass.MANAGED_WORK && workPolicyBlocksSelf && selfCanManageWorkPolicy) {
-                return NativeEngineDecision(null, NativeEngineSetupAction.APPLY_WORK_ACCESSIBILITY_POLICY, "WORK_POLICY_FIX_REQUIRED")
+
+            // Hybrid failover: if Accessibility is enabled/stale but not locally bound,
+            // use the already-authorized persistent Shizuku UiAutomation engine.
+            if (shizukuReady) {
+                return NativeEngineDecision(
+                    AutomationBackend.SHIZUKU,
+                    NativeEngineSetupAction.NONE,
+                    "ACCESSIBILITY_UNBOUND_SHIZUKU_FALLBACK"
+                )
             }
-            return NativeEngineDecision(AutomationBackend.ACCESSIBILITY, NativeEngineSetupAction.ENABLE_LOCAL_ACCESSIBILITY, "LOCAL_ACCESSIBILITY_ENABLE_REQUIRED")
+
+            if (profileClass == NativeProfileClass.MANAGED_WORK &&
+                workPolicyBlocksSelf &&
+                selfCanManageWorkPolicy
+            ) {
+                return NativeEngineDecision(
+                    null,
+                    NativeEngineSetupAction.APPLY_WORK_ACCESSIBILITY_POLICY,
+                    "WORK_POLICY_FIX_REQUIRED"
+                )
+            }
+
+            return NativeEngineDecision(
+                AutomationBackend.ACCESSIBILITY,
+                NativeEngineSetupAction.ENABLE_LOCAL_ACCESSIBILITY,
+                "LOCAL_ACCESSIBILITY_ENABLE_REQUIRED"
+            )
         }
 
         if (requested == AutomationBackend.SHIZUKU) {

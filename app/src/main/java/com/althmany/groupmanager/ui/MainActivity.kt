@@ -459,10 +459,14 @@ class MainActivity : AppCompatActivity() {
         linksInputLayout.setEndIconOnClickListener { linksEditText.text?.clear() }
         setupServiceButton.setOnClickListener {
             val readiness = AccessibilityStatus.readiness(this@MainActivity)
-            if (readiness.systemEnabled) {
-                waitForLocalAccessibilityBind(allowQueuedContinuation = false, startAfterBind = false)
-            } else {
-                showOneTimeSetupDialog(false)
+            when {
+                isAnyAutomationEngineReady() -> renderRuntimeState()
+                readiness.systemEnabled ->
+                    waitForLocalAccessibilityBind(
+                        allowQueuedContinuation = false,
+                        startAfterBind = false
+                    )
+                else -> showOneTimeSetupDialog(false)
             }
         }
         startAutomationButton.setOnClickListener { startAutomaticRun(allowQueuedContinuation = true) }
@@ -540,9 +544,16 @@ class MainActivity : AppCompatActivity() {
         renderRuntimeState()
     }
 
+    private fun isAnyAutomationEngineReady(): Boolean {
+        val accessibilityReady =
+            AccessibilityStatus.isQuickJoinServiceConnectedLocally(this@MainActivity)
+        if (accessibilityReady) return true
+        return runCatching { ShizukuBridge.status().ready }.getOrDefault(false)
+    }
+
     private fun renderRuntimeState() = with(binding) {
         val readiness = AccessibilityStatus.readiness(this@MainActivity)
-        val serviceEnabled = readiness.systemEnabled && readiness.localServiceConnected
+        val serviceEnabled = isAnyAutomationEngineReady()
         val permissionConfigured = readiness.systemEnabled
         serviceStatusText.setText(
             when {
@@ -695,7 +706,7 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.profile_target_not_verified)
         }
         binding.communityTraversalSwitch.isChecked = app.preferences.communityTraversalEnabled
-        renderReadiness(AccessibilityStatus.isQuickJoinServiceConnectedLocally(this))
+        renderReadiness(isAnyAutomationEngineReady())
     }
 
     private fun showInstalledWhatsAppPicker() {
@@ -916,6 +927,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (decision.runnable) {
+            if (decision.backend == AutomationBackend.SHIZUKU &&
+                requested != AutomationBackend.SHIZUKU
+            ) {
+                Toast.makeText(
+                    this,
+                    "المحرك المختار تلقائيًا: Shizuku السريع",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
             if (requested == AutomationBackend.SHIZUKU && decision.backend == AutomationBackend.ACCESSIBILITY) {
                 Toast.makeText(
                     this,
@@ -1267,7 +1287,7 @@ class MainActivity : AppCompatActivity() {
             AutomationPolicy.MAX_LINKS_PER_SESSION
         )
         updateSessionEstimate()
-        renderReadiness(AccessibilityStatus.isQuickJoinServiceConnectedLocally(this))
+        renderReadiness(isAnyAutomationEngineReady())
         if (detectedLinkCount > 0) scheduleSmartAutoStart()
     }
 

@@ -780,6 +780,25 @@ fun main() {
     )
     expect("native router prefers local accessibility", AutomationBackend.ACCESSIBILITY, nativePersonal.backend)
 
+    val nativePersonalShizukuFallback = NativeProfileEnginePolicy.choose(
+        requested = AutomationBackend.ACCESSIBILITY,
+        profileClass = NativeProfileClass.OWNER,
+        accessibilityLocalReady = false,
+        shizukuReady = true,
+        selfCanManageWorkPolicy = false,
+        workPolicyBlocksSelf = false
+    )
+    expect(
+        "explicit accessibility uses shizuku when accessibility is unbound",
+        AutomationBackend.SHIZUKU,
+        nativePersonalShizukuFallback.backend
+    )
+    expect(
+        "hybrid shizuku fallback needs no setup dialog",
+        NativeEngineSetupAction.NONE,
+        nativePersonalShizukuFallback.setupAction
+    )
+
     val nativeWorkFallback = NativeProfileEnginePolicy.choose(
         requested = AutomationBackend.AUTO,
         profileClass = NativeProfileClass.MANAGED_WORK,

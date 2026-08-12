@@ -151,6 +151,7 @@ settings_layout = (RES / "layout/activity_settings.xml").read_text(encoding="utf
 main_layout = (RES / "layout/activity_main.xml").read_text(encoding="utf-8")
 profile_environment = (JAVA / "com/althmany/groupmanager/util/ProfileEnvironment.kt").read_text(encoding="utf-8")
 profile_control_policy = (JAVA / "com/althmany/groupmanager/domain/ProfileControlPolicy.kt").read_text(encoding="utf-8")
+native_profile_engine_policy = (JAVA / "com/althmany/groupmanager/domain/NativeProfileEnginePolicy.kt").read_text(encoding="utf-8")
 profile_accessibility_runtime = (JAVA / "com/althmany/groupmanager/util/ProfileAccessibilityRuntime.kt").read_text(encoding="utf-8")
 accessibility_status = (JAVA / "com/althmany/groupmanager/accessibility/AccessibilityStatus.kt").read_text(encoding="utf-8")
 accessibility_settings_launcher = (JAVA / "com/althmany/groupmanager/util/AccessibilitySettingsLauncher.kt").read_text(encoding="utf-8")
@@ -171,13 +172,15 @@ shizuku_launch_policy = (JAVA / "com/althmany/groupmanager/domain/ShizukuLaunchP
 group_app = (JAVA / "com/althmany/groupmanager/GroupManagerApp.kt").read_text(encoding="utf-8")
 
 checks = {
+    "Hybrid auto engine failover 2.9.0": "ACCESSIBILITY_UNBOUND_SHIZUKU_FALLBACK" in native_profile_engine_policy and "isAnyAutomationEngineReady" in main_activity and "المحرك المختار تلقائيًا: Shizuku السريع" in main_activity,
+
     "hybrid Shizuku to Accessibility fallback": "accessibilityMayTakeOver" in hybrid_policy and "chooseForStart" in hybrid_policy,
     "conversation fast exit policy": "settleMs" in fast_exit_policy and "shouldAttemptBack" in fast_exit_policy,
     "profile-key launch continuity": "expectedProfileKey" in whatsapp_launcher,
     "AL-thmany namespace": 'namespace = "com.althmany.groupmanager"' in build,
     "AL-thmany application id": 'applicationId = "com.althmany.groupmanager"' in build,
-    "versionCode 288": "versionCode = 288" in build,
-    "versionName 2.8.8": 'versionName = "2.8.8"' in build,
+    "versionCode 290": "versionCode = 290" in build,
+    "versionName 2.9.0": 'versionName = "2.9.0"' in build,
     "Accessibility permission gate 2.6.4": all(token in main_activity for token in ["permissionConfigured", "waitForLocalAccessibilityBind", "shouldPromptAccessibilitySetup", "accessibility_enabled_but_not_bound"]),
     "Accessibility setup debounce policy 2.6.4": all(token in profile_control_policy for token in ["ACCESSIBILITY_SETUP_CONFIRM_READS = 3", "ACCESSIBILITY_RECONNECT_WAIT_MS = 4_000L", "ACCESSIBILITY_RECONNECT_POLL_MS = 100L", "shouldPromptAccessibilitySetup"]),
     "Accessibility Samsung live readiness 2.7.4": all(token in accessibility_status for token in ["isRuntimeConnected", "secureSettingEnabled", "isLocalConnectionAlive", "profileHeartbeatConnected = runtime.localServiceConnected"]) and all(token in service for token in ["override fun onCreate()", "PROFILE_SERVICE_EVENT_RECOVERED"]),
