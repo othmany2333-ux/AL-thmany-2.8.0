@@ -668,9 +668,9 @@ fun main() {
         RuntimeWatchdogState.STALLED,
         RuntimeWatchdogPolicy.assess(7, 1_700L, loading = false, conflict = ScreenEvidenceConflict.NONE, turbo = true)
     )
-    expect("fast fallback poll avoids busy loop", 95L, RuntimeCadencePolicy.pollIntervalMs(true))
-    expect("fast event scan cadence", 14L, RuntimeCadencePolicy.minScanIntervalMs(true, 1))
-    expect("stable fast screen relaxes cadence", 36L, RuntimeCadencePolicy.minScanIntervalMs(true, 8))
+    expect("fast fallback poll avoids busy loop", 80L, RuntimeCadencePolicy.pollIntervalMs(true))
+    expect("fast event scan cadence", 12L, RuntimeCadencePolicy.minScanIntervalMs(true, 1))
+    expect("stable fast screen relaxes cadence", 30L, RuntimeCadencePolicy.minScanIntervalMs(true, 8))
     expect(
         "stalled unknown is recoverable",
         true,

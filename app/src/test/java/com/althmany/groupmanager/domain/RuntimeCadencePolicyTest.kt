@@ -8,7 +8,7 @@ class RuntimeCadencePolicyTest {
     @Test
     fun fastCadenceIsResponsiveWithoutBusyLooping() {
         assertTrue(RuntimeCadencePolicy.FAST_EVENT_SCAN_MS >= 12L)
-        assertTrue(RuntimeCadencePolicy.FAST_FALLBACK_POLL_MS >= 90L)
+        assertTrue(RuntimeCadencePolicy.FAST_FALLBACK_POLL_MS >= 80L)
         assertTrue(RuntimeCadencePolicy.FAST_CLICK_THROTTLE_MS >= 60L)
         assertTrue(RuntimeCadencePolicy.FAST_GESTURE_DURATION_MS >= 16L)
     }

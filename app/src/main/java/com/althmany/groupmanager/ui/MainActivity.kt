@@ -145,24 +145,16 @@ class MainActivity : AppCompatActivity() {
             lastAutomaticInputHash = null
         }
 
-        if (pendingAutoStartAfterSettings) {
+        if (pendingAutoStartAfterSettings &&
+            AccessibilityStatus.isQuickJoinServiceEnabled(this@MainActivity)
+        ) {
             val continueQueuedBatch = pendingQueueContinuationAfterSettings
-            val readiness = AccessibilityStatus.readiness(this@MainActivity)
-            when {
-                ProfileControlPolicy.mayStartWhileServiceBinds(readiness.systemEnabled) &&
-                    readiness.localServiceConnected -> {
-                    pendingAutoStartAfterSettings = false
-                    pendingQueueContinuationAfterSettings = false
-                    // Do not deadlock on Samsung's delayed service callback. The enabled service
-                    // receives the WhatsApp window event and self-heals its runtime connection.
-                    binding.root.postDelayed({ startAutomaticRun(allowQueuedContinuation = continueQueuedBatch) }, 180L)
-                }
-                else -> {
-                    // Do not reopen the setup dialog from one transient negative read after an
-                    // APK update/resume. The bind gate confirms a genuinely disabled service.
-                    waitForLocalAccessibilityBind(continueQueuedBatch, startAfterBind = true)
-                }
-            }
+            pendingAutoStartAfterSettings = false
+            pendingQueueContinuationAfterSettings = false
+            binding.root.postDelayed(
+                { startAutomaticRun(allowQueuedContinuation = continueQueuedBatch) },
+                90L
+            )
         }
     }
 
@@ -789,9 +781,12 @@ class MainActivity : AppCompatActivity() {
         getString(if (installed) R.string.autopilot_installed_mark else R.string.autopilot_missing_mark)
 
     private fun startAutomaticRun(allowQueuedContinuation: Boolean = false) {
-        // Pressing Start is an explicit instruction to execute. Never let a developer-only Shadow
-        // preference inherited from an older build suppress every Join while the UI says running.
+        // 2.8.8 Fast Parity: explicit Start always means the proven 2.4.4-style fast JOIN path.
+        // Keep semantic verification, but remove artificial inter-link waiting.
         app.preferences.runtimeShadowMode = false
+        app.preferences.fastHandsFreeMode = true
+        app.preferences.interLinkDelayMs = AutomationPolicy.FAST_INTER_LINK_DELAY_MS
+        app.preferences.accessibilityActionTimeoutSeconds = AutomationPolicy.FAST_ACTION_TIMEOUT_SECONDS
 
         if (app.preferences.hasScheduledStart) {
             toast(R.string.aurora_schedule_already_active)
@@ -816,15 +811,14 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             val backend = resolveAutomationBackendForStart() ?: return
-            if (backend == AutomationBackend.ACCESSIBILITY) {
-                val readiness = AccessibilityStatus.readiness(this@MainActivity)
-                if (!readiness.systemEnabled || !readiness.localServiceConnected) {
-                    pendingAutoStartAfterSettings = true
-                    pendingQueueContinuationAfterSettings = true
-                    app.preferences.accessibilityQuickJoin = true
-                    waitForLocalAccessibilityBind(allowQueuedContinuation = true, startAfterBind = true)
-                    return
-                }
+            if (backend == AutomationBackend.ACCESSIBILITY &&
+                !AccessibilityStatus.isQuickJoinServiceEnabled(this@MainActivity)
+            ) {
+                pendingAutoStartAfterSettings = true
+                pendingQueueContinuationAfterSettings = true
+                app.preferences.accessibilityQuickJoin = true
+                showOneTimeSetupDialog(true)
+                return
             }
             app.preferences.runtimeAutomationBackend = backend
             app.preferences.accessibilityQuickJoin = backend == AutomationBackend.ACCESSIBILITY
