@@ -585,6 +585,27 @@ class ShizukuAutomationService : Service() {
                         "SHIZUKU_ACTION_AMBIGUOUS",
                         "action=${action.name}; ambiguous=${selection.ambiguous}; best=${candidate?.score ?: -1}; runner=${selection.runnerUpScore}; count=$consecutiveAmbiguousActions"
                     )
+
+                    // Samsung/Work can expose a partial semantic tree even while the real wide
+                    // WhatsApp Join/Request control is visibly present. Do not park forever waiting
+                    // for a node that this profile never publishes. Reuse the existing screenshot
+                    // fallback only after two semantic misses, only for positive JOIN/REQUEST
+                    // actions, and only after exact package/user foreground proof inside that helper.
+                    if (fastUiMode == FastUiMode.ACTIVE &&
+                        action in setOf(AccessibilityJoinAction.JOIN, AccessibilityJoinAction.REQUEST) &&
+                        consecutiveAmbiguousActions >= 2 &&
+                        handleVisualProfileFallback(current, targetPackage)
+                    ) {
+                        runtimeDiagnostic(
+                            current,
+                            "SHIZUKU_ACTION_VISUAL_RESCUE",
+                            "action=${action.name}; semantic tree partial; guarded visual positive-action lane engaged"
+                        )
+                        consecutiveAmbiguousActions = 0
+                        resetActionConsensus()
+                        return false
+                    }
+
                     if (consecutiveAmbiguousActions >= ShizukuRuntimePolicy.MAX_CONSECUTIVE_AMBIGUOUS_ACTIONS) {
                         runtimeDiagnostic(
                             current,
@@ -610,8 +631,32 @@ class ShizukuAutomationService : Service() {
                     exactPackage = candidate.node.packageName == targetPackage,
                     ambiguous = selection.ambiguous
                 )
-                if (!actionConsensus(candidate.fingerprint, requiredScans)) return false
-                if (requiredScans == 1) {
+
+                val consensusReady = actionConsensus(candidate.fingerprint, requiredScans)
+                val exactPositiveActionRescue =
+                    fastUiMode == FastUiMode.ACTIVE &&
+                        action in setOf(AccessibilityJoinAction.JOIN, AccessibilityJoinAction.REQUEST) &&
+                        snapshot.inviteContext &&
+                        !selection.ambiguous &&
+                        candidate.node.enabled &&
+                        candidate.node.packageName == targetPackage &&
+                        candidate.score >= ShizukuRuntimePolicy.MIN_ACTION_SCORE &&
+                        ((action == AccessibilityJoinAction.JOIN &&
+                            snapshot.screenKind == AutomationScreenKind.JOIN_ACTION) ||
+                         (action == AccessibilityJoinAction.REQUEST &&
+                            snapshot.screenKind == AutomationScreenKind.REQUEST_ACTION)) &&
+                        stageAge >= maxOf(60L, runtimeSpeed().eventScanMs)
+
+                if (!consensusReady && !exactPositiveActionRescue) return false
+
+                if (exactPositiveActionRescue && !consensusReady) {
+                    runtimeDiagnostic(
+                        current,
+                        "SHIZUKU_FAST_SEMANTIC_RESCUE",
+                        "action=${action.name}; score=${candidate.score}; exactPackage=true; " +
+                            "screen=${snapshot.screenKind.name}; consensus fingerprint was unstable, tapping guarded semantic bounds"
+                    )
+                } else if (requiredScans == 1) {
                     runtimeDiagnostic(
                         current,
                         "SHIZUKU_FAST_ACTION",
@@ -1444,7 +1489,16 @@ class ShizukuAutomationService : Service() {
         current: GroupLink,
         purpose: String
     ): Boolean {
-        if (!isTargetForeground(targetPackage, forceProbe = true)) return false
+        val forcedForeground = isTargetForeground(targetPackage, forceProbe = true)
+        if (!forcedForeground) {
+            val userId = cachedAndroidUserId ?: return false
+            if (!foregroundLeaseValid(targetPackage, userId)) return false
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_BACK_LEASE_RECOVERY",
+                "$purpose; forced activity proof missed but exact-user/package foreground lease is still valid"
+            )
+        }
         waitInputCooldown()
         val persistent = ShizukuBridge.fastBack(this)
         val shell = if (!persistent) {
@@ -1466,7 +1520,23 @@ class ShizukuAutomationService : Service() {
         current: GroupLink,
         initialSnapshot: ShizukuUiSnapshot
     ): Boolean {
-        if (!isTargetForeground(targetPackage, forceProbe = true)) return false
+        val forcedForeground = isTargetForeground(targetPackage, forceProbe = true)
+        if (!forcedForeground) {
+            val exactTargetTreeVisible =
+                initialSnapshot.nodes.any { node -> node.belongsTo(targetPackage) }
+            val exactUser = cachedAndroidUserId
+            if (!exactTargetTreeVisible || exactUser == null) return false
+
+            // The already-parsed snapshot came from this exact locked package and exact Android
+            // user. Renew the short input lease rather than rejecting X/Back because Samsung's
+            // dumpsys formatting omitted the user token during this frame.
+            recordForegroundLease(targetPackage, exactUser)
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_EXIT_FOREGROUND_RECOVERED",
+                "forced activity probe missed; exact target UI tree remained visible, guarded exit lease renewed"
+            )
+        }
         var snapshot = initialSnapshot
 
         // 1) Prefer WhatsApp's actual X/Close.
@@ -2120,11 +2190,34 @@ class ShizukuAutomationService : Service() {
         detail: String
     ) {
         val prefs = app.preferences
-        val targetPackage = prefs.runtimeLockedWhatsAppPackage
-        val sessionId = prefs.accessibilitySessionId
 
-        if (targetPackage.isNullOrBlank() || sessionId.isNullOrBlank()) {
-            stopRun(AutomationStopReason.SESSION_CHANGED, "Direct Shizuku handoff lost its locked session/target")
+        // A second detector can arrive a few milliseconds after another detector completed/stopped
+        // the run. Never let that late callback overwrite the real result with SESSION_CHANGED.
+        if (!prefs.accessibilityBatchRunning) {
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_LATE_RESULT_IGNORED",
+                "result=${resultCode.name}; run already stopped/completed"
+            )
+            return
+        }
+
+        val targetPackage = prefs.runtimeLockedWhatsAppPackage
+            ?.takeIf { it.isNotBlank() && PACKAGE_NAME.matches(it) }
+            ?: cachedTargetPackage
+                ?.takeIf { it.isNotBlank() && PACKAGE_NAME.matches(it) }
+
+        val sessionId = prefs.accessibilitySessionId
+            ?.takeIf { it.isNotBlank() }
+            ?: prefs.activeSessionId?.takeIf { it.isNotBlank() }
+
+        if (targetPackage.isNullOrBlank() || sessionId.isNullOrBlank() ||
+            prefs.activeSessionId != sessionId
+        ) {
+            stopRun(
+                AutomationStopReason.SESSION_CHANGED,
+                "Shizuku handoff could not recover a valid active session/locked target"
+            )
             return
         }
 
