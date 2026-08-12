@@ -455,8 +455,8 @@ fun main() {
     expect("parser accepted unique links", 2, report.accepted.size)
     expect("parser duplicate count", 1, report.duplicateCount)
     expect("session queue cap", 1_000_000, AutomationPolicy.MAX_LINKS_PER_SESSION)
-    expect("explicit run cap", 1000, AutomationPolicy.BATCH_SIZE)
-    expect("explicit-run windows per full queue", 1_000, AutomationPolicy.MAX_BATCHES_PER_SESSION)
+    expect("explicit run follows session cap", 1_000_000, AutomationPolicy.BATCH_SIZE)
+    expect("one explicit-run window per full queue", 1, AutomationPolicy.MAX_BATCHES_PER_SESSION)
     expect(
         "exact-user conversation activity proof",
         true,

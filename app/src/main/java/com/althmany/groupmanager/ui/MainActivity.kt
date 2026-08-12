@@ -583,7 +583,17 @@ class MainActivity : AppCompatActivity() {
 
         pasteButton.setOnClickListener { pasteFromClipboard() }
         importButton.setOnClickListener {
-            importDocumentsLauncher.launch(arrayOf("text/plain", "text/csv", "text/*"))
+            importDocumentsLauncher.launch(
+                arrayOf(
+                    "text/plain",
+                    "text/csv",
+                    "text/*",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/vnd.ms-excel",
+                    "application/vnd.ms-excel.sheet.macroEnabled.12",
+                    "application/octet-stream"
+                )
+            )
         }
         clearInputButton.setOnClickListener { linksEditText.text?.clear() }
         linksInputLayout.setEndIconOnClickListener { linksEditText.text?.clear() }

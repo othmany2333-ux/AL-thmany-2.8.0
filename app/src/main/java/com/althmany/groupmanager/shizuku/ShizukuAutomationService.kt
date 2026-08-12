@@ -126,6 +126,7 @@ class ShizukuAutomationService : Service() {
     private var currentLaunchElapsed = 0L
     private var currentLaunchEventBaseline = 0L
     private var currentLaunchSawTargetEvent = false
+    private var currentLaunchSawTargetForeground = false
     private var visualProbeLinkId = -1L
     private var visualProbeAttempts = 0
     private var lastVisualProbeAtElapsed = 0L
@@ -263,17 +264,29 @@ class ShizukuAutomationService : Service() {
             }
 
             if (!isTargetForeground(targetPackage)) {
-                if (pauseAfterStableForegroundLoss(current, targetPackage)) {
-                    updateNotification("Paused: return to the selected WhatsApp to continue")
-                    delay(PAUSED_POLL_MS)
+                // Once this link was actually foreground in the locked WhatsApp, foreground loss
+                // means user departure. Never force-open WhatsApp again in this branch.
+                if (prefs.autoPauseOutsideWhatsApp && currentLaunchSawTargetForeground) {
+                    if (shouldAutoPauseForUserExit(current, targetPackage)) {
+                        updateNotification("Paused: return to the selected WhatsApp to continue")
+                        delay(PAUSED_POLL_MS)
+                        continue
+                    }
+                    prefs.transitionAutomation(
+                        AutomationStage.WAITING_FOR_WHATSAPP,
+                        "User left the selected WhatsApp; waiting without forcing it back"
+                    )
+                    delay(minOf(runtimeSpeed().stableScanMs, USER_EXIT_PROBE_INTERVAL_MS))
                     continue
                 }
+
+                // Recovery is reserved for an initial launch that never reached WhatsApp.
                 val now = System.currentTimeMillis()
                 if (foregroundWaitStartedAt == 0L) foregroundWaitStartedAt = now
                 val waitAge = now - foregroundWaitStartedAt
                 prefs.transitionAutomation(
                     AutomationStage.WAITING_FOR_WHATSAPP,
-                    "Continuity engine is reacquiring the selected WhatsApp window"
+                    "Continuity engine is acquiring the selected WhatsApp window"
                 )
 
                 if (waitAge >= ShizukuContinuityPolicy.FOREGROUND_REOPEN_AFTER_MS &&
@@ -283,7 +296,7 @@ class ShizukuAutomationService : Service() {
                     runtimeDiagnostic(
                         current,
                         "SHIZUKU_FOREGROUND_RECOVER",
-                        "attempt=$foregroundRecoveryAttempts; waitedMs=$waitAge; reopening exact-user deep link"
+                        "attempt=$foregroundRecoveryAttempts; waitedMs=$waitAge; initial launch recovery"
                     )
                     if (openInvitation(current, targetPackage, forceResolvedActivity = true)) {
                         prefs.markAutomationLaunched()
@@ -303,13 +316,15 @@ class ShizukuAutomationService : Service() {
                         current,
                         LinkStatus.FAILED,
                         LinkResultCode.UNKNOWN_SCREEN,
-                        "Selected WhatsApp window could not be reacquired after bounded exact-user recovery; continuity advanced to the next link without guessing a click"
+                        "Selected WhatsApp never reached foreground after bounded initial-launch recovery; continuity advanced without guessing a click"
                     )
                     continue
                 }
                 delay(runtimeSpeed().stableScanMs)
                 continue
             }
+            currentLaunchSawTargetForeground = true
+            outsideTargetCandidateStartedAtElapsed = 0L
             foregroundWaitStartedAt = 0L
             foregroundRecoveryAttempts = 0
 
@@ -915,10 +930,11 @@ class ShizukuAutomationService : Service() {
                         RuntimeDiagnosticStore.append(
                             this,
                             "SHIZUKU_FAST_UI_PRESET",
-                            "event=14ms; compactTree=true; visualWorkFallback=true; stable=36ms; poll=95ms; watchdog=40ms/1000ms; click=68ms; gesture=18ms; result=88ms; next=0ms"
+                            "event=14ms; compactTree=true; visualWorkFallback=true; stable=36ms; poll=95ms; watchdog=40ms/1000ms; click=60ms; gesture=72ms; result=72ms; next=0ms"
                         )
                     }
                     fastUiFailureCount = 0
+                    fastUiSessionRecoveryAttempts = 0
                     consecutiveDumpFailures = 0
                     emptyDumpStartedAt = 0L
                     fastUiNoRootStartedAtElapsed = 0L
@@ -1525,28 +1541,49 @@ class ShizukuAutomationService : Service() {
             .firstOrNull()
         if (semantic != null) return semantic
 
-        // Some Work-profile WhatsApp sheets expose the X as an unlabeled clickable image.
-        // Geometry fallback is allowed only on a verified invitation surface.
-        if (!snapshot.inviteContext || displayWidth <= 0 || displayHeight <= 0) return null
+        // Work/Secure/RTL WhatsApp can expose the X as an unlabeled ImageView and mirror it
+        // to either corner. Geometry fallback is allowed only on invite/terminal result sheets.
+        val terminalSurface = snapshot.screenKind in setOf(
+            AutomationScreenKind.REQUEST_SUBMITTED,
+            AutomationScreenKind.ALREADY_MEMBER,
+            AutomationScreenKind.GROUP_FULL,
+            AutomationScreenKind.INVALID_OR_EXPIRED,
+            AutomationScreenKind.REMOVED_OR_BANNED,
+            AutomationScreenKind.GENERIC_FAILURE,
+            AutomationScreenKind.RESTRICTED
+        )
+        if ((!snapshot.inviteContext && !terminalSurface) || snapshot.conversationSurface ||
+            displayWidth <= 0 || displayHeight <= 0
+        ) return null
         return snapshot.nodes.asSequence()
             .filter { node ->
-                node.enabled && node.clickable && node.bounds?.valid == true &&
-                    node.belongsTo(targetPackage)
+                node.enabled && node.bounds?.valid == true && node.belongsTo(targetPackage)
+            }
+            .filter { node ->
+                node.clickable ||
+                    node.className.contains("Image", ignoreCase = true) ||
+                    node.resourceId.contains("close", ignoreCase = true) ||
+                    node.resourceId.contains("dismiss", ignoreCase = true)
             }
             .filter { node ->
                 val b = node.bounds ?: return@filter false
                 val w = b.right - b.left
                 val h = b.bottom - b.top
-                val nearTopRight = b.centerX >= displayWidth * 72 / 100 &&
+                val nearTopCorner =
+                    (b.centerX <= displayWidth * 28 / 100 ||
+                     b.centerX >= displayWidth * 72 / 100) &&
                     b.centerY <= displayHeight * 32 / 100
                 val compact = w in 1..(displayWidth * 18 / 100).coerceAtLeast(1) &&
                     h in 1..(displayHeight * 12 / 100).coerceAtLeast(1)
                 val roughlySquare = w <= h * 2 && h <= w * 2
-                nearTopRight && compact && roughlySquare
+                nearTopCorner && compact && roughlySquare
             }
             .minByOrNull { node ->
                 val b = node.bounds!!
-                (displayWidth - b.centerX).coerceAtLeast(0) + b.centerY.coerceAtLeast(0)
+                minOf(
+                    b.centerX.coerceAtLeast(0),
+                    (displayWidth - b.centerX).coerceAtLeast(0)
+                ) + b.centerY.coerceAtLeast(0)
             }
     }
 
@@ -1807,6 +1844,9 @@ class ShizukuAutomationService : Service() {
         lastOutsideTargetProbeAtElapsed = 0L
         currentLaunchEventBaseline = lastFastEventSequence
         currentLaunchSawTargetEvent = false
+        currentLaunchSawTargetForeground = false
+        profileCompatCommandProbes = 0
+        fastUiSessionRecoveryAttempts = 0
         fastUiNoRootStartedAtElapsed = 0L
         armFastBurst(FAST_OPEN_BURST_MS)
         runtimeDiagnostic(
@@ -1965,7 +2005,9 @@ class ShizukuAutomationService : Service() {
             (now - currentLaunchElapsed).coerceAtLeast(0L)
         } else 0L
         // Never interpret the normal app -> WhatsApp Deep Link transition as a user exit.
-        if (currentLaunchElapsed <= 0L || launchAge < USER_EXIT_LAUNCH_GRACE_MS) {
+        if (!currentLaunchSawTargetForeground &&
+            (currentLaunchElapsed <= 0L || launchAge < USER_EXIT_LAUNCH_GRACE_MS)
+        ) {
             outsideTargetCandidateStartedAtElapsed = 0L
             return false
         }
@@ -2008,6 +2050,7 @@ class ShizukuAutomationService : Service() {
             "Selected WhatsApp returned to foreground; automatic Shizuku resume"
         )
         currentLaunchElapsed = now
+        currentLaunchSawTargetForeground = true
         outsideTargetCandidateStartedAtElapsed = 0L
         armFastBurst(FAST_OPEN_BURST_MS)
         RuntimeDiagnosticStore.append(
@@ -2314,17 +2357,17 @@ class ShizukuAutomationService : Service() {
         targetPackage: String,
         current: GroupLink
     ): Boolean {
-        if (!ShizukuRuntimePolicy.isSafeTapBounds(bounds, displayWidth, displayHeight)) return false
+        if (!ShizukuRuntimePolicy.isSafeSwipeBounds(bounds, displayWidth, displayHeight)) return false
         if (!isTargetForeground(targetPackage)) return false
         waitInputCooldown()
         val x = bounds.centerX
-        val startY = bounds.top + ((bounds.bottom - bounds.top) * 78 / 100)
-        val endY = bounds.top + ((bounds.bottom - bounds.top) * 28 / 100)
+        val startY = bounds.top + ((bounds.bottom - bounds.top) * 74 / 100)
+        val endY = bounds.top + ((bounds.bottom - bounds.top) * 30 / 100)
         if (startY <= endY) return false
         val persistent = fastUiMode == FastUiMode.ACTIVE &&
             ShizukuBridge.fastSwipe(this, x, startY, x, endY, ShizukuFastUiPolicy.GESTURE_DURATION_MS.toInt())
         val shell = if (!persistent) {
-            ShizukuBridge.execute(this, "input swipe $x $startY $x $endY 180", 3_000)
+            ShizukuBridge.execute(this, "input swipe $x $startY $x $endY 160", 3_000)
         } else null
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true
@@ -2525,6 +2568,7 @@ class ShizukuAutomationService : Service() {
         foregroundRecoveryAttempts = 0
         outsideTargetCandidateStartedAtElapsed = 0L
         lastOutsideTargetProbeAtElapsed = 0L
+        fastUiSessionRecoveryAttempts = 0
         fastUiNoRootStartedAtElapsed = 0L
         fastUiTargetHiddenStartedAtElapsed = 0L
         profileCompatCommandProbes = 0
@@ -2532,6 +2576,7 @@ class ShizukuAutomationService : Service() {
         currentLaunchElapsed = 0L
         currentLaunchEventBaseline = lastFastEventSequence
         currentLaunchSawTargetEvent = false
+        currentLaunchSawTargetForeground = false
         visualProbeLinkId = -1L
         visualProbeAttempts = 0
         lastVisualProbeAtElapsed = 0L
@@ -2790,7 +2835,7 @@ class ShizukuAutomationService : Service() {
         private const val ACTIVITY_PROBE_TIMEOUT_MS = 1_500
         private const val ACTIVITY_PROBE_ATTEMPTS = 4
         private const val ACTIVITY_PROBE_RETRY_MS = 45L
-        private const val RESULT_MIRROR_SYNC_EVERY = 10
+        private const val RESULT_MIRROR_SYNC_EVERY = 1000
         private const val FAST_UI_MAX_NODES = 900
         private const val REQUEST_TERMINAL_PROBE_MIN_AGE_MS = 320L
         private const val REQUEST_TERMINAL_PROBE_COOLDOWN_MS = 280L
@@ -2806,9 +2851,9 @@ class ShizukuAutomationService : Service() {
         private const val FAST_UI_DISABLE_AFTER_FAILURES = 4
         private const val FAST_UI_SESSION_RECOVERY_MAX = 1
         private const val USER_EXIT_LAUNCH_GRACE_MS = 650L
-        private const val USER_EXIT_CONFIRM_MS = 420L
-        private const val USER_EXIT_PROBE_INTERVAL_MS = 180L
-        private const val USER_RETURN_PROBE_INTERVAL_MS = 450L
+        private const val USER_EXIT_CONFIRM_MS = 140L
+        private const val USER_EXIT_PROBE_INTERVAL_MS = 70L
+        private const val USER_RETURN_PROBE_INTERVAL_MS = 180L
         private const val NOTIFICATION_THROTTLE_MS = 500L
         private val PACKAGE_NAME = Regex("[A-Za-z0-9_.]+")
         private val COMPONENT_NAME = Regex("[A-Za-z0-9_.]+/[A-Za-z0-9_.\$]+")

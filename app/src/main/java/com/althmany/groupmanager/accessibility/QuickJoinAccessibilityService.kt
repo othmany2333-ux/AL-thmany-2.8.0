@@ -1692,19 +1692,22 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         val canScroll = CommunityTraversalPolicy.canScroll(prefs.communityScrollAttempts)
         val scrollNode = screen.communityScrollNode
         if (canScroll && scrollNode != null) {
-            val scrolled = withContext(Dispatchers.Main.immediate) {
+            val semanticScrolled = withContext(Dispatchers.Main.immediate) {
                 scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
             }
-            if (scrolled) {
+            val gestureScrolled = !semanticScrolled && withContext(Dispatchers.Main.immediate) {
+                dispatchReliableScrollGesture(scrollNode)
+            }
+            if (semanticScrolled || gestureScrolled) {
                 prefs.communityScrollAttempts += 1
                 communityEmptyStableScans = 0
                 runtimeDiagnostic(
                     current,
                     "COMMUNITY_SCROLL",
-                    "Searching for more subgroup rows; scroll=${prefs.communityScrollAttempts}"
+                    "Searching for more subgroup rows; scroll=${prefs.communityScrollAttempts}; mode=${if (semanticScrolled) "SEMANTIC" else "GESTURE"}"
                 )
             } else {
-                // ACTION_SCROLL_FORWARD=false is a strong end-of-list signal.
+                // End-of-list only after both semantic and touch-gesture paths fail.
                 prefs.communityScrollAttempts = CommunityTraversalPolicy.MAX_SCROLL_ATTEMPTS
                 communityEmptyStableScans += 1
             }
@@ -1865,18 +1868,26 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         // UltraMotion recovery: if an invitation sheet is valid but its action is below the
         // visible fold, use Android's semantic scroll action instead of a long swipe gesture.
         // The attempt count is bounded per link so a changed WhatsApp layout cannot loop-scroll.
+        val inviteScrollNode = screen.scrollNode
         if (pending == null && screen.inviteContext && !screen.loading && screen.action == null &&
-            screen.scrollNode != null && inviteScrollAttempts < MAX_INVITE_SCROLL_ATTEMPTS
+            inviteScrollNode != null && inviteScrollAttempts < MAX_INVITE_SCROLL_ATTEMPTS
         ) {
-            val scrolled = withContext(Dispatchers.Main.immediate) {
-                screen.scrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+            val semanticScrolled = withContext(Dispatchers.Main.immediate) {
+                inviteScrollNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
             }
-            if (scrolled) {
+            val gestureScrolled = !semanticScrolled && withContext(Dispatchers.Main.immediate) {
+                dispatchReliableScrollGesture(inviteScrollNode)
+            }
+            if (semanticScrolled || gestureScrolled) {
                 inviteScrollAttempts += 1
-                runtimeDiagnostic(current, "FAST_SCROLL", "Scrolled invitation surface; attempt=$inviteScrollAttempts")
+                runtimeDiagnostic(
+                    current,
+                    "FAST_SCROLL",
+                    "Scrolled invitation surface; attempt=$inviteScrollAttempts; mode=${if (semanticScrolled) "SEMANTIC" else "GESTURE"}"
+                )
                 app.preferences.transitionAutomation(
                     AutomationStage.LOOKING_FOR_JOIN,
-                    "Invitation controls were below the fold; fast semantic scroll completed",
+                    "Invitation controls were below the fold; reliable scroll completed",
                     resetRetries = false
                 )
                 lastScanAt = 0L
@@ -2709,7 +2720,9 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
         // Some WhatsApp versions expose the invitation X as an unlabeled image/button.
         // Accept that geometry only inside a verified invitation surface.
-        if (inviteContext && closeNode == null) {
+        if ((inviteContext || terminalEvidenceKinds.isNotEmpty()) &&
+            !conversationSurface && closeNode == null
+        ) {
             closeNode = nodes.asSequence()
                 .map { it.node }
                 .filter { it.isVisibleToUser && it.isEnabled }
@@ -2761,7 +2774,8 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
     private fun looksLikeTopRightCloseCandidate(node: AccessibilityNodeInfo): Boolean {
         if (!node.isVisibleToUser || !node.isEnabled) return false
-        if (!node.isClickable && node.parent?.isClickable != true) return false
+        val imageLike = node.className?.toString()?.contains("Image", ignoreCase = true) == true
+        if (!node.isClickable && node.parent?.isClickable != true && !imageLike) return false
         val bounds = Rect().also(node::getBoundsInScreen)
         if (bounds.isEmpty) return false
         val metrics = resources.displayMetrics
@@ -2769,7 +2783,10 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         val height = metrics.heightPixels.coerceAtLeast(1)
         val maxSize = dpToPx(112)
         val topBand = minOf((height * 0.18f).toInt(), dpToPx(210))
-        return bounds.centerX() >= (width * 0.70f).toInt() &&
+        val nearMirroredCorner =
+            bounds.centerX() <= (width * 0.30f).toInt() ||
+            bounds.centerX() >= (width * 0.70f).toInt()
+        return nearMirroredCorner &&
             bounds.centerY() <= topBand &&
             bounds.width() in dpToPx(18)..maxSize &&
             bounds.height() in dpToPx(18)..maxSize
@@ -2782,7 +2799,11 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         if (node.isClickable) score += 50
         if (node.parent?.isClickable == true) score += 25
         if (node.className?.toString()?.contains("Image", ignoreCase = true) == true) score += 20
-        score += ((bounds.centerX().toFloat() / width) * 25f).toInt()
+        val edgeDistance = minOf(
+            bounds.centerX().coerceAtLeast(0),
+            (width - bounds.centerX()).coerceAtLeast(0)
+        )
+        score += (25 - (edgeDistance * 25 / width)).coerceAtLeast(0)
         score += (30 - (bounds.centerY() / dpToPx(8))).coerceAtLeast(0)
         return score
     }
@@ -2829,6 +2850,32 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         AccessibilityFailureType.GROUP_FULL -> 2
         AccessibilityFailureType.GENERIC -> 1
         null -> 0
+    }
+
+    private fun dispatchReliableScrollGesture(node: AccessibilityNodeInfo): Boolean {
+        if (!node.isVisibleToUser || !node.isEnabled) return false
+        val bounds = Rect().also(node::getBoundsInScreen)
+        if (bounds.isEmpty) return false
+        val metrics = resources.displayMetrics
+        val screenWidth = metrics.widthPixels.coerceAtLeast(2)
+        val screenHeight = metrics.heightPixels.coerceAtLeast(2)
+        val top = bounds.top.coerceIn(1, screenHeight - 2)
+        val bottom = bounds.bottom.coerceIn(top + 1, screenHeight - 1)
+        val usableHeight = bottom - top
+        if (bounds.width() < dpToPx(48) || usableHeight < dpToPx(80)) return false
+        val x = bounds.centerX().coerceIn(1, screenWidth - 1)
+        val startY = top + usableHeight * 74 / 100
+        val endY = top + usableHeight * 30 / 100
+        if (startY <= endY) return false
+        val path = Path().apply {
+            moveTo(x.toFloat(), startY.toFloat())
+            lineTo(x.toFloat(), endY.toFloat())
+        }
+        val duration = maxOf(72L, runtimeSpeed().gestureDurationMs)
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, duration))
+            .build()
+        return dispatchGesture(gesture, null, null)
     }
 
     private fun clickNodeParentOrGesture(
@@ -3856,7 +3903,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         private const val MAX_INVITE_SCROLL_ATTEMPTS = 2
         private const val USER_INSTANT_ADVANCE_SETTLE_MS = 0L
         private const val SCHEDULED_WAKE_LOCK_MS = 30_000L
-        private const val RESULT_MIRROR_SYNC_EVERY = 10
+        private const val RESULT_MIRROR_SYNC_EVERY = 1000
         private const val DIAGNOSTIC_REPEAT_SUPPRESSION_MS = 1_500L
         private const val IDEMPOTENCY_SUPPRESSION_MS = 1_200L
         private const val NOTIFICATION_REFRESH_MIN_MS = 300L

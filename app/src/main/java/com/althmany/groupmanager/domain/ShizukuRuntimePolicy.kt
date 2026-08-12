@@ -42,6 +42,22 @@ object ShizukuRuntimePolicy {
         return bounds.centerX in 1 until displayWidth && bounds.centerY in 1 until displayHeight
     }
 
+    fun isSafeSwipeBounds(
+        bounds: ShizukuBounds,
+        displayWidth: Int,
+        displayHeight: Int
+    ): Boolean {
+        if (!bounds.valid || displayWidth <= 0 || displayHeight <= 0) return false
+        if (bounds.left < 0 || bounds.top < 0 ||
+            bounds.right > displayWidth || bounds.bottom > displayHeight
+        ) return false
+        val width = bounds.right - bounds.left
+        val height = bounds.bottom - bounds.top
+        if (width < 48 || height < 120) return false
+        return bounds.centerX in 1 until displayWidth &&
+            bounds.centerY in 1 until displayHeight
+    }
+
     fun actionConsensusScans(
         score: Int,
         runnerUpScore: Int,

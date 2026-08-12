@@ -14,7 +14,7 @@ object ShizukuFastUiPolicy {
     const val WATCHDOG_INTERVAL_MS = 32L
 
     const val CLICK_THROTTLE_MS = 60L
-    const val GESTURE_DURATION_MS = 16L
+    const val GESTURE_DURATION_MS = 72L
     const val RESULT_ANALYSIS_FALLBACK_MS = 72L
 
     const val ACTION_RETRY_AFTER_MS = 95L
@@ -27,9 +27,9 @@ object ShizukuFastUiPolicy {
     const val UNKNOWN_TIMEOUT_MS = 2_000L
     const val LOADING_TIMEOUT_MS = 20_000L
 
-    const val BACK_SETTLE_MS = 0L
-    const val TERMINAL_ESCAPE_SETTLE_MS = 32L
-    const val NORMAL_EXIT_SETTLE_MS = 18L
+    const val BACK_SETTLE_MS = 18L
+    const val TERMINAL_ESCAPE_SETTLE_MS = 64L
+    const val NORMAL_EXIT_SETTLE_MS = 36L
     const val USER_INSTANT_ADVANCE_SETTLE_MS = 0L
     const val EVENT_TREE_COALESCE_MS = 0L
 

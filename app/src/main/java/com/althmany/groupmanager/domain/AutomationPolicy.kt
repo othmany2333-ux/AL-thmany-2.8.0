@@ -4,12 +4,12 @@ package com.althmany.groupmanager.domain
  * User-visible limits for the opt-in Accessibility-assisted workflow.
  * A session may queue a very large number of explicitly supplied invitation links. The queue is
  * disk-backed and may contain up to one million unique links while automation remains
- * user-visible and processes at most one thousand links per explicit run. Remaining links stay queued and
- * require another explicit user start. The workflow still stops immediately on WhatsApp restriction screens.
+ * user-visible and continues through the current explicit session up to the one-million-link session cap.
+ * Progress remains disk-backed so interruptions can resume from the saved current link. The workflow still stops immediately on WhatsApp restriction screens.
  */
 object AutomationPolicy {
     const val MAX_LINKS_PER_SESSION = 1_000_000
-    const val BATCH_SIZE = 1_000
+    const val BATCH_SIZE = MAX_LINKS_PER_SESSION
     const val MAX_BATCHES_PER_SESSION = (MAX_LINKS_PER_SESSION + BATCH_SIZE - 1) / BATCH_SIZE
 
     // User controls the next-link pace directly. 0 means immediate transition after the

@@ -190,8 +190,8 @@ checks = {
     "profile-key launch continuity": "expectedProfileKey" in whatsapp_launcher,
     "AL-thmany namespace": 'namespace = "com.althmany.groupmanager"' in build,
     "AL-thmany application id": 'applicationId = "com.althmany.groupmanager"' in build,
-    "versionCode 303": "versionCode = 303" in build,
-    "versionName 3.0.3": 'versionName = "3.0.3"' in build,
+    "versionCode 304": "versionCode = 304" in build,
+    "versionName 3.0.4": 'versionName = "3.0.4"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),
@@ -201,6 +201,9 @@ checks = {
     "3.0.3 repeat-run persistent UI reset": all(token in shizuku_service for token in [
         "SHIZUKU_FAST_UI_RUN_RESET", "SHIZUKU_FAST_UI_SELF_HEAL", "fastResetUiAutomation"
     ]) and "resetForNewRun" in shizuku_persistent and "fastResetUiAutomation" in shizuku_bridge_source and "fastResetUiAutomation" in shizuku_aidl_source,
+    "3.0.4 leave WhatsApp pauses without force reopen": "currentLaunchSawTargetForeground" in shizuku_service and "shouldAutoPauseForUserExit" in shizuku_service and "USER_EXIT_CONFIRM_MS = 140L" in shizuku_service,
+    "3.0.4 reliable scroll gestures": "isSafeSwipeBounds" in shizuku_policy and "GESTURE_DURATION_MS = 72L" in shizuku_fast_policy and "dispatchReliableScrollGesture" in service,
+    "3.0.4 Excel picker support": "spreadsheetml.sheet" in main_activity and "application/vnd.ms-excel" in main_activity,
     "Accessibility permission gate 2.6.4": all(token in main_activity for token in ["permissionConfigured", "waitForLocalAccessibilityBind", "shouldPromptAccessibilitySetup", "accessibility_enabled_but_not_bound"]),
     "Accessibility setup debounce policy 2.6.4": all(token in profile_control_policy for token in ["ACCESSIBILITY_SETUP_CONFIRM_READS = 3", "ACCESSIBILITY_RECONNECT_WAIT_MS = 4_000L", "ACCESSIBILITY_RECONNECT_POLL_MS = 100L", "shouldPromptAccessibilitySetup"]),
     "Accessibility Samsung live readiness 2.7.4": all(token in accessibility_status for token in ["isRuntimeConnected", "secureSettingEnabled", "isLocalConnectionAlive", "profileHeartbeatConnected = runtime.localServiceConnected"]) and all(token in service for token in ["override fun onCreate()", "PROFILE_SERVICE_EVENT_RECOVERED"]),
@@ -209,7 +212,7 @@ checks = {
     "Accessibility visual fallback 2.7.5": all(token in service for token in ["maybeHandleAccessibilityVisualFallback", "ACCESSIBILITY_VISUAL_ACTION_TAP", "captureWidePositiveActionBounds", "VisualActionButtonPolicy", "DIRECT_CONVERSATION_STABLE_SCANS"]) and 'android:canTakeScreenshot="true"' in service_config,
     "executable runtime migration 2.7.2": "applyExecutableRuntimeMigration" in preferences_source and "applyExecutableRuntimeMigration" in group_app and "app.preferences.runtimeShadowMode = false" in main_activity,
     "large disk-backed queue limit": "MAX_LINKS_PER_SESSION = 1_000_000" in policy,
-    "1000-link explicit run window": "BATCH_SIZE = 1_000" in policy,
+    "full-session explicit run window": "BATCH_SIZE = MAX_LINKS_PER_SESSION" in policy,
     "sub-second unified handoff control": all(token in policy for token in ["MAX_INTER_LINK_DELAY_MS = 10_000", "INTER_LINK_DELAY_STEP_MS = 100", "clampInterLinkDelayMs"]) and "interLinkDelayMs" in preferences_source,
     "Accessibility service manifest": "QuickJoinAccessibilityService" in manifest,
     "profile accessibility policy inspector": (ROOT / "app/src/main/java/com/althmany/groupmanager/util/ProfileAccessibilityPolicyInspector.kt").exists(),

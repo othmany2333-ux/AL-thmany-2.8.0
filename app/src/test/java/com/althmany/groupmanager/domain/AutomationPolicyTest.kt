@@ -51,8 +51,8 @@ class AutomationPolicyTest {
     @Test
     fun queueAndExplicitRunLimitsStaySynchronized() {
         assertEquals(1_000_000, AutomationPolicy.MAX_LINKS_PER_SESSION)
-        assertEquals(1000, AutomationPolicy.BATCH_SIZE)
-        assertEquals(1_000, AutomationPolicy.MAX_BATCHES_PER_SESSION)
+        assertEquals(AutomationPolicy.MAX_LINKS_PER_SESSION, AutomationPolicy.BATCH_SIZE)
+        assertEquals(1, AutomationPolicy.MAX_BATCHES_PER_SESSION)
     }
 
     @Test

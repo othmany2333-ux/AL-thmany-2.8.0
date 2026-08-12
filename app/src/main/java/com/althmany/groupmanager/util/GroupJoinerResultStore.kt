@@ -18,19 +18,34 @@ object GroupJoinerResultStore {
             val leftDir = File(root, "Left").apply { mkdirs() }
             val name = "${snapshot.sessionId}.txt"
 
-            val joined = snapshot.links.filter {
-                it.status == LinkStatus.JOINED || it.status == LinkStatus.REQUESTED
+            File(joinedDir, name).bufferedWriter(Charsets.UTF_8).use { joined ->
+                File(failDir, name).bufferedWriter(Charsets.UTF_8).use { failed ->
+                    File(leftDir, name).bufferedWriter(Charsets.UTF_8).use { left ->
+                        var joinedFirst = true
+                        var failedFirst = true
+                        var leftFirst = true
+                        snapshot.links.forEach { link ->
+                            when (link.status) {
+                                LinkStatus.JOINED, LinkStatus.REQUESTED -> {
+                                    if (!joinedFirst) joined.newLine()
+                                    joined.write(link.url)
+                                    joinedFirst = false
+                                }
+                                LinkStatus.FAILED, LinkStatus.SKIPPED -> {
+                                    if (!failedFirst) failed.newLine()
+                                    failed.write(link.url)
+                                    failedFirst = false
+                                }
+                                LinkStatus.PENDING, LinkStatus.OPENED -> {
+                                    if (!leftFirst) left.newLine()
+                                    left.write(link.url)
+                                    leftFirst = false
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            val failed = snapshot.links.filter {
-                it.status == LinkStatus.FAILED || it.status == LinkStatus.SKIPPED
-            }
-            val left = snapshot.links.filter {
-                it.status == LinkStatus.PENDING || it.status == LinkStatus.OPENED
-            }
-
-            File(joinedDir, name).writeText(joined.joinToString("\n") { it.url })
-            File(failDir, name).writeText(failed.joinToString("\n") { it.url })
-            File(leftDir, name).writeText(left.joinToString("\n") { it.url })
         }
     }
 }
