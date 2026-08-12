@@ -3,6 +3,8 @@ import com.althmany.groupmanager.domain.AccessibilityActionScoringPolicy
 import com.althmany.groupmanager.domain.AccessibilityFailureType
 import com.althmany.groupmanager.domain.RuntimeCircuitBreaker
 import com.althmany.groupmanager.domain.RuntimeCadencePolicy
+import com.althmany.groupmanager.domain.RuntimeSpeedMode
+import com.althmany.groupmanager.domain.RuntimeSpeedProfilePolicy
 import com.althmany.groupmanager.domain.RuntimeConfidenceBand
 import com.althmany.groupmanager.domain.RuntimeDecisionCoordinator
 import com.althmany.groupmanager.domain.RuntimeDirective
