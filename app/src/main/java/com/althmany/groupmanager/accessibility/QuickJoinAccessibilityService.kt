@@ -45,6 +45,8 @@ import com.althmany.groupmanager.domain.RuntimeScreenFingerprint
 import com.althmany.groupmanager.domain.RuntimeRecoveryPolicy
 import com.althmany.groupmanager.domain.RuntimeWatchdogPolicy
 import com.althmany.groupmanager.domain.RuntimeWatchdogState
+import com.althmany.groupmanager.domain.LinkRuntimePhase
+import com.althmany.groupmanager.domain.RestrictionHandlingMode
 import com.althmany.groupmanager.domain.ScreenEvidenceConflict
 import com.althmany.groupmanager.domain.ScreenEvidencePolicy
 import com.althmany.groupmanager.domain.ScreenEvidenceSummary
@@ -143,6 +145,25 @@ class QuickJoinAccessibilityService : AccessibilityService() {
     private val app: GroupManagerApp
         get() = application as GroupManagerApp
 
+
+    private fun runtimeSpeed() = app.preferences.runtimeSpeedProfile()
+
+    private fun currentProcessAndroidUserId(): Int =
+        (android.os.Process.myUid() / 100_000).coerceAtLeast(0)
+
+    private fun lockCurrentProcessUserOrReject(current: GroupLink): Boolean {
+        val userId = currentProcessAndroidUserId()
+        val ok = app.preferences.lockRuntimeAndroidUserId(userId)
+        if (!ok) {
+            runtimeDiagnostic(
+                current,
+                "ANDROID_USER_MISMATCH",
+                "expected=${app.preferences.runtimeLockedAndroidUserId}; actual=$userId"
+            )
+        }
+        return ok
+    }
+
     /**
      * Accessibility is the compatibility-safe owner whenever it was selected, and it can reclaim
      * a live run if Shizuku was selected but its binder/runtime disappeared. This specifically
@@ -239,7 +260,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         requestScheduledStart()
         pollJob = serviceScope.launch {
             while (isActive) {
-                delay(RuntimeCadencePolicy.pollIntervalMs(app.preferences.fastHandsFreeMode))
+                delay(runtimeSpeed().fallbackPollMs)
                 ProfileAccessibilityRuntime.heartbeat(this@QuickJoinAccessibilityService)
                 requestScheduledStart()
                 requestScan()
@@ -613,10 +634,13 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         serviceScope.launch {
             try {
                 while (scanPending.getAndSet(false) && isActive) {
-                    val minScanInterval = RuntimeCadencePolicy.minScanIntervalMs(
-                        fast = app.preferences.fastHandsFreeMode,
-                        stableScreenScans = stableScreenFingerprintScans
-                    )
+                    val speed = runtimeSpeed()
+                    val minScanInterval =
+                        if (stableScreenFingerprintScans >= RuntimeCadencePolicy.STABLE_SCREEN_RELAX_AFTER_SCANS) {
+                            speed.stableScanMs
+                        } else {
+                            speed.eventScanMs
+                        }
                     val elapsed = SystemClock.elapsedRealtime() - lastScanAt
                     if (elapsed < minScanInterval) delay(minScanInterval - elapsed)
                     lastScanAt = SystemClock.elapsedRealtime()
@@ -635,6 +659,23 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         if (!app.preferences.accessibilityBatchRunning || app.preferences.accessibilityPaused) return
 
         val current = withContext(Dispatchers.IO) { loadCurrentLinkOrStop() } ?: return
+        app.preferences.beginRuntimeLink(
+            current.id,
+            current.position,
+            current.url,
+            "ACCESSIBILITY"
+        )
+        if (!lockCurrentProcessUserOrReject(current)) {
+            completeAndAdvance(
+                current,
+                LinkStatus.FAILED,
+                LinkResultCode.UNKNOWN_SCREEN,
+                "Android user/profile identity changed during the run; skipped without clicking",
+                fastAdvance = true,
+                surfaceAlreadyExited = true
+            )
+            return
+        }
         ensureTrackingFor(current.id)
         val root = withContext(Dispatchers.Main.immediate) { rootInActiveWindow }
         if (root == null) {
@@ -672,6 +713,16 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         markTargetForeground()
 
         val screen = inspectScreen(root)
+        app.preferences.markRuntimePhase(
+            when {
+                screen.loading -> LinkRuntimePhase.OPENING
+                screen.action == AccessibilityJoinAction.PREVIEW -> LinkRuntimePhase.PREVIEW
+                screen.action != null -> LinkRuntimePhase.ACTION_READY
+                readPendingAction(current) != null -> LinkRuntimePhase.VERIFYING
+                else -> app.preferences.runtimeLinkPhase
+            },
+            "ACCESSIBILITY:${screen.action?.name ?: "SCREEN"}"
+        )
         updateScreenFingerprintStability(screen)
         runtimeDiagnostic(
             current,
@@ -727,14 +778,33 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             RuntimeDirective.STOP_RESTRICTED -> {
                 resetAdaptiveEvidence()
                 resetConflictEvidence()
-                withContext(Dispatchers.IO) {
-                    app.repository.markStatus(
-                        current.id, LinkStatus.FAILED, LinkResultCode.RESTRICTED,
-                        "WhatsApp displayed a restriction or retry-later screen"
+                if (app.preferences.restrictionHandlingMode == RestrictionHandlingMode.STOP_RUN) {
+                    withContext(Dispatchers.IO) {
+                        app.repository.markStatus(
+                            current.id,
+                            LinkStatus.FAILED,
+                            LinkResultCode.RESTRICTED,
+                            app.preferences.buildRuntimeAuditDetail(
+                                "WhatsApp displayed a restriction/retry-later screen",
+                                LinkResultCode.RESTRICTED.name,
+                                "ACCESSIBILITY"
+                            )
+                        )
+                    }
+                    stopBatch(
+                        AutomationStopReason.RESTRICTED_SCREEN,
+                        "Restriction detected; user policy is Stop run"
+                    )
+                } else {
+                    completeAndAdvance(
+                        current,
+                        LinkStatus.FAILED,
+                        LinkResultCode.RESTRICTED,
+                        "Restriction recorded for this link; no bypass attempted",
+                        fastAdvance = true,
+                        terminalEscapeAdvance = true
                     )
                 }
-                GroupJoinerResultStore.sync(this, app.repository.loadActiveSnapshot())
-                stopBatch(AutomationStopReason.RESTRICTED_SCREEN, "Restriction screen detected")
             }
 
             RuntimeDirective.WAIT_LOADING -> {
@@ -790,7 +860,11 @@ class QuickJoinAccessibilityService : AccessibilityService() {
     }
 
     private fun hasTerminalEvidence(screen: ScreenInspection): Boolean =
-        screen.failure != null || screen.requestSubmitted || screen.alreadyMember
+        screen.failure != null ||
+            screen.requestSubmitted ||
+            screen.alreadyMember ||
+            (screen.restricted &&
+                app.preferences.restrictionHandlingMode == RestrictionHandlingMode.SKIP_AND_CONTINUE)
 
     private suspend fun handleStableTerminalEvidence(
         current: GroupLink,
@@ -1003,7 +1077,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 runtimeDiagnostic(current, "IDEMPOTENCY", "Suppressed duplicate ${action.name} action")
                 return
             }
-            val clickThrottle = RuntimeCadencePolicy.clickThrottleMs(app.preferences.fastHandsFreeMode)
+            val clickThrottle = runtimeSpeed().clickThrottleMs
             if (now - lastClickAt < clickThrottle) return
 
             val gestureFirst = action in setOf(
@@ -1030,6 +1104,11 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             lastClickAt = now
             idempotencyGuard.recordSuccess(actionKey, now)
             recordActionAttempt(current.id, action, node)
+            app.preferences.recordRuntimeAction(action.name, "ACCESSIBILITY")
+            app.preferences.markRuntimePhase(
+                LinkRuntimePhase.ACTION_TAPPED,
+                "ACCESSIBILITY:${action.name}"
+            )
             runtimeDiagnostic(current, "CLICK", "Executed ${action.name}; attempt=$actionAttempts")
 
             when (action) {
@@ -1186,7 +1265,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             var lastWatchFingerprint = 0L
             var stableWatchScans = 0
             while (isActive) {
-                delay(ContinuousHandoffPolicy.watchIntervalMs(app.preferences.fastHandsFreeMode))
+                delay(runtimeSpeed().watchdogIntervalMs)
                 if (!app.preferences.accessibilityBatchRunning || app.preferences.accessibilityPaused) return@launch
                 if (app.preferences.accessibilityPendingLinkId != linkId) return@launch
 
@@ -1948,17 +2027,58 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             return
         }
 
-        // Never reopen the same invite URL. If it never appears, wait for the conservative
-        // timeout and then move on. Input parsing also de-duplicates canonical invite URLs.
-        if (age >= effectiveTimeoutMs &&
+        if (age >= minOf(effectiveTimeoutMs, runtimeSpeed().unknownRecoveryAfterMs) &&
             AdaptiveInteractionPolicy.unknownIsStableEnough(unknownStableScans)
         ) {
+            if (pending == null && attemptUnknownDeepLinkRecovery(current)) return
+
             completeAndAdvance(
                 current,
                 LinkStatus.FAILED,
                 LinkResultCode.UNKNOWN_SCREEN,
-                "No known group or community invitation control appeared before the conservative timeout"
+                "Unknown screen remained after bounded Scan/Exit/Back/one-reopen recovery",
+                fastAdvance = true
             )
+        }
+    }
+
+    private suspend fun attemptUnknownDeepLinkRecovery(current: GroupLink): Boolean {
+        if (!app.preferences.recordRecoveryReopen(current.id)) return false
+
+        app.preferences.markRuntimePhase(
+            LinkRuntimePhase.EXITING,
+            "ACCESSIBILITY:UNKNOWN_RECOVERY"
+        )
+        exitInvitationSurface()
+
+        val destination = withContext(Dispatchers.Main.immediate) {
+            WhatsAppLauncher.launch(
+                this@QuickJoinAccessibilityService,
+                current.url,
+                app.preferences.preferredTarget,
+                app.preferences.runtimeLockedWhatsAppPackage
+                    ?: app.preferences.selectedWhatsAppPackage,
+                strictProfileTarget = app.preferences.strictProfileTargeting,
+                expectedProfileKey = app.preferences.runtimeLockedProfileKey
+            )
+        }
+
+        return when (destination) {
+            LaunchDestination.PERSONAL,
+            LaunchDestination.BUSINESS,
+            LaunchDestination.CLONED,
+            LaunchDestination.SELECTED,
+            LaunchDestination.DUAL_CHOOSER -> {
+                app.preferences.markAutomationLaunched()
+                app.preferences.markRuntimePhase(
+                    LinkRuntimePhase.OPENING,
+                    "ACCESSIBILITY:RECOVERY_REOPENED"
+                )
+                lastScanAt = 0L
+                requestScan()
+                true
+            }
+            else -> false
         }
     }
 
@@ -2744,7 +2864,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             val x = bounds.centerX().coerceIn(1, metrics.widthPixels - 1)
             val y = bounds.centerY().coerceIn(1, metrics.heightPixels - 1)
             val path = Path().apply { moveTo(x.toFloat(), y.toFloat()) }
-            val duration = RuntimeCadencePolicy.gestureDurationMs(app.preferences.fastHandsFreeMode)
+            val duration = runtimeSpeed().gestureDurationMs
             val gesture = GestureDescription.Builder()
                 .addStroke(GestureDescription.StrokeDescription(path, 0, duration))
                 .build()
@@ -2978,7 +3098,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         val x = bounds.centerX().coerceIn(1, metrics.widthPixels - 1)
         val y = bounds.centerY().coerceIn(1, metrics.heightPixels - 1)
         val path = Path().apply { moveTo(x.toFloat(), y.toFloat()) }
-        val duration = RuntimeCadencePolicy.gestureDurationMs(app.preferences.fastHandsFreeMode)
+        val duration = runtimeSpeed().gestureDurationMs
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, duration))
             .build()
@@ -3220,7 +3340,20 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 val stillCurrent = app.repository.loadAutomationCurrent(sessionId)
                 if (stillCurrent?.id != current.id) return@withContext null
 
-                app.repository.markStatus(current.id, status, resultCode, detail)
+                app.preferences.markRuntimePhase(
+                    LinkRuntimePhase.EXITING,
+                    "ACCESSIBILITY:${resultCode.name}"
+                )
+                val auditedDetail = app.preferences.buildRuntimeAuditDetail(
+                    detail,
+                    resultCode.name,
+                    "ACCESSIBILITY"
+                )
+                app.repository.markStatus(current.id, status, resultCode, auditedDetail)
+                app.preferences.finishRuntimeLink(
+                    current.position,
+                    "ACCESSIBILITY:${resultCode.name}"
+                )
                 invalidateRuntimeCache()
                 app.preferences.clearAccessibilityPending()
                 app.preferences.accessibilityProcessedCount += 1
@@ -3274,8 +3407,20 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         if (!surfaceAlreadyExited) exitInvitationSurface()
 
         if (state.limitReached) {
-            finishBatch(AutomationStopReason.BATCH_LIMIT_REACHED, "Run window completed; queued links remain available for the next explicit batch")
-            return
+            if (app.preferences.autoResumeCurrentRun && state.next != null) {
+                app.preferences.accessibilityProcessedCount = 0
+                runtimeDiagnostic(
+                    current,
+                    "AUTO_BATCH_CONTINUE",
+                    "1000-link internal window completed; Auto Resume continues the same disk-backed queue"
+                )
+            } else {
+                finishBatch(
+                    AutomationStopReason.BATCH_LIMIT_REACHED,
+                    "Run window completed; queued links remain resumable"
+                )
+                return
+            }
         }
         if (state.complete || state.next == null) {
             finishBatch(AutomationStopReason.SESSION_COMPLETE, "All links processed")
@@ -3285,7 +3430,12 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         // Terminal Escape is intentionally immediate: once a specific terminal state has been
         // confirmed, waiting cannot improve the current link. Normal/success paths still honor
         // the user-selected inter-link delay.
-        val delayMs = if (terminalEscapeAdvance) 0 else app.preferences.interLinkDelayMs
+        app.preferences.markRuntimePhase(
+            LinkRuntimePhase.ADVANCING,
+            "ACCESSIBILITY:NEXT"
+        )
+        val configuredDelay = app.preferences.runtimeSpeedProfile().interLinkDelayMs.toInt()
+        val delayMs = if (terminalEscapeAdvance) 0 else configuredDelay
         if (delayMs <= 0) {
             app.preferences.transitionAutomation(
                 AutomationStage.WAITING_BEFORE_NEXT,
@@ -3441,6 +3591,28 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 return@repeat
             }
 
+            val safeCancel = collectVisibleNodes(root)
+                .firstOrNull { item ->
+                    item.node.isVisibleToUser &&
+                        item.node.isEnabled &&
+                        sequenceOf(
+                            item.text,
+                            item.description,
+                            item.hint,
+                            item.viewId
+                        ).any(AccessibilityJoinMatcher::isSafeDialogCancel)
+                }
+                ?.node
+            if (terminalSurface && safeCancel != null) {
+                val cancelled = withContext(Dispatchers.Main.immediate) {
+                    clickNodeParentOrGesture(safeCancel, allowSafeClose = true)
+                }
+                if (cancelled) {
+                    delay(terminalDismissSettleDelayMs())
+                    return@repeat
+                }
+            }
+
             // Normal fallback: Android Back. Coordinate close is reserved for the last verified
             // invite attempt and never used on a normal conversation.
             if (step < maxSteps - 1) {
@@ -3499,7 +3671,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 GestureDescription.StrokeDescription(
                     path,
                     0,
-                    RuntimeCadencePolicy.gestureDurationMs(app.preferences.fastHandsFreeMode)
+                    runtimeSpeed().gestureDurationMs
                 )
             )
             .build()
@@ -3510,7 +3682,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         (dp * resources.displayMetrics.density).toInt().coerceAtLeast(1)
 
     private fun exitSettleDelayMs(): Long =
-        RuntimeCadencePolicy.exitSettleMs(app.preferences.fastHandsFreeMode)
+        runtimeSpeed().postTapWaitMs.coerceIn(6L, 120L)
 
     private suspend fun waitShortDelay(milliseconds: Long): Boolean {
         val safe = milliseconds.coerceAtLeast(0L)
@@ -3543,7 +3715,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
     }
 
     private fun resultInferenceDelayMs(): Long =
-        RuntimeCadencePolicy.resultInferenceDelayMs(app.preferences.fastHandsFreeMode)
+        runtimeSpeed().postTapWaitMs
 
     private fun refreshAutomationNotification(
         force: Boolean,
@@ -3688,8 +3860,8 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         private const val DIAGNOSTIC_REPEAT_SUPPRESSION_MS = 1_500L
         private const val IDEMPOTENCY_SUPPRESSION_MS = 1_200L
         private const val NOTIFICATION_REFRESH_MIN_MS = 300L
-        private const val DIRECT_CONVERSATION_STABLE_SCANS = 2
-        private const val DIRECT_CONVERSATION_FAST_MIN_AGE_MS = 180L
+        private const val DIRECT_CONVERSATION_STABLE_SCANS = 1
+        private const val DIRECT_CONVERSATION_FAST_MIN_AGE_MS = 60L
         private const val DIRECT_CONVERSATION_NORMAL_MIN_AGE_MS = 650L
         private const val DIRECT_CONVERSATION_WINDOW_EVENT_MAX_AGE_MS = 1_200L
         private const val ACCESSIBILITY_VISUAL_FAST_PROBE_AFTER_MS = 180L

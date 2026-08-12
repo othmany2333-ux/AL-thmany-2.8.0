@@ -40,6 +40,9 @@ import com.althmany.groupmanager.domain.AutomationStopReason
 import com.althmany.groupmanager.domain.HybridBackendPolicy
 import com.althmany.groupmanager.domain.NativeEngineSetupAction
 import com.althmany.groupmanager.domain.ProfileControlPolicy
+import com.althmany.groupmanager.domain.RestrictionHandlingMode
+import com.althmany.groupmanager.domain.RuntimeSpeedMode
+import com.althmany.groupmanager.domain.RuntimeSpeedProfilePolicy
 import com.althmany.groupmanager.domain.SessionRules
 import com.althmany.groupmanager.model.AutomationBackend
 import com.althmany.groupmanager.model.GroupLink
@@ -92,6 +95,9 @@ class MainActivity : AppCompatActivity() {
     private var accessibilityReconnectJob: Job? = null
     private var lastAutomaticInputHash: Int? = null
     private var detectedLinkCount: Int = 0
+    private var advancedSettingsVisible = false
+    private var runtimeSpeedBinding = false
+    private var autoResumeKickPending = false
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -143,6 +149,29 @@ class MainActivity : AppCompatActivity() {
             app.preferences.automationStopReason == AutomationStopReason.SESSION_COMPLETE
         ) {
             lastAutomaticInputHash = null
+        }
+
+        if (app.preferences.autoResumeCurrentRun && !autoResumeKickPending) {
+            val recoverable = app.preferences.automationStopReason in setOf(
+                AutomationStopReason.SERVICE_DISABLED,
+                AutomationStopReason.TARGET_UNSUPPORTED,
+                AutomationStopReason.OPEN_FAILED,
+                AutomationStopReason.BROWSER_FALLBACK,
+                AutomationStopReason.UNKNOWN_SCREEN,
+                AutomationStopReason.ACTION_TIMEOUT,
+                AutomationStopReason.RUNTIME_CIRCUIT_BREAKER
+            )
+            if (recoverable && !app.preferences.accessibilityBatchRunning &&
+                !app.preferences.hasScheduledStart && isAnyAutomationEngineReady()
+            ) {
+                autoResumeKickPending = true
+                binding.root.postDelayed({
+                    autoResumeKickPending = false
+                    if (canContinueQueuedBatch() && !app.preferences.accessibilityBatchRunning) {
+                        startAutomaticRun(allowQueuedContinuation = true)
+                    }
+                }, 350L)
+            }
         }
 
         if (pendingAutoStartAfterSettings &&
@@ -235,6 +264,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun configureTimingControls() = with(binding) {
+        configureRuntimeSpeedControls()
+
         delaySlider.value = app.preferences.interLinkDelayMs.toFloat()
         delayValueText.text = formatInterLinkDelay(app.preferences.interLinkDelayMs)
         delaySlider.addOnChangeListener { _, value, fromUser ->
@@ -296,6 +327,102 @@ class MainActivity : AppCompatActivity() {
         chooseClockButton.setOnClickListener { showClockPicker() }
         renderTimingControls()
         updateSessionEstimate()
+    }
+
+    private fun configureRuntimeSpeedControls() = with(binding) {
+        runtimeSpeedBinding = true
+        speedModeToggleGroup.check(
+            when (app.preferences.runtimeSpeedMode) {
+                RuntimeSpeedMode.STABLE -> R.id.speedStableButton
+                RuntimeSpeedMode.FAST -> R.id.speedFastButton
+                RuntimeSpeedMode.TURBO -> R.id.speedTurboButton
+                RuntimeSpeedMode.MAX -> R.id.speedMaxButton
+                RuntimeSpeedMode.CUSTOM -> R.id.speedCustomButton
+            }
+        )
+        customScanSlider.value = app.preferences.customScanMs.toFloat()
+        customPostTapSlider.value = app.preferences.customPostTapMs.toFloat()
+        customInterLinkSlider.value = app.preferences.customInterLinkMs.toFloat()
+        runtimeSpeedBinding = false
+
+        speedModeToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked || runtimeSpeedBinding) return@addOnButtonCheckedListener
+            app.preferences.runtimeSpeedMode = when (checkedId) {
+                R.id.speedStableButton -> RuntimeSpeedMode.STABLE
+                R.id.speedTurboButton -> RuntimeSpeedMode.TURBO
+                R.id.speedMaxButton -> RuntimeSpeedMode.MAX
+                R.id.speedCustomButton -> RuntimeSpeedMode.CUSTOM
+                else -> RuntimeSpeedMode.FAST
+            }
+            applyRuntimeSpeedCompatibilityValues()
+            renderRuntimeSpeedControls()
+        }
+
+        customScanSlider.addOnChangeListener { _, value, fromUser ->
+            if (!fromUser) return@addOnChangeListener
+            app.preferences.customScanMs = value.toInt()
+            customScanValueText.text = getString(
+                R.string.runtime_ms_format,
+                app.preferences.customScanMs
+            )
+        }
+        customPostTapSlider.addOnChangeListener { _, value, fromUser ->
+            if (!fromUser) return@addOnChangeListener
+            app.preferences.customPostTapMs = value.toInt()
+            customPostTapValueText.text = getString(
+                R.string.runtime_ms_format,
+                app.preferences.customPostTapMs
+            )
+        }
+        customInterLinkSlider.addOnChangeListener { _, value, fromUser ->
+            if (!fromUser) return@addOnChangeListener
+            app.preferences.customInterLinkMs = value.toInt()
+            app.preferences.interLinkDelayMs = app.preferences.customInterLinkMs
+            customInterLinkValueText.text = getString(
+                R.string.runtime_ms_format,
+                app.preferences.customInterLinkMs
+            )
+            delaySlider.value = app.preferences.interLinkDelayMs.toFloat()
+            delayValueText.text = formatInterLinkDelay(app.preferences.interLinkDelayMs)
+        }
+
+        renderRuntimeSpeedControls()
+    }
+
+    private fun applyRuntimeSpeedCompatibilityValues() {
+        val profile = app.preferences.runtimeSpeedProfile()
+        app.preferences.fastHandsFreeMode =
+            RuntimeSpeedProfilePolicy.isFast(app.preferences.runtimeSpeedMode)
+        app.preferences.interLinkDelayMs = profile.interLinkDelayMs.toInt()
+        binding.fastHandsFreeSwitch.isChecked = app.preferences.fastHandsFreeMode
+        binding.delaySlider.value = app.preferences.interLinkDelayMs.toFloat()
+        binding.delayValueText.text = formatInterLinkDelay(app.preferences.interLinkDelayMs)
+    }
+
+    private fun renderRuntimeSpeedControls() = with(binding) {
+        val custom = app.preferences.runtimeSpeedMode == RuntimeSpeedMode.CUSTOM
+        customSpeedControls.visibility = if (custom) View.VISIBLE else View.GONE
+        customScanValueText.text = getString(
+            R.string.runtime_ms_format,
+            app.preferences.customScanMs
+        )
+        customPostTapValueText.text = getString(
+            R.string.runtime_ms_format,
+            app.preferences.customPostTapMs
+        )
+        customInterLinkValueText.text = getString(
+            R.string.runtime_ms_format,
+            app.preferences.customInterLinkMs
+        )
+    }
+
+    private fun renderAdvancedSettings() = with(binding) {
+        advancedSmartCard.visibility = if (advancedSettingsVisible) View.VISIBLE else View.GONE
+        advancedScheduleCard.visibility = if (advancedSettingsVisible) View.VISIBLE else View.GONE
+        advancedSettingsButton.setText(
+            if (advancedSettingsVisible) R.string.hide_advanced_settings
+            else R.string.advanced_settings
+        )
     }
 
     private fun showDatePicker() {
@@ -393,6 +520,9 @@ class MainActivity : AppCompatActivity() {
         )
         autoResumeSwitch.setOnCheckedChangeListener { _, checked ->
             app.preferences.autoResumeCurrentRun = checked
+            if (compactAutoResumeSwitch.isChecked != checked) {
+                compactAutoResumeSwitch.isChecked = checked
+            }
             autoResumeHintText.setText(
                 if (checked) R.string.auto_resume_enabled_hint
                 else R.string.auto_resume_disabled_hint
@@ -470,6 +600,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
         startAutomationButton.setOnClickListener { startAutomaticRun(allowQueuedContinuation = true) }
+        resumeLastRunButton.setOnClickListener { startAutomaticRun(allowQueuedContinuation = true) }
+        advancedSettingsButton.setOnClickListener {
+            advancedSettingsVisible = !advancedSettingsVisible
+            renderAdvancedSettings()
+        }
+
+        compactAutoResumeSwitch.isChecked = app.preferences.autoResumeCurrentRun
+        compactAutoResumeSwitch.setOnCheckedChangeListener { _, checked ->
+            app.preferences.autoResumeCurrentRun = checked
+            if (autoResumeSwitch.isChecked != checked) autoResumeSwitch.isChecked = checked
+        }
+
+        continueOnRestrictionSwitch.isChecked =
+            app.preferences.restrictionHandlingMode == RestrictionHandlingMode.SKIP_AND_CONTINUE
+        continueOnRestrictionSwitch.setOnCheckedChangeListener { _, checked ->
+            app.preferences.restrictionHandlingMode =
+                if (checked) RestrictionHandlingMode.SKIP_AND_CONTINUE
+                else RestrictionHandlingMode.STOP_RUN
+        }
+
+        renderAdvancedSettings()
         pauseAutomationButton.setOnClickListener { toggleAutomationPause() }
         stopAutomationButton.setOnClickListener { stopAutomationFromUi() }
         skipCurrentButton.setOnClickListener { viewModel.markCurrentSkipped() }
@@ -582,6 +733,10 @@ class MainActivity : AppCompatActivity() {
         val scheduled = app.preferences.hasScheduledStart
         val controlsUnlocked = !running && !scheduled
         startAutomationButton.isEnabled = (!running || paused) && !scheduled
+        resumeLastRunButton.visibility =
+            if (!running && !scheduled && canContinueQueuedBatch()) View.VISIBLE else View.GONE
+        resumeLastRunButton.isEnabled = !running && !scheduled
+        compactAutoResumeSwitch.isEnabled = true
         autoStartSwitch.isEnabled = controlsUnlocked
         autoResumeSwitch.isEnabled = true
         autoPauseOutsideWhatsAppSwitch.isEnabled = true

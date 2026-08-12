@@ -506,4 +506,19 @@ Reason: %10$s</string>
     <string name="work_policy_already_allowed">The Work Profile policy already permits AL-thmany. Enable the service in Android settings, then analyze again.</string>
     <string name="work_policy_apply_failed">Unable to update the Work Profile Accessibility policy. Check the Profile Owner/work-manager status in diagnostics.</string>
 
+    <string name="runtime_speed_title">Engine speed</string>
+    <string name="speed_stable">Stable</string>
+    <string name="speed_fast">Fast</string>
+    <string name="speed_turbo">Turbo</string>
+    <string name="speed_max">MAX</string>
+    <string name="speed_custom">Custom</string>
+    <string name="custom_scan_title">Scan</string>
+    <string name="custom_post_tap_title">After tap</string>
+    <string name="custom_next_title">Between links</string>
+    <string name="runtime_ms_format">%1$dms</string>
+    <string name="advanced_settings">Advanced settings</string>
+    <string name="hide_advanced_settings">Hide advanced settings</string>
+    <string name="resume_last_run">Resume from last link</string>
+    <string name="continue_on_restriction">Skip Restriction and continue</string>
+    <string name="continue_on_restriction_hint">When off, the run stops on Restriction. WhatsApp restrictions are never bypassed.</string>
 </resources>

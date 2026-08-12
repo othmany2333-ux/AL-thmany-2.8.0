@@ -14,7 +14,7 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="96dp"
+            android:layout_height="82dp"
             android:background="@drawable/bg_hero_aurora"
             android:contentInsetStartWithNavigation="18dp"
             android:paddingHorizontal="14dp"
@@ -58,7 +58,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="22dp"
+                    app:cardCornerRadius="18dp"
                     app:cardElevation="3dp"
                     app:strokeColor="@color/aurora_border"
                     app:strokeWidth="1dp">
@@ -180,7 +180,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="22dp"
+                    app:cardCornerRadius="18dp"
                     app:cardElevation="3dp"
                     app:strokeColor="@color/aurora_border"
                     app:strokeWidth="1dp">
@@ -328,13 +328,235 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
+
+                <!-- Compact runtime controls: speed + resume + advanced -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/runtimeControlCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/aurora_border"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/runtime_speed_title"
+                            android:textColor="@color/nebula_primary_dark"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/speedModeToggleGroup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/speedStableButton"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:minWidth="0dp"
+                                android:paddingHorizontal="1dp"
+                                android:text="@string/speed_stable"
+                                android:textSize="8sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/speedFastButton"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:minWidth="0dp"
+                                android:paddingHorizontal="1dp"
+                                android:text="@string/speed_fast"
+                                android:textSize="8sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/speedTurboButton"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:minWidth="0dp"
+                                android:paddingHorizontal="1dp"
+                                android:text="@string/speed_turbo"
+                                android:textSize="8sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/speedMaxButton"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:minWidth="0dp"
+                                android:paddingHorizontal="1dp"
+                                android:text="@string/speed_max"
+                                android:textSize="8sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/speedCustomButton"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:minWidth="0dp"
+                                android:paddingHorizontal="1dp"
+                                android:text="@string/speed_custom"
+                                android:textSize="8sp" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        <LinearLayout
+                            android:id="@+id/customSpeedControls"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/custom_scan_title"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="10sp" />
+                                <TextView
+                                    android:id="@+id/customScanValueText"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="12ms"
+                                    android:textColor="@color/nebula_primary_dark"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/customScanSlider"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:stepSize="2"
+                                android:value="12"
+                                android:valueFrom="6"
+                                android:valueTo="250" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/custom_post_tap_title"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="10sp" />
+                                <TextView
+                                    android:id="@+id/customPostTapValueText"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="55ms"
+                                    android:textColor="@color/nebula_primary_dark"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/customPostTapSlider"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:stepSize="5"
+                                android:value="55"
+                                android:valueFrom="0"
+                                android:valueTo="1000" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/custom_next_title"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="10sp" />
+                                <TextView
+                                    android:id="@+id/customInterLinkValueText"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0ms"
+                                    android:textColor="@color/nebula_primary_dark"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/customInterLinkSlider"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:stepSize="50"
+                                android:value="0"
+                                android:valueFrom="0"
+                                android:valueTo="10000" />
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/compactAutoResumeSwitch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/auto_resume_title"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/resumeLastRunButton"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/resume_last_run"
+                            android:textSize="10sp"
+                            android:visibility="gone" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/advancedSettingsButton"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/advanced_settings"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <!-- Smart controls -->
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/advancedSmartCard"
+                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="22dp"
+                    app:cardCornerRadius="18dp"
                     app:cardElevation="3dp"
                     app:strokeColor="@color/aurora_border"
                     app:strokeWidth="1dp">
@@ -610,6 +832,29 @@
                                 android:layout_height="wrap_content" />
                         </LinearLayout>
 
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/continueOnRestrictionSwitch"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/continue_on_restriction"
+                                android:textColor="@color/text_primary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/continue_on_restriction_hint"
+                                android:textColor="@color/text_tertiary"
+                                android:textSize="9sp" />
+                        </LinearLayout>
+
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -622,11 +867,13 @@
 
                 <!-- Scheduling -->
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/advancedScheduleCard"
+                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="22dp"
+                    app:cardCornerRadius="18dp"
                     app:cardElevation="1dp"
                     app:strokeColor="@color/aurora_border"
                     app:strokeWidth="1dp">
@@ -794,7 +1041,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     app:cardBackgroundColor="@color/swift_status_surface"
-                    app:cardCornerRadius="22dp"
+                    app:cardCornerRadius="18dp"
                     app:cardElevation="3dp"
                     app:strokeColor="@color/swift_border"
                     app:strokeWidth="1dp">
@@ -884,7 +1131,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="22dp"
+                    app:cardCornerRadius="18dp"
                     app:strokeColor="@color/aurora_border"
                     app:strokeWidth="1dp">
                     <TextView
@@ -903,7 +1150,7 @@
                     android:layout_marginTop="10dp"
                     android:visibility="gone"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="22dp"
+                    app:cardCornerRadius="18dp"
                     app:cardElevation="3dp"
                     app:strokeColor="@color/aurora_border"
                     app:strokeWidth="1dp">

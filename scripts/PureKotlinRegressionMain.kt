@@ -671,6 +671,22 @@ fun main() {
     expect("fast fallback poll avoids busy loop", 80L, RuntimeCadencePolicy.pollIntervalMs(true))
     expect("fast event scan cadence", 12L, RuntimeCadencePolicy.minScanIntervalMs(true, 1))
     expect("stable fast screen relaxes cadence", 30L, RuntimeCadencePolicy.minScanIntervalMs(true, 8))
+    val maxSpeed = RuntimeSpeedProfilePolicy.resolve(RuntimeSpeedMode.MAX)
+    expect("MAX event scan", 6L, maxSpeed.eventScanMs)
+    expect("MAX stable scan", 14L, maxSpeed.stableScanMs)
+    expect("MAX fallback poll", 40L, maxSpeed.fallbackPollMs)
+    expect("MAX post tap", 22L, maxSpeed.postTapWaitMs)
+    expect("MAX next link", 0L, maxSpeed.interLinkDelayMs)
+
+    val customSpeed = RuntimeSpeedProfilePolicy.resolve(
+        RuntimeSpeedMode.CUSTOM,
+        customScanMs = 18,
+        customPostTapMs = 75,
+        customInterLinkMs = 0
+    )
+    expect("Custom event scan", 18L, customSpeed.eventScanMs)
+    expect("Custom post tap", 75L, customSpeed.postTapWaitMs)
+    expect("Custom zero next", 0L, customSpeed.interLinkDelayMs)
     expect(
         "stalled unknown is recoverable",
         true,

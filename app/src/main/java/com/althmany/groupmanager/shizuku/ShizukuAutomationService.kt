@@ -25,6 +25,8 @@ import com.althmany.groupmanager.domain.AutomationPolicy
 import com.althmany.groupmanager.domain.AutomationScreenKind
 import com.althmany.groupmanager.domain.AutomationStage
 import com.althmany.groupmanager.domain.AutomationStopReason
+import com.althmany.groupmanager.domain.LinkRuntimePhase
+import com.althmany.groupmanager.domain.RestrictionHandlingMode
 import com.althmany.groupmanager.domain.CommunityTraversalPolicy
 import com.althmany.groupmanager.domain.CommunityTraversalStage
 import com.althmany.groupmanager.domain.ShizukuBounds
@@ -72,6 +74,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ShizukuAutomationService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val app: GroupManagerApp get() = application as GroupManagerApp
+
+    private fun runtimeSpeed() = app.preferences.runtimeSpeedProfile()
     private var runJob: Job? = null
     private val resultCommitExecuting = AtomicBoolean(false)
 
@@ -220,6 +224,13 @@ class ShizukuAutomationService : Service() {
                 )
             }
 
+            prefs.beginRuntimeLink(
+                current.id,
+                current.position,
+                current.url,
+                "SHIZUKU"
+            )
+
             if (!prefs.communityTraversalActive &&
                 (prefs.automationStage == AutomationStage.OPENING_LINK ||
                     prefs.automationStage == AutomationStage.WAITING_BEFORE_NEXT)
@@ -235,7 +246,7 @@ class ShizukuAutomationService : Service() {
                 }
                 prefs.markAutomationLaunched()
                 updateNotification(getString(R.string.shizuku_service_opened_link, current.position + 1))
-                if (fastUiMode != FastUiMode.ACTIVE) delay(OPEN_SETTLE_MS)
+                if (fastUiMode != FastUiMode.ACTIVE) delay(runtimeSpeed().postTapWaitMs.coerceAtMost(OPEN_SETTLE_MS))
             }
 
             if (!isTargetForeground(targetPackage)) {
@@ -278,7 +289,7 @@ class ShizukuAutomationService : Service() {
                     )
                     continue
                 }
-                delay(FOREGROUND_RECHECK_MS)
+                delay(runtimeSpeed().stableScanMs)
                 continue
             }
             foregroundWaitStartedAt = 0L
@@ -286,11 +297,11 @@ class ShizukuAutomationService : Service() {
 
             val snapshot = dumpSnapshot(current, targetPackage) ?: run {
                 if (handleVisualProfileFallback(current, targetPackage)) continue
-                if (fastUiMode != FastUiMode.ACTIVE) delay(DUMP_RETRY_MS)
+                if (fastUiMode != FastUiMode.ACTIVE) delay(runtimeSpeed().stableScanMs)
                 continue
             }
             if (handleSnapshot(current, targetPackage, snapshot)) return
-            if (fastUiMode != FastUiMode.ACTIVE) delay(SCAN_INTERVAL_MS)
+            if (fastUiMode != FastUiMode.ACTIVE) delay(runtimeSpeed().eventScanMs)
         }
 
         if (!prefs.accessibilityBatchRunning) stopSelf()
@@ -379,19 +390,51 @@ class ShizukuAutomationService : Service() {
         snapshot: ShizukuUiSnapshot
     ): Boolean {
         val prefs = app.preferences
+        prefs.markRuntimePhase(
+            when {
+                snapshot.screenKind == AutomationScreenKind.LOADING -> LinkRuntimePhase.OPENING
+                snapshot.screenKind == AutomationScreenKind.PREVIEW_ACTION -> LinkRuntimePhase.PREVIEW
+                snapshot.screenKind in setOf(
+                    AutomationScreenKind.JOIN_ACTION,
+                    AutomationScreenKind.REQUEST_ACTION
+                ) -> LinkRuntimePhase.ACTION_READY
+                readPendingAction(current) != null -> LinkRuntimePhase.VERIFYING
+                else -> prefs.runtimeLinkPhase
+            },
+            "SHIZUKU:${snapshot.screenKind.name}"
+        )
         updateSnapshotStability(snapshot)
 
         if (snapshot.screenKind == AutomationScreenKind.RESTRICTED) {
-            withContext(Dispatchers.IO) {
-                app.repository.markStatus(
-                    current.id,
-                    LinkStatus.FAILED,
-                    LinkResultCode.RESTRICTED,
-                    "WhatsApp displayed a restriction/retry-later screen while Shizuku was active"
+            if (prefs.restrictionHandlingMode == RestrictionHandlingMode.STOP_RUN) {
+                withContext(Dispatchers.IO) {
+                    app.repository.markStatus(
+                        current.id,
+                        LinkStatus.FAILED,
+                        LinkResultCode.RESTRICTED,
+                        prefs.buildRuntimeAuditDetail(
+                            "WhatsApp displayed a restriction/retry-later screen; no bypass attempted",
+                            LinkResultCode.RESTRICTED.name,
+                            "SHIZUKU"
+                        )
+                    )
+                }
+                stopRun(
+                    AutomationStopReason.RESTRICTED_SCREEN,
+                    "Restriction detected; user policy is Stop run"
                 )
+                return true
             }
-            stopRun(AutomationStopReason.RESTRICTED_SCREEN, "Restriction screen detected; no bypass attempted")
-            return true
+
+            completeTerminalResult(
+                current,
+                LinkStatus.FAILED,
+                LinkResultCode.RESTRICTED,
+                "Restriction recorded for this link; no bypass attempted",
+                snapshot,
+                targetPackage
+            )
+            return false
         }
 
         if (maybeHandleCommunityTraversal(current, targetPackage, snapshot)) return false
@@ -671,16 +714,30 @@ class ShizukuAutomationService : Service() {
                 current, LinkStatus.FAILED, LinkResultCode.WHATSAPP_REJECTED, decision.diagnostic, snapshot, targetPackage
             )
             AutomationCommand.STOP_RESTRICTED -> {
-                stopRun(AutomationStopReason.RESTRICTED_SCREEN, decision.diagnostic)
-                return true
+                if (prefs.restrictionHandlingMode == RestrictionHandlingMode.STOP_RUN) {
+                    stopRun(AutomationStopReason.RESTRICTED_SCREEN, decision.diagnostic)
+                    return true
+                }
+                completeTerminalResult(
+                    current,
+                    LinkStatus.FAILED,
+                    LinkResultCode.RESTRICTED,
+                    "${decision.diagnostic}; recorded and continued",
+                    snapshot,
+                    targetPackage
+                )
+                return false
             }
             AutomationCommand.STOP_UNKNOWN -> {
+                if (attemptUnknownRecoveryOnce(current, targetPackage, snapshot)) {
+                    return false
+                }
                 runtimeDiagnostic(current, "SHIZUKU_UNKNOWN_CONTINUITY_ADVANCE", decision.diagnostic)
                 completeCurrent(
                     current,
                     LinkStatus.FAILED,
                     LinkResultCode.UNKNOWN_SCREEN,
-                    "${decision.diagnostic}. Continuity mode advanced without guessing or pressing an unsafe action"
+                    "${decision.diagnostic}. Scan/Exit/Back/one-reopen recovery exhausted; skipped safely"
                 )
                 return false
             }
@@ -1006,12 +1063,50 @@ class ShizukuAutomationService : Service() {
             )
             emptyDumpStartedAt = 0L
             consecutiveDumpFailures = 0
-            stopRun(
-                AutomationStopReason.TARGET_UNSUPPORTED,
-                "Shizuku could not obtain a WhatsApp UI hierarchy after compatibility recovery. The current link was preserved and was not marked failed."
+            completeCurrent(
+                current,
+                LinkStatus.FAILED,
+                LinkResultCode.UNKNOWN_SCREEN,
+                "Shizuku UI hierarchy remained unavailable after bounded recovery; link recorded UNKNOWN and queue continued"
             )
         }
         return null
+    }
+
+    private suspend fun attemptUnknownRecoveryOnce(
+        current: GroupLink,
+        targetPackage: String,
+        snapshot: ShizukuUiSnapshot
+    ): Boolean {
+        if (readPendingAction(current) != null) return false
+        if (!app.preferences.recordRecoveryReopen(current.id)) return false
+
+        app.preferences.markRuntimePhase(
+            LinkRuntimePhase.EXITING,
+            "SHIZUKU:UNKNOWN_RECOVERY"
+        )
+        if (snapshot.inviteContext || snapshot.conversationSurface) {
+            dismissKnownResultSurface(targetPackage, current, snapshot)
+        }
+
+        val reopened = openInvitation(
+            current,
+            targetPackage,
+            forceResolvedActivity = true
+        )
+        if (reopened) {
+            app.preferences.markAutomationLaunched()
+            app.preferences.markRuntimePhase(
+                LinkRuntimePhase.OPENING,
+                "SHIZUKU:RECOVERY_REOPENED"
+            )
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_UNKNOWN_REOPEN",
+                "one bounded exact-user/package Deep Link recovery dispatched"
+            )
+        }
+        return reopened
     }
 
     private suspend fun beginCommunityTraversalAfterJoin(
@@ -1260,7 +1355,17 @@ class ShizukuAutomationService : Service() {
                 CommunityTraversalStage.PROCESSING_GROUP
             )
         if (!subgroup) {
-            if (snapshot.inviteContext || snapshot.conversationSurface) {
+            val terminalSurface = snapshot.screenKind in setOf(
+                AutomationScreenKind.REQUEST_SUBMITTED,
+                AutomationScreenKind.ALREADY_MEMBER,
+                AutomationScreenKind.GROUP_FULL,
+                AutomationScreenKind.INVALID_OR_EXPIRED,
+                AutomationScreenKind.REMOVED_OR_BANNED,
+                AutomationScreenKind.GENERIC_FAILURE,
+                AutomationScreenKind.RESTRICTED
+            )
+            if (snapshot.inviteContext || snapshot.conversationSurface || terminalSurface) {
+                prefs.markRuntimePhase(LinkRuntimePhase.EXITING, "SHIZUKU:SMART_EXIT")
                 dismissKnownResultSurface(targetPackage, current, snapshot)
             }
             completeCurrent(current, status, resultCode, detail)
@@ -1382,8 +1487,33 @@ class ShizukuAutomationService : Service() {
             }
         }
 
-        // 2) Conversation/result fallback: at most two verified Back attempts.
-        repeat(2) { attempt ->
+        val safeCancel = snapshot.nodes.asSequence()
+            .filter { node ->
+                node.enabled &&
+                    node.bounds?.valid == true &&
+                    node.belongsTo(targetPackage)
+            }
+            .firstOrNull { node ->
+                node.labels().any(AccessibilityJoinMatcher::isSafeDialogCancel)
+            }
+        if (safeCancel?.bounds != null) {
+            val dismissed = tapNode(
+                safeCancel.bounds,
+                targetPackage,
+                current,
+                "RESULT_SAFE_CANCEL"
+            )
+            if (dismissed) {
+                delay(runtimeSpeed().postTapWaitMs.coerceIn(6L, 120L))
+                val afterCancel = quickResultSnapshot(targetPackage)
+                if (afterCancel == null) return true
+                snapshot = afterCancel
+                if (!snapshot.inviteContext && !snapshot.conversationSurface) return true
+            }
+        }
+
+        // 3) Conversation/result fallback: bounded verified Back attempts.
+        repeat(com.althmany.groupmanager.domain.SmartExitControllerPolicy.MAX_BACK_ATTEMPTS) { attempt ->
             if (!snapshot.inviteContext && !snapshot.conversationSurface) return true
             if (!pressResultBack(targetPackage, current, "RESULT_EXIT_${attempt + 1}")) return false
 
@@ -1623,6 +1753,14 @@ class ShizukuAutomationService : Service() {
             cachedResolvedActivityUserId = null
             cachedResolvedActivityTargetPackage = null
             cachedResolvedActivityName = null
+        }
+        if (id != null && !app.preferences.lockRuntimeAndroidUserId(id)) {
+            RuntimeDiagnosticStore.append(
+                this,
+                "SHIZUKU_ANDROID_USER_MISMATCH",
+                "expected=${app.preferences.runtimeLockedAndroidUserId}; actual=$id; target=$targetPackage"
+            )
+            return null
         }
         cachedTargetPackage = targetPackage
         cachedAndroidUserId = id
@@ -1913,6 +2051,11 @@ class ShizukuAutomationService : Service() {
             return false
         }
         consecutiveInputFailures = 0
+        app.preferences.recordRuntimeAction(purpose, "SHIZUKU")
+        app.preferences.markRuntimePhase(
+            LinkRuntimePhase.ACTION_TAPPED,
+            "SHIZUKU:$purpose"
+        )
         armFastBurst()
         return true
     }
@@ -1961,7 +2104,11 @@ class ShizukuAutomationService : Service() {
 
     private suspend fun waitInputCooldown() {
         val elapsed = SystemClock.elapsedRealtime() - lastInputAtElapsed
-        val cooldown = ShizukuRuntimePolicy.inputCooldownMs(fastUiMode == FastUiMode.ACTIVE)
+        val cooldown = if (fastUiMode == FastUiMode.ACTIVE) {
+            runtimeSpeed().clickThrottleMs
+        } else {
+            ShizukuRuntimePolicy.inputCooldownMs(false)
+        }
         val wait = cooldown - elapsed
         if (wait > 0) delay(wait)
     }
@@ -1990,7 +2137,20 @@ class ShizukuAutomationService : Service() {
             withContext(Dispatchers.IO) {
                 val stillCurrent = app.repository.loadAutomationCurrent(sessionId)
                 if (stillCurrent?.id != current.id) return@withContext null
-                app.repository.markStatus(current.id, status, resultCode, detail)
+                prefs.markRuntimePhase(
+                    LinkRuntimePhase.EXITING,
+                    "SHIZUKU:${resultCode.name}"
+                )
+                val auditedDetail = prefs.buildRuntimeAuditDetail(
+                    detail,
+                    resultCode.name,
+                    "SHIZUKU"
+                )
+                app.repository.markStatus(current.id, status, resultCode, auditedDetail)
+                prefs.finishRuntimeLink(
+                    current.position,
+                    "SHIZUKU:${resultCode.name}"
+                )
                 prefs.clearAccessibilityPending()
                 prefs.accessibilityProcessedCount += 1
                 val processed = prefs.accessibilityProcessedCount
@@ -2020,15 +2180,28 @@ class ShizukuAutomationService : Service() {
         resetPerLinkEvidence()
 
         if (state.limitReached) {
-            completeRun(AutomationStopReason.BATCH_LIMIT_REACHED, "Shizuku explicit-run limit reached")
-            return
+            if (prefs.autoResumeCurrentRun && state.next != null) {
+                prefs.accessibilityProcessedCount = 0
+                runtimeDiagnostic(
+                    current,
+                    "SHIZUKU_AUTO_BATCH_CONTINUE",
+                    "1000-link internal window completed; Auto Resume continues queued links"
+                )
+            } else {
+                completeRun(
+                    AutomationStopReason.BATCH_LIMIT_REACHED,
+                    "Shizuku run window reached; queued links remain resumable"
+                )
+                return
+            }
         }
         if (state.complete || state.next == null) {
             completeRun(AutomationStopReason.SESSION_COMPLETE, "All invitation links are complete")
             return
         }
 
-        val waitMs = prefs.interLinkDelayMs.toLong()
+        prefs.markRuntimePhase(LinkRuntimePhase.ADVANCING, "SHIZUKU:NEXT")
+        val waitMs = prefs.runtimeSpeedProfile().interLinkDelayMs
         prefs.transitionAutomation(
             AutomationStage.WAITING_BEFORE_NEXT,
             if (waitMs <= 0L) "Result recorded; direct Accessibility-like next-link handoff"
@@ -2105,20 +2278,23 @@ class ShizukuAutomationService : Service() {
 
     private fun fastFrameTimeoutMs(current: GroupLink): Long {
         val pending = readPendingAction(current)
+        val speed = runtimeSpeed()
         return when {
             pending != null -> {
                 val untilResultFallback = (ShizukuFastUiPolicy.RESULT_ANALYSIS_FALLBACK_MS - pendingAgeMs())
                     .coerceAtLeast(1L)
-                minOf(ShizukuFastUiPolicy.WATCHDOG_INTERVAL_MS, untilResultFallback)
+                minOf(speed.watchdogIntervalMs, untilResultFallback)
             }
-            SystemClock.elapsedRealtime() <= fastBurstUntilElapsed -> ShizukuFastUiPolicy.STABLE_SCAN_MS
-            stableSnapshotScans < ShizukuFastUiPolicy.STABLE_SCANS_BEFORE_FALLBACK_POLL -> ShizukuFastUiPolicy.STABLE_SCAN_MS
-            else -> ShizukuFastUiPolicy.FALLBACK_POLL_MS
+            SystemClock.elapsedRealtime() <= fastBurstUntilElapsed -> speed.stableScanMs
+            stableSnapshotScans < ShizukuFastUiPolicy.STABLE_SCANS_BEFORE_FALLBACK_POLL -> speed.stableScanMs
+            else -> speed.fallbackPollMs
         }
     }
 
     private fun postJoinMinEvidenceMs(): Long =
-        if (fastUiMode == FastUiMode.ACTIVE) ShizukuFastUiPolicy.POST_JOIN_MIN_EVIDENCE_MS else POST_JOIN_MIN_MS
+        if (fastUiMode == FastUiMode.ACTIVE) {
+            runtimeSpeed().postTapWaitMs.coerceAtLeast(12L)
+        } else POST_JOIN_MIN_MS
 
     private fun postJoinStableScans(): Int =
         if (fastUiMode == FastUiMode.ACTIVE) ShizukuFastUiPolicy.POST_JOIN_STABLE_SCANS
@@ -2175,7 +2351,7 @@ class ShizukuAutomationService : Service() {
         pending: AccessibilityJoinAction?
     ): Boolean {
         if (pending !in setOf(AccessibilityJoinAction.JOIN, AccessibilityJoinAction.REQUEST)) return false
-        if (pendingAgeMs() < ShizukuFastUiPolicy.ACTION_RETRY_AFTER_MS) return false
+        if (pendingAgeMs() < runtimeSpeed().actionRetryAfterMs) return false
         if (app.preferences.automationRetryCount >= ShizukuFastUiPolicy.MAX_ACTION_ATTEMPTS - 1) return false
         val expectedScreen = if (pending == AccessibilityJoinAction.JOIN) AutomationScreenKind.JOIN_ACTION else AutomationScreenKind.REQUEST_ACTION
         if (snapshot.screenKind != expectedScreen) return false

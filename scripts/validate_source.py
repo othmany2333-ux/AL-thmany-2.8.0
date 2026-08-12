@@ -142,6 +142,7 @@ runtime_circuit = (JAVA / "com/althmany/groupmanager/domain/RuntimeCircuitBreake
 continuous_handoff = (JAVA / "com/althmany/groupmanager/domain/ContinuousHandoffPolicy.kt").read_text(encoding="utf-8")
 runtime_idempotency = (JAVA / "com/althmany/groupmanager/domain/RuntimeIdempotencyGuard.kt").read_text(encoding="utf-8")
 runtime_cadence = (JAVA / "com/althmany/groupmanager/domain/RuntimeCadencePolicy.kt").read_text(encoding="utf-8")
+runtime_speed_profile = (JAVA / "com/althmany/groupmanager/domain/RuntimeSpeedProfile.kt").read_text(encoding="utf-8")
 runtime_recovery = (JAVA / "com/althmany/groupmanager/domain/RuntimeRecoveryPolicy.kt").read_text(encoding="utf-8")
 runtime_diagnostics = (JAVA / "com/althmany/groupmanager/util/RuntimeDiagnosticStore.kt").read_text(encoding="utf-8")
 foreground_policy = (JAVA / "com/althmany/groupmanager/domain/ForegroundTargetPolicy.kt").read_text(encoding="utf-8")
@@ -172,6 +173,12 @@ shizuku_launch_policy = (JAVA / "com/althmany/groupmanager/domain/ShizukuLaunchP
 group_app = (JAVA / "com/althmany/groupmanager/GroupManagerApp.kt").read_text(encoding="utf-8")
 
 checks = {
+    "3.0 five speed modes": all(token in runtime_speed_profile for token in ["STABLE", "FAST", "TURBO", "MAX", "CUSTOM", "eventScanMs", "postTapWaitMs", "interLinkDelayMs"]),
+    "3.0 professional link phases": all(token in runtime_speed_profile for token in ["OPENING", "PREVIEW", "ACTION_READY", "ACTION_TAPPED", "VERIFYING", "EXITING", "ADVANCING"]),
+    "3.0 Smart Exit controller": all(token in runtime_speed_profile for token in ["SAFE_CLOSE", "TERMINAL_ACK", "SAFE_CANCEL", "BACK", "DIRECT_NEXT_DEEP_LINK"]) and "isSafeDialogCancel" in matcher,
+    "3.0 persistent resume state": all(token in preferences_source for token in ["runtimeLockedAndroidUserId", "runtimeCurrentLinkId", "runtimeCurrentLinkUrl", "runtimeActionExecuted", "runtimeRecoveryReopenAttempts", "lastCompletedLinkPosition"]),
+    "3.0 restriction user policy": "RestrictionHandlingMode" in runtime_speed_profile and "continueOnRestrictionSwitch" in main_activity and "restrictionHandlingMode" in preferences_source,
+    "3.0 compact dashboard": all(token in main_layout for token in ["speedModeToggleGroup", "customSpeedControls", "resumeLastRunButton", "advancedSettingsButton", "advancedSmartCard", "advancedScheduleCard"]),
     "Hybrid auto engine failover 2.9.0": "ACCESSIBILITY_UNBOUND_SHIZUKU_FALLBACK" in native_profile_engine_policy and "isAnyAutomationEngineReady" in main_activity and "المحرك المختار تلقائيًا: Shizuku السريع" in main_activity,
 
     "hybrid Shizuku to Accessibility fallback": "accessibilityMayTakeOver" in hybrid_policy and "chooseForStart" in hybrid_policy,
@@ -179,8 +186,8 @@ checks = {
     "profile-key launch continuity": "expectedProfileKey" in whatsapp_launcher,
     "AL-thmany namespace": 'namespace = "com.althmany.groupmanager"' in build,
     "AL-thmany application id": 'applicationId = "com.althmany.groupmanager"' in build,
-    "versionCode 290": "versionCode = 290" in build,
-    "versionName 2.9.0": 'versionName = "2.9.0"' in build,
+    "versionCode 300": "versionCode = 300" in build,
+    "versionName 3.0.0": 'versionName = "3.0.0"' in build,
     "Accessibility permission gate 2.6.4": all(token in main_activity for token in ["permissionConfigured", "waitForLocalAccessibilityBind", "shouldPromptAccessibilitySetup", "accessibility_enabled_but_not_bound"]),
     "Accessibility setup debounce policy 2.6.4": all(token in profile_control_policy for token in ["ACCESSIBILITY_SETUP_CONFIRM_READS = 3", "ACCESSIBILITY_RECONNECT_WAIT_MS = 4_000L", "ACCESSIBILITY_RECONNECT_POLL_MS = 100L", "shouldPromptAccessibilitySetup"]),
     "Accessibility Samsung live readiness 2.7.4": all(token in accessibility_status for token in ["isRuntimeConnected", "secureSettingEnabled", "isLocalConnectionAlive", "profileHeartbeatConnected = runtime.localServiceConnected"]) and all(token in service for token in ["override fun onCreate()", "PROFILE_SERVICE_EVENT_RECOVERED"]),
@@ -341,7 +348,7 @@ checks = {
     "privacy-safe rotating diagnostics": "MAX_BYTES = 256 * 1024L" in runtime_diagnostics and "never stores message contents" in runtime_diagnostics.lower(),
     "runtime micro-benchmark": (ROOT / "scripts/run_runtime_benchmarks.sh").exists() and (ROOT / "scripts/RuntimeBenchmarkMain.kt").exists(),
     "live runtime health line": (JAVA / "com/althmany/groupmanager/util/RuntimeHealthMonitor.kt").exists() and "runtime_health_format" in (RES / "values/strings.xml").read_text(encoding="utf-8") and "RuntimeHealthMonitor.snapshot" in main_activity,
-    "adaptive event-first cadence": all(token in runtime_cadence for token in ("FAST_FALLBACK_POLL_MS = 80L", "FAST_EVENT_SCAN_MS = 12L", "FAST_STABLE_SCAN_MS = 30L", "FAST_CLICK_THROTTLE_MS = 60L")) and "RuntimeCadencePolicy.minScanIntervalMs" in service,
+    "adaptive event-first cadence": all(token in runtime_speed_profile for token in ("eventScanMs", "stableScanMs", "fallbackPollMs", "clickThrottleMs")) and all(token in service for token in ("runtimeSpeed()", "speed.eventScanMs", "speed.stableScanMs", "runtimeSpeed().fallbackPollMs")),
     "missing-root self recovery": "handleUnavailableRoot" in service and "FAST_ROOT_UNAVAILABLE_TIMEOUT_MS = 2_500L" in runtime_recovery,
     "recoverable accessibility interruption": "Accessibility was interrupted temporarily; recovery is armed" in service and "onServiceConnected() resumes" in service,
     "actionable stalled-screen recovery": "shouldAdvanceStalledUnknown" in runtime_recovery and "Self-recovery advanced an inert WhatsApp screen" in service,

@@ -6,6 +6,12 @@ import com.althmany.groupmanager.domain.AutomationStage
 import com.althmany.groupmanager.domain.AutomationStopReason
 import com.althmany.groupmanager.domain.AccessibilityInviteTarget
 import com.althmany.groupmanager.domain.CommunityTraversalStage
+import com.althmany.groupmanager.domain.LinkRuntimePhase
+import com.althmany.groupmanager.domain.RestrictionHandlingMode
+import com.althmany.groupmanager.domain.RuntimeSpeedMode
+import com.althmany.groupmanager.domain.RuntimeSpeedProfile
+import com.althmany.groupmanager.domain.RuntimeSpeedProfilePolicy
+import com.althmany.groupmanager.domain.SmartResultClassifier
 import com.althmany.groupmanager.model.AutomationBackend
 import com.althmany.groupmanager.model.PreferredTarget
 import com.althmany.groupmanager.model.ThemeMode
@@ -41,6 +47,228 @@ class AppPreferences(context: Context) {
     var fastHandsFreeMode: Boolean
         get() = preferences.getBoolean(KEY_FAST_HANDS_FREE_MODE, true)
         set(value) = preferences.edit().putBoolean(KEY_FAST_HANDS_FREE_MODE, value).apply()
+
+    var runtimeSpeedMode: RuntimeSpeedMode
+        get() = enumValueOrDefault(
+            preferences.getString(KEY_RUNTIME_SPEED_MODE, null),
+            RuntimeSpeedMode.FAST
+        )
+        set(value) = preferences.edit().putString(KEY_RUNTIME_SPEED_MODE, value.name).apply()
+
+    var customScanMs: Int
+        get() = preferences.getInt(KEY_CUSTOM_SCAN_MS, 12)
+            .coerceIn(
+                RuntimeSpeedProfilePolicy.MIN_CUSTOM_SCAN_MS,
+                RuntimeSpeedProfilePolicy.MAX_CUSTOM_SCAN_MS
+            )
+        set(value) = preferences.edit()
+            .putInt(
+                KEY_CUSTOM_SCAN_MS,
+                value.coerceIn(
+                    RuntimeSpeedProfilePolicy.MIN_CUSTOM_SCAN_MS,
+                    RuntimeSpeedProfilePolicy.MAX_CUSTOM_SCAN_MS
+                )
+            )
+            .apply()
+
+    var customPostTapMs: Int
+        get() = preferences.getInt(KEY_CUSTOM_POST_TAP_MS, 55)
+            .coerceIn(
+                RuntimeSpeedProfilePolicy.MIN_CUSTOM_POST_TAP_MS,
+                RuntimeSpeedProfilePolicy.MAX_CUSTOM_POST_TAP_MS
+            )
+        set(value) = preferences.edit()
+            .putInt(
+                KEY_CUSTOM_POST_TAP_MS,
+                value.coerceIn(
+                    RuntimeSpeedProfilePolicy.MIN_CUSTOM_POST_TAP_MS,
+                    RuntimeSpeedProfilePolicy.MAX_CUSTOM_POST_TAP_MS
+                )
+            )
+            .apply()
+
+    var customInterLinkMs: Int
+        get() = preferences.getInt(KEY_CUSTOM_INTER_LINK_MS, 0)
+            .coerceIn(
+                RuntimeSpeedProfilePolicy.MIN_CUSTOM_INTER_LINK_MS,
+                RuntimeSpeedProfilePolicy.MAX_CUSTOM_INTER_LINK_MS
+            )
+        set(value) = preferences.edit()
+            .putInt(
+                KEY_CUSTOM_INTER_LINK_MS,
+                value.coerceIn(
+                    RuntimeSpeedProfilePolicy.MIN_CUSTOM_INTER_LINK_MS,
+                    RuntimeSpeedProfilePolicy.MAX_CUSTOM_INTER_LINK_MS
+                )
+            )
+            .apply()
+
+    fun runtimeSpeedProfile(): RuntimeSpeedProfile =
+        RuntimeSpeedProfilePolicy.resolve(
+            runtimeSpeedMode,
+            customScanMs,
+            customPostTapMs,
+            customInterLinkMs
+        )
+
+    var restrictionHandlingMode: RestrictionHandlingMode
+        get() = enumValueOrDefault(
+            preferences.getString(KEY_RESTRICTION_HANDLING_MODE, null),
+            RestrictionHandlingMode.SKIP_AND_CONTINUE
+        )
+        set(value) = preferences.edit()
+            .putString(KEY_RESTRICTION_HANDLING_MODE, value.name)
+            .apply()
+
+    var runtimeLockedAndroidUserId: Int
+        get() = preferences.getInt(KEY_RUNTIME_LOCKED_ANDROID_USER_ID, -1)
+        private set(value) = preferences.edit()
+            .putInt(KEY_RUNTIME_LOCKED_ANDROID_USER_ID, value)
+            .apply()
+
+    fun lockRuntimeAndroidUserId(userId: Int): Boolean {
+        if (userId < 0) return false
+        val current = runtimeLockedAndroidUserId
+        if (current >= 0 && current != userId) return false
+        runtimeLockedAndroidUserId = userId
+        return true
+    }
+
+    var runtimeLinkPhase: LinkRuntimePhase
+        get() = enumValueOrDefault(
+            preferences.getString(KEY_RUNTIME_LINK_PHASE, null),
+            LinkRuntimePhase.OPENING
+        )
+        private set(value) = preferences.edit().putString(KEY_RUNTIME_LINK_PHASE, value.name).apply()
+
+    var runtimeCurrentLinkId: Long
+        get() = preferences.getLong(KEY_RUNTIME_CURRENT_LINK_ID, -1L)
+        private set(value) = preferences.edit().putLong(KEY_RUNTIME_CURRENT_LINK_ID, value).apply()
+
+    var runtimeCurrentLinkPosition: Int
+        get() = preferences.getInt(KEY_RUNTIME_CURRENT_LINK_POSITION, -1)
+        private set(value) = preferences.edit().putInt(KEY_RUNTIME_CURRENT_LINK_POSITION, value).apply()
+
+    var runtimeCurrentLinkUrl: String?
+        get() = preferences.getString(KEY_RUNTIME_CURRENT_LINK_URL, null)
+        private set(value) = preferences.edit().apply {
+            if (value.isNullOrBlank()) remove(KEY_RUNTIME_CURRENT_LINK_URL)
+            else putString(KEY_RUNTIME_CURRENT_LINK_URL, value.take(512))
+        }.apply()
+
+    var runtimeLinkStartedAt: Long
+        get() = preferences.getLong(KEY_RUNTIME_LINK_STARTED_AT, 0L)
+        private set(value) = preferences.edit().putLong(KEY_RUNTIME_LINK_STARTED_AT, value).apply()
+
+    var runtimeActionExecuted: String?
+        get() = preferences.getString(KEY_RUNTIME_ACTION_EXECUTED, null)
+        private set(value) = preferences.edit().apply {
+            if (value.isNullOrBlank()) remove(KEY_RUNTIME_ACTION_EXECUTED)
+            else putString(KEY_RUNTIME_ACTION_EXECUTED, value.take(80))
+        }.apply()
+
+    var runtimeActionAttemptCount: Int
+        get() = preferences.getInt(KEY_RUNTIME_ACTION_ATTEMPT_COUNT, 0).coerceAtLeast(0)
+        private set(value) = preferences.edit()
+            .putInt(KEY_RUNTIME_ACTION_ATTEMPT_COUNT, value.coerceAtLeast(0))
+            .apply()
+
+    var runtimeRecoveryReopenAttempts: Int
+        get() = preferences.getInt(KEY_RUNTIME_RECOVERY_REOPEN_ATTEMPTS, 0).coerceAtLeast(0)
+        private set(value) = preferences.edit()
+            .putInt(KEY_RUNTIME_RECOVERY_REOPEN_ATTEMPTS, value.coerceAtLeast(0))
+            .apply()
+
+    var runtimeLastEngineState: String?
+        get() = preferences.getString(KEY_RUNTIME_LAST_ENGINE_STATE, null)
+        set(value) = preferences.edit().apply {
+            if (value.isNullOrBlank()) remove(KEY_RUNTIME_LAST_ENGINE_STATE)
+            else putString(KEY_RUNTIME_LAST_ENGINE_STATE, value.take(120))
+        }.apply()
+
+    var lastCompletedLinkPosition: Int
+        get() = preferences.getInt(KEY_LAST_COMPLETED_LINK_POSITION, -1)
+        private set(value) = preferences.edit()
+            .putInt(KEY_LAST_COMPLETED_LINK_POSITION, value)
+            .apply()
+
+    fun beginRuntimeLink(linkId: Long, position: Int, url: String, engine: String) {
+        if (runtimeCurrentLinkId != linkId) {
+            preferences.edit()
+                .putLong(KEY_RUNTIME_CURRENT_LINK_ID, linkId)
+                .putInt(KEY_RUNTIME_CURRENT_LINK_POSITION, position)
+                .putString(KEY_RUNTIME_CURRENT_LINK_URL, url.take(512))
+                .putLong(KEY_RUNTIME_LINK_STARTED_AT, System.currentTimeMillis())
+                .putString(KEY_RUNTIME_LINK_PHASE, LinkRuntimePhase.OPENING.name)
+                .remove(KEY_RUNTIME_ACTION_EXECUTED)
+                .putInt(KEY_RUNTIME_ACTION_ATTEMPT_COUNT, 0)
+                .putInt(KEY_RUNTIME_RECOVERY_REOPEN_ATTEMPTS, 0)
+                .putString(KEY_RUNTIME_LAST_ENGINE_STATE, engine.take(120))
+                .apply()
+        } else {
+            runtimeLastEngineState = engine
+        }
+    }
+
+    fun markRuntimePhase(phase: LinkRuntimePhase, engineState: String? = null) {
+        preferences.edit().apply {
+            putString(KEY_RUNTIME_LINK_PHASE, phase.name)
+            if (!engineState.isNullOrBlank()) {
+                putString(KEY_RUNTIME_LAST_ENGINE_STATE, engineState.take(120))
+            }
+        }.apply()
+    }
+
+    fun recordRuntimeAction(action: String, engine: String) {
+        preferences.edit()
+            .putString(KEY_RUNTIME_ACTION_EXECUTED, action.take(80))
+            .putInt(KEY_RUNTIME_ACTION_ATTEMPT_COUNT, runtimeActionAttemptCount + 1)
+            .putString(KEY_RUNTIME_LINK_PHASE, LinkRuntimePhase.ACTION_TAPPED.name)
+            .putString(KEY_RUNTIME_LAST_ENGINE_STATE, engine.take(120))
+            .apply()
+    }
+
+    fun canReopenCurrentLinkOnce(linkId: Long): Boolean =
+        runtimeCurrentLinkId == linkId &&
+            runtimeRecoveryReopenAttempts <
+                com.althmany.groupmanager.domain.SmartExitControllerPolicy.MAX_REOPEN_ATTEMPTS_PER_LINK
+
+    fun recordRecoveryReopen(linkId: Long): Boolean {
+        if (!canReopenCurrentLinkOnce(linkId)) return false
+        runtimeRecoveryReopenAttempts += 1
+        markRuntimePhase(LinkRuntimePhase.OPENING, "RECOVERY_REOPEN")
+        return true
+    }
+
+    fun buildRuntimeAuditDetail(
+        detail: String,
+        resultCodeName: String,
+        backend: String
+    ): String {
+        val elapsed = if (runtimeLinkStartedAt > 0L) {
+            (System.currentTimeMillis() - runtimeLinkStartedAt).coerceAtLeast(0L)
+        } else 0L
+        val resultClass = SmartResultClassifier.fromResultCode(resultCodeName)
+        return buildString {
+            append(detail.take(900))
+            append(" | resultClass=").append(resultClass.name)
+            append(" | attempts=").append(runtimeActionAttemptCount)
+            append(" | elapsedMs=").append(elapsed)
+            append(" | backend=").append(backend)
+            append(" | package=").append(runtimeLockedWhatsAppPackage.orEmpty())
+            append(" | userId=").append(runtimeLockedAndroidUserId)
+            append(" | profile=").append(runtimeLockedProfileKey.orEmpty())
+            append(" | phase=").append(runtimeLinkPhase.name)
+        }.take(1_600)
+    }
+
+    fun finishRuntimeLink(position: Int, engineState: String) {
+        preferences.edit()
+            .putInt(KEY_LAST_COMPLETED_LINK_POSITION, position)
+            .putString(KEY_RUNTIME_LINK_PHASE, LinkRuntimePhase.ADVANCING.name)
+            .putString(KEY_RUNTIME_LAST_ENGINE_STATE, engineState.take(120))
+            .apply()
+    }
 
     /**
      * User opt-in: if Android recreates the Accessibility service during the current explicit run,
@@ -105,6 +333,7 @@ class AppPreferences(context: Context) {
         preferences.edit()
             .putString(KEY_RUNTIME_LOCKED_WHATSAPP_PACKAGE, packageName)
             .putString(KEY_RUNTIME_LOCKED_PROFILE_KEY, profileKey)
+            .remove(KEY_RUNTIME_LOCKED_ANDROID_USER_ID)
             .apply()
     }
 
@@ -112,6 +341,7 @@ class AppPreferences(context: Context) {
         preferences.edit()
             .remove(KEY_RUNTIME_LOCKED_WHATSAPP_PACKAGE)
             .remove(KEY_RUNTIME_LOCKED_PROFILE_KEY)
+            .remove(KEY_RUNTIME_LOCKED_ANDROID_USER_ID)
             .apply()
     }
 
@@ -674,6 +904,22 @@ class AppPreferences(context: Context) {
 
         private const val KEY_SMART_AUTO_START = "smart_auto_start"
         private const val KEY_FAST_HANDS_FREE_MODE = "fast_hands_free_mode"
+        private const val KEY_RUNTIME_SPEED_MODE = "runtime_speed_mode"
+        private const val KEY_CUSTOM_SCAN_MS = "custom_scan_ms"
+        private const val KEY_CUSTOM_POST_TAP_MS = "custom_post_tap_ms"
+        private const val KEY_CUSTOM_INTER_LINK_MS = "custom_inter_link_ms"
+        private const val KEY_RESTRICTION_HANDLING_MODE = "restriction_handling_mode"
+        private const val KEY_RUNTIME_LOCKED_ANDROID_USER_ID = "runtime_locked_android_user_id"
+        private const val KEY_RUNTIME_LINK_PHASE = "runtime_link_phase"
+        private const val KEY_RUNTIME_CURRENT_LINK_ID = "runtime_current_link_id"
+        private const val KEY_RUNTIME_CURRENT_LINK_POSITION = "runtime_current_link_position"
+        private const val KEY_RUNTIME_CURRENT_LINK_URL = "runtime_current_link_url"
+        private const val KEY_RUNTIME_LINK_STARTED_AT = "runtime_link_started_at"
+        private const val KEY_RUNTIME_ACTION_EXECUTED = "runtime_action_executed"
+        private const val KEY_RUNTIME_ACTION_ATTEMPT_COUNT = "runtime_action_attempt_count"
+        private const val KEY_RUNTIME_RECOVERY_REOPEN_ATTEMPTS = "runtime_recovery_reopen_attempts"
+        private const val KEY_RUNTIME_LAST_ENGINE_STATE = "runtime_last_engine_state"
+        private const val KEY_LAST_COMPLETED_LINK_POSITION = "last_completed_link_position"
         private const val KEY_AUTO_RESUME_CURRENT_RUN = "auto_resume_current_run"
         private const val KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP = "auto_pause_outside_whatsapp"
         private const val KEY_PAUSED_BECAUSE_OUTSIDE_TARGET = "paused_because_outside_target"

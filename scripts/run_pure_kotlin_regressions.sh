@@ -38,6 +38,7 @@ kotlinc \
   "$ROOT/app/src/main/java/com/althmany/groupmanager/domain/RuntimeReplayEngine.kt" \
   "$ROOT/app/src/main/java/com/althmany/groupmanager/domain/RuntimeWatchdogPolicy.kt" \
   "$ROOT/app/src/main/java/com/althmany/groupmanager/domain/RuntimeCadencePolicy.kt" \
+  "$ROOT/app/src/main/java/com/althmany/groupmanager/domain/RuntimeSpeedProfile.kt" \
   "$ROOT/app/src/main/java/com/althmany/groupmanager/domain/RuntimeRecoveryPolicy.kt" \
   "$ROOT/app/src/main/java/com/althmany/groupmanager/domain/RuntimeIdempotencyGuard.kt" \
   "$ROOT/app/src/main/java/com/althmany/groupmanager/domain/RuntimeFeatureFlags.kt" \

@@ -506,4 +506,19 @@ AL-thmany Profile Owner: %5$s
     <string name="work_policy_already_allowed">سياسة ملف العمل تسمح بخدمة AL-thmany بالفعل. فعّل الخدمة من إعدادات النظام ثم أعد الفحص.</string>
     <string name="work_policy_apply_failed">تعذر تعديل سياسة Accessibility لملف العمل. راجع حالة Profile Owner/مدير العمل في التشخيص.</string>
 
+    <string name="runtime_speed_title">سرعة المحرك</string>
+    <string name="speed_stable">Stable</string>
+    <string name="speed_fast">Fast</string>
+    <string name="speed_turbo">Turbo</string>
+    <string name="speed_max">MAX</string>
+    <string name="speed_custom">Custom</string>
+    <string name="custom_scan_title">Scan</string>
+    <string name="custom_post_tap_title">بعد الضغط</string>
+    <string name="custom_next_title">بين الروابط</string>
+    <string name="runtime_ms_format">%1$dms</string>
+    <string name="advanced_settings">الإعدادات المتقدمة</string>
+    <string name="hide_advanced_settings">إخفاء الإعدادات المتقدمة</string>
+    <string name="resume_last_run">استئناف من آخر رابط</string>
+    <string name="continue_on_restriction">تخطي Restriction والاستمرار</string>
+    <string name="continue_on_restriction_hint">إذا أوقفته، تتوقف الجولة عند Restriction. لا يتم تجاوز قيود واتساب في الحالتين.</string>
 </resources>

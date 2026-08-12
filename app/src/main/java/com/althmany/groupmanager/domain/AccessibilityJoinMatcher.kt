@@ -87,6 +87,11 @@ object AccessibilityJoinMatcher {
         "إلغاء الطلب", "الغاء الطلب", "إلغاء طلب الانضمام", "الغاء طلب الانضمام"
     )
 
+    private val genericDialogCancelLabels = normalizedSetOf(
+        "cancel", "dismiss", "close dialog",
+        "إلغاء", "الغاء", "إغلاق", "اغلاق"
+    )
+
     private val requestApprovalNoticeFragments = normalizedSetOf(
         "an admin must approve your request", "an admin needs to approve your request",
         "one of the admins must approve your request", "your request needs admin approval",
@@ -374,6 +379,13 @@ object AccessibilityJoinMatcher {
 
     fun isRequestSubmitted(label: CharSequence?): Boolean =
         containsAny(normalize(label), requestSubmittedFragments)
+
+    fun isSafeDialogCancel(value: CharSequence?): Boolean {
+        val normalized = normalize(value)
+        if (normalized.isBlank()) return false
+        if (cancelRequestLabels.any { normalized == it || normalized.contains(it) }) return false
+        return genericDialogCancelLabels.any { normalized == it }
+    }
 
     fun isCancelRequest(label: CharSequence?): Boolean {
         val value = normalize(label)
