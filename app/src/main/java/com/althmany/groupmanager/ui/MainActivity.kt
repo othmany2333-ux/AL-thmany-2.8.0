@@ -951,6 +951,10 @@ class MainActivity : AppCompatActivity() {
         // Keep semantic verification, but remove artificial inter-link waiting.
         app.preferences.runtimeShadowMode = false
         app.preferences.fastHandsFreeMode = true
+        // Explicit hands-free runs must respect a manual Home/app switch. The engine pauses
+        // instead of forcing WhatsApp back to foreground, then resumes only when the user returns
+        // to the same locked WhatsApp target.
+        app.preferences.autoPauseOutsideWhatsApp = true
         app.preferences.interLinkDelayMs = AutomationPolicy.FAST_INTER_LINK_DELAY_MS
         app.preferences.accessibilityActionTimeoutSeconds = AutomationPolicy.FAST_ACTION_TIMEOUT_SECONDS
 

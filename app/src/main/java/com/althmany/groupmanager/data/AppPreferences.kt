@@ -281,7 +281,7 @@ class AppPreferences(context: Context) {
 
     /** Pause the current run when the foreground app leaves the selected WhatsApp target. */
     var autoPauseOutsideWhatsApp: Boolean
-        get() = preferences.getBoolean(KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP, false)
+        get() = preferences.getBoolean(KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP, true)
         set(value) = preferences.edit().putBoolean(KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP, value).apply()
 
     /** Internal marker so automatic resume never overrides a manual pause. */

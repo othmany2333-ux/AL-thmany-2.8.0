@@ -103,6 +103,9 @@ class ShizukuAutomationService : Service() {
     private var lastForegroundVerifiedAtElapsed = 0L
     private var lastForegroundVerifiedPackage: String? = null
     private var lastForegroundVerifiedUserId: Int? = null
+    private var outsideTargetCandidateStartedAtElapsed = 0L
+    private var lastOutsideTargetProbeAtElapsed = 0L
+    private var fastUiSessionRecoveryAttempts = 0
     // 2.7.0 probes the persistent event-first bridge on every fresh Shizuku UserService. Devices
     // that reject it fall back once to command UIAutomator; compatible Work/Secure profiles keep
     // the fast event/tree connection for the whole run.
@@ -190,6 +193,16 @@ class ShizukuAutomationService : Service() {
             }
 
             if (prefs.accessibilityPaused) {
+                // A manual Pause remains manual. Only the special outside-target pause may resume
+                // itself, and only after the user brings the exact locked WhatsApp/user back.
+                if (prefs.pausedBecauseOutsideTarget &&
+                    prefs.autoPauseOutsideWhatsApp &&
+                    prefs.autoResumeCurrentRun &&
+                    tryAutoResumeAfterUserReturn(targetPackage)
+                ) {
+                    updateNotification("WhatsApp returned; resuming the saved invitation")
+                    continue
+                }
                 updateNotification(getString(R.string.shizuku_service_paused))
                 delay(PAUSED_POLL_MS)
                 continue
@@ -250,6 +263,11 @@ class ShizukuAutomationService : Service() {
             }
 
             if (!isTargetForeground(targetPackage)) {
+                if (pauseAfterStableForegroundLoss(current, targetPackage)) {
+                    updateNotification("Paused: return to the selected WhatsApp to continue")
+                    delay(PAUSED_POLL_MS)
+                    continue
+                }
                 val now = System.currentTimeMillis()
                 if (foregroundWaitStartedAt == 0L) foregroundWaitStartedAt = now
                 val waitAge = now - foregroundWaitStartedAt
@@ -328,6 +346,18 @@ class ShizukuAutomationService : Service() {
             stopRun(AutomationStopReason.SERVICE_DISABLED, "Shizuku is not running, permission is missing, or UserService could not bind")
             return false
         }
+        val freshFastUi = ShizukuBridge.fastResetUiAutomation(this)
+        fastUiMode = FastUiMode.UNKNOWN
+        fastUiFailureCount = 0
+        fastUiSessionRecoveryAttempts = 0
+        lastFastEventSequence = 0L
+        currentLaunchEventBaseline = 0L
+        RuntimeDiagnosticStore.append(
+            this,
+            "SHIZUKU_FAST_UI_RUN_RESET",
+            "freshPersistentSession=$freshFastUi; status=${ShizukuBridge.fastUiStatus(this).take(180)}"
+        )
+
         val userId = resolveAndroidUserId(targetPackage)
         if (userId == null) {
             val reason = "AL-thmany and the selected WhatsApp could not be proven to exist in the same Android user/profile"
@@ -1029,6 +1059,23 @@ class ShizukuAutomationService : Service() {
                 // path. NO_ROOT and target-hidden transition frames are handled above.
                 if (fast.state != "NO_ROOT") fastUiFailureCount += 1
                 if (!forceCommandDump && (fast.unavailable || fastUiFailureCount >= FAST_UI_DISABLE_AFTER_FAILURES)) {
+                    if (fastUiSessionRecoveryAttempts < FAST_UI_SESSION_RECOVERY_MAX) {
+                        fastUiSessionRecoveryAttempts += 1
+                        val recovered = ShizukuBridge.fastResetUiAutomation(this)
+                        runtimeDiagnostic(
+                            current,
+                            "SHIZUKU_FAST_UI_SELF_HEAL",
+                            "attempt=$fastUiSessionRecoveryAttempts; recovered=$recovered; state=${fast.state}; detail=${fast.detail.take(160)}"
+                        )
+                        if (recovered) {
+                            fastUiMode = FastUiMode.UNKNOWN
+                            fastUiFailureCount = 0
+                            lastFastEventSequence = 0L
+                            currentLaunchEventBaseline = 0L
+                            armFastEventSequence(targetPackage)
+                            return null
+                        }
+                    }
                     if (fastUiMode != FastUiMode.DISABLED) {
                         RuntimeDiagnosticStore.append(
                             this,
@@ -1052,7 +1099,10 @@ class ShizukuAutomationService : Service() {
             UI_DUMP_TIMEOUT_MS
         )
         var xml = result.output
-        if (!result.success || !xml.contains("<hierarchy")) {
+        // exit=137/SIGKILL is a hard failure on this Android runtime. Spawning the same
+        // UIAutomator command again only burns another second and delays the screenshot rescue.
+        val commandDumpKilled = result.exitCode == 137 || xml.contains("Killed", ignoreCase = true)
+        if ((!result.success || !xml.contains("<hierarchy")) && !commandDumpKilled) {
             delay(COMMAND_DUMP_COMPAT_RETRY_MS)
             result = ShizukuBridge.execute(
                 this,
@@ -1065,12 +1115,12 @@ class ShizukuAutomationService : Service() {
             xml = result.output
         }
         if (!result.success || !xml.contains("<hierarchy")) {
-            return handleDumpFailure(current, "exit=${result.exitCode}; ${xml.take(320)}; mode=COMMAND_COMPAT")
+            return handleDumpFailure(current, targetPackage, "exit=${result.exitCode}; ${xml.take(320)}; mode=COMMAND_COMPAT")
         }
         val snapshot = ShizukuUiDumpParser.parse(xml)
         val targetVisible = snapshot.nodes.any { it.packageName == targetPackage }
         if (!targetVisible) {
-            return handleDumpFailure(current, "hierarchy exists but selected package nodes are hidden; fast=$lastFastUiDetail")
+            return handleDumpFailure(current, targetPackage, "hierarchy exists but selected package nodes are hidden; fast=$lastFastUiDetail")
         }
         if (profileCompatibilityProbe) {
             // The standard command hierarchy proved that WhatsApp is visible while the persistent
@@ -1089,7 +1139,11 @@ class ShizukuAutomationService : Service() {
         return snapshot
     }
 
-    private suspend fun handleDumpFailure(current: GroupLink, detail: String): ShizukuUiSnapshot? {
+    private suspend fun handleDumpFailure(
+        current: GroupLink,
+        targetPackage: String,
+        detail: String
+    ): ShizukuUiSnapshot? {
         if (emptyDumpStartedAt == 0L) emptyDumpStartedAt = System.currentTimeMillis()
         consecutiveDumpFailures += 1
         val age = System.currentTimeMillis() - emptyDumpStartedAt
@@ -1101,6 +1155,26 @@ class ShizukuAutomationService : Service() {
         if (age >= ShizukuContinuityPolicy.UI_TREE_ADVANCE_AFTER_MS ||
             consecutiveDumpFailures >= ShizukuContinuityPolicy.MAX_UI_TREE_FAILURES
         ) {
+            val launchAge = if (currentLaunchElapsed > 0L) {
+                (SystemClock.elapsedRealtime() - currentLaunchElapsed).coerceAtLeast(0L)
+            } else 0L
+            if (app.preferences.autoPauseOutsideWhatsApp &&
+                launchAge >= USER_EXIT_LAUNCH_GRACE_MS &&
+                !isTargetForeground(targetPackage, forceProbe = true)
+            ) {
+                app.preferences.pauseAccessibilityBatch(
+                    diagnostic = "Paused automatically after confirmed user exit while UI acquisition was unavailable",
+                    outsideTarget = true
+                )
+                runtimeDiagnostic(
+                    current,
+                    "SHIZUKU_USER_EXIT_AUTO_PAUSE",
+                    "source=UI_TREE_FAILURE; target=$targetPackage; user=${cachedAndroidUserId ?: -1}; noReopen=true"
+                )
+                emptyDumpStartedAt = 0L
+                consecutiveDumpFailures = 0
+                return null
+            }
             runtimeDiagnostic(
                 current,
                 "SHIZUKU_UI_TREE_PRESERVE_CURRENT",
@@ -1489,16 +1563,10 @@ class ShizukuAutomationService : Service() {
         current: GroupLink,
         purpose: String
     ): Boolean {
-        val forcedForeground = isTargetForeground(targetPackage, forceProbe = true)
-        if (!forcedForeground) {
-            val userId = cachedAndroidUserId ?: return false
-            if (!foregroundLeaseValid(targetPackage, userId)) return false
-            runtimeDiagnostic(
-                current,
-                "SHIZUKU_BACK_LEASE_RECOVERY",
-                "$purpose; forced activity proof missed but exact-user/package foreground lease is still valid"
-            )
-        }
+        val userId = resolveAndroidUserId(targetPackage) ?: return false
+        if (!foregroundLeaseValid(targetPackage, userId) &&
+            !isTargetForeground(targetPackage, forceProbe = true)
+        ) return false
         waitInputCooldown()
         val persistent = ShizukuBridge.fastBack(this)
         val shell = if (!persistent) {
@@ -1520,22 +1588,14 @@ class ShizukuAutomationService : Service() {
         current: GroupLink,
         initialSnapshot: ShizukuUiSnapshot
     ): Boolean {
-        val forcedForeground = isTargetForeground(targetPackage, forceProbe = true)
-        if (!forcedForeground) {
-            val exactTargetTreeVisible =
-                initialSnapshot.nodes.any { node -> node.belongsTo(targetPackage) }
-            val exactUser = cachedAndroidUserId
-            if (!exactTargetTreeVisible || exactUser == null) return false
-
-            // The already-parsed snapshot came from this exact locked package and exact Android
-            // user. Renew the short input lease rather than rejecting X/Back because Samsung's
-            // dumpsys formatting omitted the user token during this frame.
+        val exactUser = resolveAndroidUserId(targetPackage) ?: return false
+        val exactTargetTreeVisible = initialSnapshot.nodes.any { node -> node.belongsTo(targetPackage) }
+        if (exactTargetTreeVisible) {
             recordForegroundLease(targetPackage, exactUser)
-            runtimeDiagnostic(
-                current,
-                "SHIZUKU_EXIT_FOREGROUND_RECOVERED",
-                "forced activity probe missed; exact target UI tree remained visible, guarded exit lease renewed"
-            )
+        } else if (!foregroundLeaseValid(targetPackage, exactUser) &&
+            !isTargetForeground(targetPackage, forceProbe = true)
+        ) {
+            return false
         }
         var snapshot = initialSnapshot
 
@@ -1743,6 +1803,8 @@ class ShizukuAutomationService : Service() {
         // dumpSnapshot still rejects the frame unless WhatsApp nodes from targetPackage are visible.
         recordForegroundLease(targetPackage, userId)
         currentLaunchElapsed = SystemClock.elapsedRealtime()
+        outsideTargetCandidateStartedAtElapsed = 0L
+        lastOutsideTargetProbeAtElapsed = 0L
         currentLaunchEventBaseline = lastFastEventSequence
         currentLaunchSawTargetEvent = false
         fastUiNoRootStartedAtElapsed = 0L
@@ -1844,6 +1906,116 @@ class ShizukuAutomationService : Service() {
         displayWidth = match.groupValues[1].toIntOrNull() ?: 0
         displayHeight = match.groupValues[2].toIntOrNull() ?: 0
         return displayWidth > 0 && displayHeight > 0
+    }
+
+    private fun pauseAfterStableForegroundLoss(
+        current: GroupLink,
+        targetPackage: String
+    ): Boolean {
+        val prefs = app.preferences
+        if (!prefs.autoPauseOutsideWhatsApp || prefs.accessibilityPaused ||
+            !prefs.accessibilityBatchRunning
+        ) {
+            outsideTargetCandidateStartedAtElapsed = 0L
+            return false
+        }
+        val now = SystemClock.elapsedRealtime()
+        val launchAge = if (currentLaunchElapsed > 0L) {
+            (now - currentLaunchElapsed).coerceAtLeast(0L)
+        } else 0L
+        if (currentLaunchElapsed <= 0L || launchAge < USER_EXIT_LAUNCH_GRACE_MS) {
+            outsideTargetCandidateStartedAtElapsed = 0L
+            return false
+        }
+        if (outsideTargetCandidateStartedAtElapsed == 0L) {
+            outsideTargetCandidateStartedAtElapsed = now
+            return false
+        }
+        val outsideAge = (now - outsideTargetCandidateStartedAtElapsed).coerceAtLeast(0L)
+        if (outsideAge < USER_EXIT_CONFIRM_MS) return false
+
+        prefs.pauseAccessibilityBatch(
+            diagnostic = "Paused automatically because the user left the selected WhatsApp target",
+            outsideTarget = true
+        )
+        runtimeDiagnostic(
+            current,
+            "SHIZUKU_USER_EXIT_AUTO_PAUSE",
+            "outsideMs=$outsideAge; target=$targetPackage; user=${cachedAndroidUserId ?: -1}; noReopen=true"
+        )
+        invalidateForegroundLease()
+        outsideTargetCandidateStartedAtElapsed = 0L
+        return true
+    }
+
+    private suspend fun shouldAutoPauseForUserExit(
+        current: GroupLink,
+        targetPackage: String
+    ): Boolean {
+        val prefs = app.preferences
+        if (!prefs.autoPauseOutsideWhatsApp || prefs.accessibilityPaused ||
+            !prefs.accessibilityBatchRunning
+        ) {
+            outsideTargetCandidateStartedAtElapsed = 0L
+            return false
+        }
+
+        val now = SystemClock.elapsedRealtime()
+        val launchAge = if (currentLaunchElapsed > 0L) {
+            (now - currentLaunchElapsed).coerceAtLeast(0L)
+        } else 0L
+        // Never interpret the normal app -> WhatsApp Deep Link transition as a user exit.
+        if (currentLaunchElapsed <= 0L || launchAge < USER_EXIT_LAUNCH_GRACE_MS) {
+            outsideTargetCandidateStartedAtElapsed = 0L
+            return false
+        }
+        if (now - lastOutsideTargetProbeAtElapsed < USER_EXIT_PROBE_INTERVAL_MS) return false
+        lastOutsideTargetProbeAtElapsed = now
+
+        if (isTargetForeground(targetPackage, forceProbe = true)) {
+            outsideTargetCandidateStartedAtElapsed = 0L
+            return false
+        }
+
+        if (outsideTargetCandidateStartedAtElapsed == 0L) {
+            outsideTargetCandidateStartedAtElapsed = now
+            return false
+        }
+        val outsideAge = (now - outsideTargetCandidateStartedAtElapsed).coerceAtLeast(0L)
+        if (outsideAge < USER_EXIT_CONFIRM_MS) return false
+
+        prefs.pauseAccessibilityBatch(
+            diagnostic = "Paused automatically because the user left the selected WhatsApp target",
+            outsideTarget = true
+        )
+        runtimeDiagnostic(
+            current,
+            "SHIZUKU_USER_EXIT_AUTO_PAUSE",
+            "outsideMs=$outsideAge; target=$targetPackage; user=${cachedAndroidUserId ?: -1}; noReopen=true"
+        )
+        invalidateForegroundLease()
+        outsideTargetCandidateStartedAtElapsed = 0L
+        return true
+    }
+
+    private suspend fun tryAutoResumeAfterUserReturn(targetPackage: String): Boolean {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastOutsideTargetProbeAtElapsed < USER_RETURN_PROBE_INTERVAL_MS) return false
+        lastOutsideTargetProbeAtElapsed = now
+        if (!isTargetForeground(targetPackage, forceProbe = true)) return false
+
+        app.preferences.resumeAccessibilityBatch(
+            "Selected WhatsApp returned to foreground; automatic Shizuku resume"
+        )
+        currentLaunchElapsed = now
+        outsideTargetCandidateStartedAtElapsed = 0L
+        armFastBurst(FAST_OPEN_BURST_MS)
+        RuntimeDiagnosticStore.append(
+            this,
+            "SHIZUKU_USER_RETURN_AUTO_RESUME",
+            "target=$targetPackage; user=${cachedAndroidUserId ?: -1}; current link preserved"
+        )
+        return true
     }
 
     private suspend fun isTargetForeground(targetPackage: String, forceProbe: Boolean = false): Boolean {
@@ -1967,6 +2139,8 @@ class ShizukuAutomationService : Service() {
                 if (tapNode(remainingButton, targetPackage, current, "VISUAL_POSITIVE_RETRY")) {
                     visualTapAttempts += 1
                     visualActionTappedAtElapsed = SystemClock.elapsedRealtime()
+                    consecutiveDumpFailures = 0
+                    emptyDumpStartedAt = 0L
                     runtimeDiagnostic(
                         current,
                         "SHIZUKU_VISUAL_ACTION_RETRY",
@@ -2031,6 +2205,8 @@ class ShizukuAutomationService : Service() {
         if (!tapNode(bounds, targetPackage, current, "VISUAL_POSITIVE")) return false
         visualTapAttempts = 1
         visualActionTappedAtElapsed = SystemClock.elapsedRealtime()
+        consecutiveDumpFailures = 0
+        emptyDumpStartedAt = 0L
         app.preferences.setAccessibilityPending(
             current.id,
             AccessibilityJoinAction.JOIN.name,
@@ -2054,7 +2230,10 @@ class ShizukuAutomationService : Service() {
         current: GroupLink,
         purpose: String
     ): Boolean {
-        if (!isTargetForeground(targetPackage, forceProbe = true)) return false
+        val userId = resolveAndroidUserId(targetPackage) ?: return false
+        if (!foregroundLeaseValid(targetPackage, userId) &&
+            !isTargetForeground(targetPackage, forceProbe = true)
+        ) return false
         waitInputCooldown()
         val persistent = ShizukuBridge.fastBack(this)
         val shell = if (!persistent) ShizukuBridge.execute(this, "input keyevent 4", 2_500) else null
@@ -2344,6 +2523,8 @@ class ShizukuAutomationService : Service() {
         loadingStartedAtElapsed = 0L
         unknownStartedAtElapsed = 0L
         foregroundRecoveryAttempts = 0
+        outsideTargetCandidateStartedAtElapsed = 0L
+        lastOutsideTargetProbeAtElapsed = 0L
         fastUiNoRootStartedAtElapsed = 0L
         fastUiTargetHiddenStartedAtElapsed = 0L
         profileCompatCommandProbes = 0
@@ -2623,6 +2804,11 @@ class ShizukuAutomationService : Service() {
         private const val VISUAL_MAX_TAP_ATTEMPTS = 2
         private const val VISUAL_DISMISS_SETTLE_MS = 30L
         private const val FAST_UI_DISABLE_AFTER_FAILURES = 4
+        private const val FAST_UI_SESSION_RECOVERY_MAX = 1
+        private const val USER_EXIT_LAUNCH_GRACE_MS = 650L
+        private const val USER_EXIT_CONFIRM_MS = 420L
+        private const val USER_EXIT_PROBE_INTERVAL_MS = 180L
+        private const val USER_RETURN_PROBE_INTERVAL_MS = 450L
         private const val NOTIFICATION_THROTTLE_MS = 500L
         private val PACKAGE_NAME = Regex("[A-Za-z0-9_.]+")
         private val COMPONENT_NAME = Regex("[A-Za-z0-9_.]+/[A-Za-z0-9_.\$]+")

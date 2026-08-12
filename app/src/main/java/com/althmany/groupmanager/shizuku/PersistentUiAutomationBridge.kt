@@ -256,6 +256,32 @@ internal class PersistentUiAutomationBridge {
         }
     }
 
+    /**
+     * New explicit-run boundary. Clear stale UiAutomation connection/error/event state so a second
+     * run behaves like the first run after a reboot without rebooting the phone or Shizuku.
+     */
+    fun resetForNewRun(): Boolean {
+        clearClickCache()
+        synchronized(lock) {
+            val current = automation
+            automation = null
+            if (current != null) {
+                runCatching {
+                    val method = UiAutomation::class.java.methods.firstOrNull {
+                        it.name == "destroy" && it.parameterCount == 0
+                    }
+                    method?.invoke(current)
+                }
+            }
+            runCatching { thread?.quitSafely() }
+            thread = null
+            unavailableReason = null
+            eventSequence.set(0L)
+            packageEventSequence.clear()
+        }
+        return ensureConnected() != null
+    }
+
     private fun ensureConnected(): UiAutomation? {
         automation?.let { return it }
         if (unavailableReason != null) return null

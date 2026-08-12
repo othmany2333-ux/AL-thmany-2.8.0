@@ -162,6 +162,10 @@ community_matcher = (JAVA / "com/althmany/groupmanager/domain/CommunityTraversal
 community_policy = (JAVA / "com/althmany/groupmanager/domain/CommunityTraversalPolicy.kt").read_text(encoding="utf-8")
 main_activity = (JAVA / "com/althmany/groupmanager/ui/MainActivity.kt").read_text(encoding="utf-8")
 shizuku_service = (JAVA / "com/althmany/groupmanager/shizuku/ShizukuAutomationService.kt").read_text(encoding="utf-8")
+shizuku_shell_service = (JAVA / "com/althmany/groupmanager/shizuku/ShizukuShellUserService.kt").read_text(encoding="utf-8")
+shizuku_persistent = (JAVA / "com/althmany/groupmanager/shizuku/PersistentUiAutomationBridge.kt").read_text(encoding="utf-8")
+shizuku_bridge_source = (JAVA / "com/althmany/groupmanager/shizuku/ShizukuBridge.kt").read_text(encoding="utf-8")
+shizuku_aidl_source = (ROOT / "app/src/main/aidl/com/althmany/groupmanager/shizuku/IShizukuShellService.aidl").read_text(encoding="utf-8")
 shizuku_parser = (JAVA / "com/althmany/groupmanager/domain/ShizukuUiDumpParser.kt").read_text(encoding="utf-8")
 visual_action_policy = (JAVA / "com/althmany/groupmanager/domain/VisualActionButtonPolicy.kt").read_text(encoding="utf-8")
 shizuku_policy = (JAVA / "com/althmany/groupmanager/domain/ShizukuRuntimePolicy.kt").read_text(encoding="utf-8")
@@ -186,8 +190,17 @@ checks = {
     "profile-key launch continuity": "expectedProfileKey" in whatsapp_launcher,
     "AL-thmany namespace": 'namespace = "com.althmany.groupmanager"' in build,
     "AL-thmany application id": 'applicationId = "com.althmany.groupmanager"' in build,
-    "versionCode 301": "versionCode = 301" in build,
-    "versionName 3.0.1": 'versionName = "3.0.1"' in build,
+    "versionCode 303": "versionCode = 303" in build,
+    "versionName 3.0.3": 'versionName = "3.0.3"' in build,
+    "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
+        "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
+    ]),
+    "3.0.3 Shizuku user-exit pause resume": all(token in shizuku_service for token in [
+        "pauseAfterStableForegroundLoss", "tryAutoResumeAfterUserReturn", "SHIZUKU_USER_EXIT_AUTO_PAUSE", "SHIZUKU_USER_RETURN_AUTO_RESUME"
+    ]) and "app.preferences.autoPauseOutsideWhatsApp = true" in main_activity,
+    "3.0.3 repeat-run persistent UI reset": all(token in shizuku_service for token in [
+        "SHIZUKU_FAST_UI_RUN_RESET", "SHIZUKU_FAST_UI_SELF_HEAL", "fastResetUiAutomation"
+    ]) and "resetForNewRun" in shizuku_persistent and "fastResetUiAutomation" in shizuku_bridge_source and "fastResetUiAutomation" in shizuku_aidl_source,
     "Accessibility permission gate 2.6.4": all(token in main_activity for token in ["permissionConfigured", "waitForLocalAccessibilityBind", "shouldPromptAccessibilitySetup", "accessibility_enabled_but_not_bound"]),
     "Accessibility setup debounce policy 2.6.4": all(token in profile_control_policy for token in ["ACCESSIBILITY_SETUP_CONFIRM_READS = 3", "ACCESSIBILITY_RECONNECT_WAIT_MS = 4_000L", "ACCESSIBILITY_RECONNECT_POLL_MS = 100L", "shouldPromptAccessibilitySetup"]),
     "Accessibility Samsung live readiness 2.7.4": all(token in accessibility_status for token in ["isRuntimeConnected", "secureSettingEnabled", "isLocalConnectionAlive", "profileHeartbeatConnected = runtime.localServiceConnected"]) and all(token in service for token in ["override fun onCreate()", "PROFILE_SERVICE_EVENT_RECOVERED"]),

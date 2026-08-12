@@ -219,6 +219,11 @@ object ShizukuBridge {
         runCatching { remote?.fastUiStatus().orEmpty() }.getOrDefault("UNAVAILABLE:remote error")
     }
 
+    suspend fun fastResetUiAutomation(context: Context): Boolean = withContext(Dispatchers.IO) {
+        if (!ensureBound(context)) return@withContext false
+        runCatching { remote?.fastResetUiAutomation() == true }.getOrDefault(false)
+    }
+
     suspend fun execute(
         context: Context,
         command: String,

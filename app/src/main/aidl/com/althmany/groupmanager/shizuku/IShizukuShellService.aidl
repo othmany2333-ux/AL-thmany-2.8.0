@@ -13,4 +13,5 @@ interface IShizukuShellService {
     long waitForFastEvent(String targetPackage, long afterSequence, int timeoutMs);
     String waitAndSnapshot(String targetPackage, long afterSequence, int timeoutMs, int maxNodes);
     String fastUiStatus();
+    boolean fastResetUiAutomation();
 }
