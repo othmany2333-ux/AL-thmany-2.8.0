@@ -366,7 +366,7 @@ checks = {
     "recoverable accessibility interruption": "Accessibility was interrupted temporarily; recovery is armed" in service and "onServiceConnected() resumes" in service,
     "actionable stalled-screen recovery": "shouldAdvanceStalledUnknown" in runtime_recovery and "Self-recovery advanced an inert WhatsApp screen" in service,
     "stable post-action force advance": "MIN_STABLE_SCANS_FOR_FORCE_ADVANCE = 2" in continuous_handoff and "stableWatchScans" in service,
-    "continuous mode default": "getBoolean(KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP, false)" in preferences_source,
+    "auto-pause outside WhatsApp default": "getBoolean(KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP, true)" in preferences_source,
     "zero-delay instant handoff": "USER_INSTANT_ADVANCE_SETTLE_MS = 0L" in service,
     "fast post-join evidence age": "FAST_POST_JOIN_MIN_EVIDENCE_AGE_MS = 35L" in (JAVA / "com/althmany/groupmanager/domain/InvitationStabilityPolicy.kt").read_text(encoding="utf-8"),
     "bounded fast semantic invite scroll": "ACTION_SCROLL_FORWARD" in service and "MAX_INVITE_SCROLL_ATTEMPTS = 2" in service and "FAST_SCROLL" in service,
