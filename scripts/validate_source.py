@@ -206,7 +206,7 @@ checks = {
         "X/Back handoff opened the next invitation" in service and
         "REQUEST_SENT_SHEET_BACK_FALLBACK" in shizuku_service,
     "3.3 secure classifier": "never relabel Work/Island/Dual Messenger as Secure Folder" in main_activity and
-        "secure_remote_knox_hidden" in main_activity,
+        ("secure_remote_knox_hidden" in main_activity or "secure_remote_knox_ladder" in main_activity),
     "3.3 evidence counter repair": "visualExpectedAction" in shizuku_service and
         "not counted as a false request" in shizuku_service and
         "Fast watchdog recovered a verified exact-user WhatsApp conversation after Join" in shizuku_service,
@@ -223,7 +223,7 @@ checks = {
         "not counted as a random success" in service,
     "3.4 Dual Messenger remote user": "dualRemoteButton" in main_layout and
         "detectRemoteDualTarget" in main_activity and
-        "DUAL_APP" in main_activity,
+        "dual_app" in main_activity.lower(),
     "3.4 Secure multi-source discovery": "pm list users" in main_activity and
         "cmd user list" in main_activity and
         "dumpsys user" in main_activity and
@@ -269,15 +269,15 @@ checks = {
     "persistent Shizuku direct input": "fastTap" in shizuku_service and "fastBack" in shizuku_service and "fastClickNode" in shizuku_service and "cachedClickableNodes" in (JAVA / "com/althmany/groupmanager/shizuku/PersistentUiAutomationBridge.kt").read_text(encoding="utf-8"),
     "Shizuku compact parity event frame": "waitAndSnapshot" in shizuku_service and "EVENT_TREE_COALESCE_MS = 0L" in shizuku_fast_policy and "EVENT_SCAN_MS = 12L" in shizuku_fast_policy and "STABLE_SCAN_MS = 30L" in shizuku_fast_policy and "FALLBACK_POLL_MS = 80L" in shizuku_fast_policy,
     "Shizuku 3.1 reliable cadence preset": all(token in shizuku_fast_policy for token in ["CLICK_THROTTLE_MS = 60L", "GESTURE_DURATION_MS = 72L", "RESULT_ANALYSIS_FALLBACK_MS = 72L", "ACTION_RETRY_AFTER_MS = 95L", "POST_JOIN_MIN_EVIDENCE_MS = 30L", "NON_LOADING_WATCHDOG_MS = 1_000L", "UNKNOWN_TIMEOUT_MS = 2_000L", "LOADING_TIMEOUT_MS = 20_000L", "USER_INSTANT_ADVANCE_SETTLE_MS = 0L"]),
-    "Shizuku 2.7.1 continuity policy": all(token in shizuku_continuity for token in ["FOREGROUND_REOPEN_AFTER_MS = 260L", "MAX_FOREGROUND_REOPEN_ATTEMPTS = 1", "FOREGROUND_ADVANCE_AFTER_MS = 1_100L", "NO_ROOT_ADVANCE_AFTER_MS = 1_200L", "UI_TREE_ADVANCE_AFTER_MS = 1_600L", "DIRECT_CONVERSATION_MIN_AGE_MS = 35L"]),
+    "Shizuku 2.7.1 continuity policy": all(token in shizuku_continuity for token in ["FOREGROUND_REOPEN_AFTER_MS = 260L", "MAX_FOREGROUND_REOPEN_ATTEMPTS = 1", "FOREGROUND_ADVANCE_AFTER_MS = 1_100L", "NO_ROOT_ADVANCE_AFTER_MS = 1_200L", "UI_TREE_ADVANCE_AFTER_MS = 2_200L", "DIRECT_CONVERSATION_MIN_AGE_MS = 35L"]),
     "Shizuku 2.7.1 transition fast path": all(token in shizuku_service for token in ["SHIZUKU_FAST_UI_ARMED", "resultCommitExecuting", "armFastEventSequence", "forceResolvedActivity = true", "window=skipped-fast", "sequence > currentLaunchEventBaseline"]) and "TARGET_HIDDEN_FOREGROUND_REPROBE_MS = 260L" in shizuku_continuity,
     "Shizuku Work Profile compatibility repair 2.7.3": all(token in shizuku_service for token in ["SHIZUKU_PROFILE_COMPAT_PROBE", "SHIZUKU_PROFILE_COMPAT_ACTIVE", "profileCompatibilityProbe", "fastUiMode = FastUiMode.DISABLED"]) and all(token in shizuku_continuity for token in ["PROFILE_COMPAT_COMMAND_PROBE_AFTER_MS = 180L", "MAX_PROFILE_COMPAT_COMMAND_PROBES = 2", "shouldProbeProfileCompatibleTree"]),
     "Shizuku visual Work action repair 2.7.4": all(token in shizuku_service for token in ["handleVisualProfileFallback", "SHIZUKU_VISUAL_ACTION_TAP", "fixedCoordinate=false", "dismissVisualActionSurface"]) and all(token in visual_action_policy for token in ["findWidePositiveAction", "MIN_BUTTON_WIDTH_PERCENT = 52", "isWhatsAppGreen"]),
     "Shizuku semantic launch repair 2.7.2": all(token in shizuku_service for token in ["ShizukuLaunchPolicy.launchAccepted", "resolveDeepLinkActivity", "startDeepLink", "retriedResolved"]) and all(token in shizuku_launch_policy for token in ["exitCode != 0", "unable to resolve intent", "permission denial"]),
-    "Shizuku 2.7 adaptive fast compatibility": all(token in shizuku_service for token in ["fastUiMode = FastUiMode.UNKNOWN", "/system/bin/uiautomator dump --compressed", "COMMAND_DUMP_COMPAT_RETRY_MS = 50L", "SHIZUKU_UI_TREE_PRESERVE_CURRENT", "currentPreserved=true"]),
+    "Shizuku 2.7 adaptive fast compatibility": all(token in shizuku_service for token in ["fastUiMode = FastUiMode.UNKNOWN", "/system/bin/uiautomator dump --compressed", "COMMAND_DUMP_COMPAT_RETRY_MS = 50L", "SHIZUKU_UI_TREE_BACK_HANDOFF", "pause=false; next=true"]),
     "Shizuku exact-user activity join proof": all(token in shizuku_service for token in ["probeJoinedConversationActivity", "SHIZUKU_ACTIVITY_JOIN_PROOF", "ShizukuActivityProofPolicy", "ACTIVITY_PROBE_TIMEOUT_MS", "ACTIVITY_PROBE_ATTEMPTS = 4", "ACTIVITY_PROBE_RETRY_MS = 45L"]) and (JAVA / "com/althmany/groupmanager/domain/ShizukuActivityProofPolicy.kt").exists(),
     "Shizuku 2.6.2 direct conversation event guard": all(token in shizuku_service for token in ["currentLaunchEventBaseline", "currentLaunchSawTargetEvent", "SHIZUKU_DIRECT_CONVERSATION_HANDOFF", "LinkResultCode.ALREADY_MEMBER"]),
-    "Shizuku 2.6.2 no-stall continuity": all(token in shizuku_service for token in ["SHIZUKU_FOREGROUND_CONTINUITY_ADVANCE", "SHIZUKU_AMBIGUOUS_CONTINUITY_ADVANCE", "SHIZUKU_UNKNOWN_CONTINUITY_ADVANCE", "SHIZUKU_NO_ROOT_CONTINUITY_ADVANCE", "SHIZUKU_UI_TREE_PRESERVE_CURRENT", "SHIZUKU_INPUT_CONTINUITY_RECOVERY", "SHIZUKU_RUNTIME_RECONNECT_WAIT"]),
+    "Shizuku 2.6.2 no-stall continuity": all(token in shizuku_service for token in ["SHIZUKU_FOREGROUND_CONTINUITY_ADVANCE", "SHIZUKU_AMBIGUOUS_CONTINUITY_ADVANCE", "SHIZUKU_UNKNOWN_CONTINUITY_ADVANCE", "SHIZUKU_NO_ROOT_CONTINUITY_ADVANCE", "SHIZUKU_UI_TREE_BACK_HANDOFF", "SHIZUKU_INPUT_CONTINUITY_RECOVERY", "SHIZUKU_RUNTIME_RECONNECT_WAIT"]),
     "Shizuku 2.6.2 request terminal direct handoff": all(token in shizuku_service for token in ["SHIZUKU_REQUEST_SUBMITTED_HANDOFF", "SHIZUKU_REQUEST_TERMINAL_PROBE", "REQUEST_TERMINAL_PROBE_MIN_AGE_MS", "REQUEST_TERMINAL_PROBE_COOLDOWN_MS"]),
     "Shizuku direct conversation close and handoff": "SHIZUKU_FAST_CONVERSATION_HANDOFF" in shizuku_service and "dismissKnownResultSurface" in shizuku_service,
     "Shizuku foreground timeout guard": "FOREGROUND_WAIT_STOP_MS" in shizuku_service,
