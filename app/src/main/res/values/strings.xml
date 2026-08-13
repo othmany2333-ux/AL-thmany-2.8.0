@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">AL-thmany</string>
+    <string name="app_name">Al-othmany Sender</string>
     <string name="main_title">مدير روابط القروبات</string>
     <string name="history_title">سجل الجلسات</string>
     <string name="settings_title">الإعدادات</string>
@@ -37,7 +37,7 @@
     <string name="share_report">مشاركة التقرير</string>
     <string name="clear_session">مسح الجلسة</string>
     <string name="safety_title">طريقة العمل الآمنة</string>
-    <string name="safety_note">في الوضع العادي يفتح التطبيق الرابط وتضغط أنت زر الانضمام. عند تفعيل إضافة Accessibility يدويًا، تضغط الإضافة فقط «عرض المجموعة» أو «الانضمام إلى المجموعة» أو «طلب الانضمام» داخل واتساب، وتستوعب القائمة حتى ١٠٠٠٠٠٠ رابط، مع معالجة حتى ١٠٠٠ رابطًا في كل تشغيل صريح ثم التوقف حتى يطلب المستخدم المتابعة.</string>
+    <string name="safety_note">يفتح المحرك الروابط التي أضفتها صراحة، ويتعامل فقط مع إجراءات الدعوة المعروفة داخل واتساب. يحفظ موضع التقدم، ويتوقف عند مغادرة واتساب، ولا يحاول تجاوز قيود واتساب.</string>
     <string name="link_number">الرابط %1$d</string>
     <string name="open_attempts">مرات الفتح: %1$d</string>
     <string name="status_pending">بانتظار الفتح</string>
@@ -129,7 +129,7 @@
     <string name="quick_notification_channel_name">الجلسة السريعة</string>
     <string name="quick_notification_channel_description">حالة وأزرار التحكم في معالجة روابط القروبات والمجتمعات.</string>
     <string name="quick_notification_title">دعوة واتساب قيد المعالجة</string>
-    <string name="quick_notification_body">يعالج AL-thmany الدعوة الحالية وينتقل تلقائيًا للرابط التالي.</string>
+    <string name="quick_notification_body">يعالج Al-othmany Sender الدعوة الحالية وينتقل تلقائيًا للرابط التالي.</string>
     <string name="quick_notification_progress">الرابط %1$d من %2$d قيد المعالجة التلقائية.</string>
     <string name="quick_action_joined">تم وفتح التالي</string>
     <string name="quick_action_skip">تخطي</string>
@@ -145,7 +145,7 @@
     <string name="accessibility_status_system_only">الحالة: صلاحية النظام مفعلة، لكن التشغيل داخل التطبيق متوقف.</string>
     <string name="accessibility_status_permission_needed">الحالة: يلزم تفعيل الخدمة من إعدادات إمكانية الوصول.</string>
     <string name="accessibility_status_off">الحالة: متوقفة.</string>
-    <string name="accessibility_service_name">AL-thmany — المحرك السريع للقروبات والمجتمعات</string>
+    <string name="accessibility_service_name">Al-othmany Sender — المحرك السريع للقروبات والمجتمعات</string>
     <string name="accessibility_service_description">يشغّل حتى ١٠٠٠ رابطًا في كل تشغيل صريح داخل واتساب المحدد في نفس ملف Android. يتعرف على دعوات القروبات والمجتمعات وJoin/Request/Confirm، وعند تفعيل وضع المجتمع يعالج صفوف القروبات الدلالية داخله واحدًا واحدًا ثم يعود ويكمل. لا يقرأ الرسائل ولا يرسل محتوى ولا يتجاوز قيود واتساب.</string>
     <string name="start_automatic_batch">بدء تشغيل تلقائي (حتى ١٠٠٠ من القائمة)</string>
     <string name="continue_automatic_batch">متابعة الجلسة التلقائية</string>
@@ -158,7 +158,7 @@
     <string name="save_delay">حفظ</string>
     <string name="join_delay_error">أدخل رقمًا من %1$d إلى %2$d ثانية.</string>
     <string name="join_delay_saved">تم حفظ وقت الانتظار.</string>
-    <string name="automation_notification_title">محرك AL-thmany يعمل</string>
+    <string name="automation_notification_title">محرك Al-othmany Sender يعمل</string>
     <string name="automation_notification_progress">تمت معالجة %1$d من %2$d في الجلسة • الرابط %3$d من %4$d • الفاصل %5$d ثانية</string>
     <string name="automation_notification_waiting">تمت معالجة %1$d من %2$d في الجلسة • الفاصل %3$d ثانية</string>
     <string name="automation_action_stop">إيقاف الجلسة</string>
@@ -210,17 +210,17 @@
     <string name="automation_notification_paused">الجلسة متوقفة مؤقتًا • تم %1$d من %2$d</string>
     <string name="automation_action_pause">إيقاف مؤقت</string>
     <string name="automation_action_resume">استئناف</string>
-    <string name="autopilot_toolbar_title">AL-thmany</string>
+    <string name="autopilot_toolbar_title">Al-othmany Sender</string>
     <string name="autopilot_toolbar_subtitle">قائمة حتى 1000000 رابط • حتى 1000 لكل تشغيل صريح</string>
     <string name="autopilot_icon_description">رمز التشغيل التلقائي</string>
-    <string name="autopilot_hero_title">AL-thmany — محرك سياقي دقيق</string>
-    <string name="autopilot_hero_badge">AL-THMANY CORE</string>
+    <string name="autopilot_hero_title">Al-othmany Sender — محرك سياقي دقيق</string>
+    <string name="autopilot_hero_badge">AL-OTHMANY SENDER CORE</string>
     <string name="autopilot_hero_description">أضف الروابط وحدد نسخة واتساب والوقت فقط. يفتح المحرك كل دعوة، ويتعرف على المجموعة أو المجتمع، ويضغط الانضمام أو طلب الانضمام والتأكيد، ثم ينتقل تلقائيًا للرابط التالي.</string>
     <string name="autopilot_service_ready">● خدمة الانضمام جاهزة</string>
     <string name="autopilot_service_needs_setup">● يلزم تفعيل الخدمة مرة واحدة</string>
     <string name="autopilot_service_reconnecting">● الخدمة مفعلة — جارٍ إعادة اتصال خدمة إمكانية الوصول المحلية</string>
     <string name="autopilot_recheck_service">إعادة فحص الخدمة</string>
-    <string name="accessibility_enabled_but_not_bound">إمكانية الوصول مفعلة بالفعل، لكن أندرويد لم يُعد ربط الخدمة بعد. إذا استمرت الحالة فقط، أوقف خدمة AL-thmany وشغّلها مرة واحدة.</string>
+    <string name="accessibility_enabled_but_not_bound">إمكانية الوصول مفعلة بالفعل، لكن أندرويد لم يُعد ربط الخدمة بعد. إذا استمرت الحالة فقط، أوقف خدمة Al-othmany Sender وشغّلها مرة واحدة.</string>
     <string name="autopilot_setup_once">تهيئة مرة واحدة</string>
     <string name="autopilot_service_enabled_button">الخدمة مفعّلة</string>
     <string name="autopilot_choose_app_title">1. اختر تطبيق واتساب</string>
@@ -251,12 +251,12 @@
     <string name="autopilot_remaining">المتبقي</string>
     <string name="autopilot_skip_current">تخطي الحالي</string>
     <string name="autopilot_links_results_title">تفاصيل الروابط والنتائج</string>
-    <string name="autopilot_footer">AL-thmany 2.8.0 • قائمة 1000000 رابط • حتى 1000 لكل تشغيل • ضغط مباشر وتسلسل Work</string>
+    <string name="autopilot_footer">Al-othmany Sender 2.8.0 • قائمة 1000000 رابط • حتى 1000 لكل تشغيل • ضغط مباشر وتسلسل Work</string>
     <string name="autopilot_session_ready">تم تجهيز %1$d روابط • مكرر %2$d • غير صالح %3$d • خارج الحد %4$d</string>
     <string name="autopilot_already_running">المشغّل يعمل حاليًا.</string>
     <string name="autopilot_selected_app_missing">تطبيق واتساب المحدد غير مثبت على الهاتف.</string>
     <string name="autopilot_setup_dialog_title">تهيئة الخدمة مرة واحدة</string>
-    <string name="autopilot_setup_dialog_message">لأسباب أمنية يفرض أندرويد تفعيل خدمة تسهيلات الاستخدام يدويًا مرة واحدة. إذا ظهرت رسالة «ضبط مقيّد»، افتح معلومات التطبيق واختر السماح بالإعدادات المقيّدة، ثم فعّل «AL-thmany». بعد ذلك يكفي إدخال الروابط واختيار تطبيق واتساب والوقت.</string>
+    <string name="autopilot_setup_dialog_message">لأسباب أمنية يفرض أندرويد تفعيل خدمة تسهيلات الاستخدام يدويًا مرة واحدة. إذا ظهرت رسالة «ضبط مقيّد»، افتح معلومات التطبيق واختر السماح بالإعدادات المقيّدة، ثم فعّل «Al-othmany Sender». بعد ذلك يكفي إدخال الروابط واختيار تطبيق واتساب والوقت.</string>
     <string name="autopilot_open_app_info">معلومات التطبيق</string>
     <string name="autopilot_files_imported">تم دمج الملفات وإضافة محتواها.</string>
     <string name="stop_automation">إيقاف</string>
@@ -280,9 +280,9 @@
     <string name="autopilot_recovering">فحص الشاشة بثبات قبل تجاوز الرابط دون إعادة فتحه</string>
     <string name="autopilot_auto_start_enabled">وضع بلا تدخل مفعّل.</string>
     <string name="autopilot_auto_start_disabled">تم إيقاف البدء التلقائي؛ استخدم زر التشغيل.</string>
-    <string name="aurora_toolbar_title">AL-thmany</string>
+    <string name="aurora_toolbar_title">Al-othmany Sender</string>
     <string name="aurora_toolbar_subtitle">تدفق ذكي • قروبات ومجتمعات • قائمة 1000000 • تشغيل صريح 1000</string>
-    <string name="aurora_badge">AL-THMANY CORE</string>
+    <string name="aurora_badge">AL-OTHMANY SENDER CORE</string>
     <string name="aurora_hero_title">تدفق متسلسل ودقيق ضمن التشغيل الصريح</string>
     <string name="aurora_hero_description">ألصق الروابط، اختر واتساب وحدد الوقت. يتولى المحرك فتح الدعوة، والضغط على عرض المجموعة أو المجتمع، ثم الانضمام أو طلب الانضمام والتأكيد، وبعد اكتمال النتيجة يفتح الرابط التالي تلقائيًا.</string>
     <string name="aurora_links_title">روابط الجلسة</string>
@@ -303,7 +303,7 @@
     <string name="aurora_start_scheduled_button">حفظ وتشغيل في الموعد</string>
     <string name="aurora_idle_message">كل شيء في شاشة واحدة: روابط، تطبيق، وقت بدء، فاصل بين الروابط، ومهلة ذكية لكل دعوة. يلزم تفعيل تسهيلات الاستخدام مرة واحدة فقط.</string>
     <string name="aurora_live_title">مركز عمليات Nebula المباشر</string>
-    <string name="aurora_footer">AL-thmany 2.8.0 • القروبات والمجتمعات • ضغط مباشر • إغلاق وانتقال متسلسل</string>
+    <string name="aurora_footer">Al-othmany Sender 2.8.0 • القروبات والمجتمعات • ضغط مباشر • إغلاق وانتقال متسلسل</string>
     <string name="aurora_delay_seconds_format">%1$d ثانية</string>
     <string name="aurora_start_delay_format">بعد %1$d ثانية</string>
     <string name="aurora_schedule_at_format">سيبدأ تلقائيًا في %1$s • بعد %2$s</string>
@@ -312,7 +312,7 @@
     <string name="aurora_schedule_already_active">توجد جلسة مجدولة بالفعل. ألغها أو انتظر موعدها.</string>
     <string name="aurora_service_required_for_schedule">فعّل خدمة تسهيلات الاستخدام قبل جدولة التشغيل.</string>
     <string name="automation_stage_scheduled">مجدول للبدء</string>
-    <string name="automation_notification_scheduled_title">جلسة AL-thmany مجدولة</string>
+    <string name="automation_notification_scheduled_title">جلسة Al-othmany Sender مجدولة</string>
     <string name="automation_notification_scheduled_body">سيبدأ التشغيل تلقائيًا في %1$s • الفاصل بين الروابط %2$d ثانية</string>
     <string name="automation_action_cancel_schedule">إلغاء الموعد</string>
     <string name="nebula_action_timeout_title">مهلة اكتشاف زر الانضمام</string>
@@ -341,7 +341,7 @@
     <string name="quantum_fast_mode_enabled">تم تفعيل الوضع السريع دون لمس.</string>
     <string name="quantum_fast_mode_disabled">تم الرجوع إلى السرعة المتوازنة.</string>
 
-    <string name="swift_toolbar_title">AL-thmany</string>
+    <string name="swift_toolbar_title">Al-othmany Sender</string>
     <string name="swift_toolbar_subtitle">سريع • إغلاق تلقائي • قائمة 1000000 • دفعات 1000</string>
     <string name="swift_status_title">محرك Swift</string>
     <string name="swift_links_title">الروابط — حتى 1000000 في القائمة</string>
@@ -353,10 +353,10 @@
     <string name="swift_idle_message">الواجهة مختصرة: ضع الروابط، اختر واتساب، وحدد 1–60 ثانية. بعد الانضمام يغلق المحرك نافذة الدعوة وينتقل تلقائيًا للرابط التالي.</string>
     <string name="swift_live_title">التنفيذ المباشر</string>
 
-    <string name="unified_toolbar_title">AL-thmany</string>
-    <string name="unified_toolbar_subtitle">الإصدار %1$s • تشغيل ذكي متعدد واتساب • 1000 رابط في الجولة</string>
+    <string name="unified_toolbar_title">Al-othmany Sender</string>
+    <string name="unified_toolbar_subtitle">الإصدار %1$s • تشغيل ذكي متعدد واتساب • استئناف تلقائي وثبات أعلى</string>
     <string name="unified_links_title">إدارة الروابط</string>
-    <string name="unified_links_subtitle">ألصق أو استورد حتى 1000000 رابط قروب أو مجتمع، وسيُحذف التكرار تلقائيًا، مع معالجة حتى 1000 في كل تشغيل صريح.</string>
+    <string name="unified_links_subtitle">ألصق أو استورد حتى 1000000 رابط قروب أو مجتمع. تُحذف التكرارات تلقائيًا ويستمر التشغيل مع حفظ التقدم حتى نهاية الجلسة.</string>
     <string name="unified_target_title">تطبيق الهدف</string>
     <string name="unified_target_subtitle">اختر نسخة واتساب التي ستُفتح فيها الروابط.</string>
     <string name="unified_personal_target">واتساب الأساسي</string>
@@ -383,7 +383,7 @@
     <string name="clear_runtime_diagnostics">مسح السجل</string>
     <string name="runtime_diagnostics_empty">لا توجد بيانات تشخيص بعد</string>
     <string name="runtime_diagnostics_cleared">تم مسح سجل التشخيص</string>
-    <string name="runtime_diagnostics_subject">AL-thmany — سجل تشخيص Smart Runtime</string>
+    <string name="runtime_diagnostics_subject">Al-othmany Sender — سجل تشخيص Smart Runtime</string>
     <string name="runtime_health_format">Smart Runtime: %1$s • الإجراء %2$s • الثقة %3$s • ثبات الشاشة %4$d • Watchdog %5$s</string>
     <string name="choose_installed_whatsapp">اختيار واتساب من التطبيقات المثبتة</string>
     <string name="selected_whatsapp_auto">الهدف الحالي: اختيار تلقائي من واتساب المتاح</string>
@@ -393,11 +393,11 @@
     <string name="whatsapp_picker_title">اختر تطبيق واتساب</string>
     <string name="whatsapp_picker_auto">استخدام الاختيار التلقائي</string>
     <string name="profile_support_default">يتم اكتشاف تطبيقات واتساب داخل ملف Android الحالي فقط.</string>
-    <string name="profile_support_managed">الملف الحالي: Work/Managed Profile. فعّل AL-thmany وخدمة إمكانية الوصول داخل هذا الملف.</string>
+    <string name="profile_support_managed">الملف الحالي: Work/Managed Profile. فعّل Al-othmany Sender وخدمة إمكانية الوصول داخل هذا الملف.</string>
     <string name="profile_support_secondary">الملف الحالي: ملف ثانوي/معزول. التطبيقات تُكتشف داخل هذا الملف فقط.</string>
     <string name="auto_pause_outside_title">إيقاف مؤقت عند مغادرة واتساب</string>
     <string name="auto_pause_outside_hint">يتوقف التشغيل فور انتقال الواجهة إلى تطبيق آخر، ويمكن استئنافه من الإشعار أو تلقائيًا عند العودة إذا كان الاستئناف التلقائي مفعّلًا.</string>
-    <string name="return_to_app_title">العودة إلى AL-thmany بعد انتهاء التشغيل</string>
+    <string name="return_to_app_title">العودة إلى Al-othmany Sender بعد انتهاء التشغيل</string>
     <string name="return_to_app_hint">عند اكتمال نافذة التشغيل أو انتهاء جميع الروابط يحاول فتح لوحة التطبيق مباشرة.</string>
     <string name="turbo_runtime_label">Turbo Runtime • استجابة فائقة</string>
 
@@ -405,7 +405,7 @@
     <string name="target_test_success">تم فتح واتساب المحدد داخل الملف الحالي بنجاح.</string>
     <string name="target_test_failed">تعذر فتح واتساب المحدد داخل هذا الملف. أعد اختياره من القائمة.</string>
     <string name="profile_explicit_target_required">داخل المجلد الآمن/ملف العمل يجب اختيار واتساب محدد قبل التشغيل.</string>
-    <string name="profile_support_secure_samsung">الملف الحالي: بيئة Samsung معزولة (غالبًا المجلد الآمن). ثبّت AL-thmany وواتساب داخل نفس البيئة. استخدم Accessibility إذا كانت متاحة، وإلا اختبر Shizuku؛ لا يبدأ المحرك الآلي إذا لم يستطع رؤية واجهة واتساب.</string>
+    <string name="profile_support_secure_samsung">الملف الحالي: بيئة Samsung معزولة (غالبًا المجلد الآمن). ثبّت Al-othmany Sender وواتساب داخل نفس البيئة. استخدم Accessibility إذا كانت متاحة، وإلا اختبر Shizuku؛ لا يبدأ المحرك الآلي إذا لم يستطع رؤية واجهة واتساب.</string>
     <string name="profile_target_verified">تم التحقق من الهدف داخل الملف الحالي: %1$s</string>
     <string name="profile_target_not_verified">الهدف غير جاهز داخل الملف الحالي. اختر واتساب محددًا ثم اختبره.</string>
     <string name="community_traversal_title">الانضمام الذكي إلى قروبات المجتمع</string>
@@ -419,26 +419,26 @@
     <string name="request_shizuku_permission">منح إذن Shizuku</string>
     <string name="test_shizuku">اختبار Shizuku</string>
     <string name="shizuku_status_off">Shizuku: غير متصل. شغّل Shizuku أولًا.</string>
-    <string name="shizuku_status_permission">Shizuku: يعمل، لكنه يحتاج موافقة AL-thmany.</string>
+    <string name="shizuku_status_permission">Shizuku: يعمل، لكنه يحتاج موافقة Al-othmany Sender.</string>
     <string name="shizuku_status_ready">Shizuku: جاهز • UID %1$d%2$s</string>
     <string name="shizuku_status_bound"> • UserService متصل</string>
     <string name="shizuku_probe_result">اختبار Shizuku: %1$s</string>
     <string name="shizuku_permission_requested">تم إرسال طلب صلاحية Shizuku.</string>
     <string name="shizuku_start_first">شغّل تطبيق Shizuku وابدأ الخدمة أولًا.</string>
-    <string name="shizuku_permission_denied">لم يتم منح AL-thmany صلاحية Shizuku.</string>
+    <string name="shizuku_permission_denied">لم يتم منح Al-othmany Sender صلاحية Shizuku.</string>
     <string name="shizuku_backend_warning">محرك 2.3 لا يفترض أنه يتجاوز Knox. يفحص الحزمة والواجهة وحدود الشاشة ويطلب إجماع لقطتين قبل الضغط، وإذا تعذرت قراءة UIAutomator يوقف التشغيل ويحفظ الرابط الحالي.</string>
-    <string name="shizuku_backend_not_ready">محرك Shizuku غير جاهز. افتح الإعدادات وشغّل Shizuku وامنح AL-thmany الإذن ثم اختبره.</string>
+    <string name="shizuku_backend_not_ready">محرك Shizuku غير جاهز. افتح الإعدادات وشغّل Shizuku وامنح Al-othmany Sender الإذن ثم اختبره.</string>
     <string name="shizuku_schedule_not_supported">التشغيل المجدول غير مفعل بعد لمحرك Shizuku التجريبي. استخدم «ابدأ الآن».</string>
-    <string name="shizuku_notification_channel">AL-thmany — Shizuku</string>
-    <string name="shizuku_notification_title">AL-thmany • Shizuku Engine</string>
+    <string name="shizuku_notification_channel">Al-othmany Sender — Shizuku</string>
+    <string name="shizuku_notification_title">Al-othmany Sender • Shizuku Engine</string>
     <string name="shizuku_service_starting">جارٍ ربط Shizuku وفحص البيئة…</string>
     <string name="shizuku_service_paused">التشغيل متوقف مؤقتًا</string>
     <string name="shizuku_service_opened_link">تم فتح الرابط %1$d؛ جارٍ فحص شاشة واتساب</string>
     <string name="shizuku_service_completed_link">اكتملت %1$d روابط في هذا التشغيل</string>
 
 
-    <string name="accessibility_status_active_local_profile">الحالة: خدمة AL-thmany متصلة داخل ملف Android الحالي وجاهزة للتحكم.</string>
-    <string name="accessibility_status_wrong_profile">الحالة: Android يعرض الخدمة كمفعلة، لكن لا يوجد اتصال محلي بخدمة AL-thmany داخل هذا الملف. افتح صفحة الخدمة الخاصة بهذا الملف وفعّلها هنا.</string>
+    <string name="accessibility_status_active_local_profile">الحالة: خدمة Al-othmany Sender متصلة داخل ملف Android الحالي وجاهزة للتحكم.</string>
+    <string name="accessibility_status_wrong_profile">الحالة: Android يعرض الخدمة كمفعلة، لكن لا يوجد اتصال محلي بخدمة Al-othmany Sender داخل هذا الملف. افتح صفحة الخدمة الخاصة بهذا الملف وفعّلها هنا.</string>
     <string name="profile_control_diagnostic_placeholder">تشخيص ملف التحكم: بانتظار فحص الخدمة المحلية.</string>
     <string name="profile_control_diagnostic_format">الملف: %1$s
 مفعلة في النظام: %2$s
@@ -448,62 +448,62 @@
 القدرة: %6$s</string>
 
     <string name="unknown">غير معروف</string>
-    <string name="open_accessibility_service_details">1. فتح خدمة AL-thmany مباشرة</string>
+    <string name="open_accessibility_service_details">1. فتح خدمة Al-othmany Sender مباشرة</string>
     <string name="open_accessibility_services_list">2. فتح قائمة خدمات إمكانية الوصول</string>
-    <string name="open_current_profile_app_info">3. فتح معلومات AL-thmany في هذا الملف</string>
-    <string name="accessibility_route_service_details_started">تم طلب صفحة خدمة AL-thmany. إذا نقلتك Samsung إلى الملف الشخصي الرئيسي فهذا قيد من النظام، وليس انتقالًا من التطبيق.</string>
+    <string name="open_current_profile_app_info">3. فتح معلومات Al-othmany Sender في هذا الملف</string>
+    <string name="accessibility_route_service_details_started">تم طلب صفحة خدمة Al-othmany Sender. إذا نقلتك Samsung إلى الملف الشخصي الرئيسي فهذا قيد من النظام، وليس انتقالًا من التطبيق.</string>
     <string name="accessibility_route_service_details_unavailable">صفحة تفاصيل خدمة Accessibility غير متاحة على هذا الجهاز. استخدم قائمة خدمات إمكانية الوصول.</string>
     <string name="accessibility_route_list_started">تم فتح قائمة إمكانية الوصول. في ملف العمل قد يدير Android هذه القائمة من الملف الرئيسي.</string>
     <string name="accessibility_route_list_unavailable">تعذر فتح قائمة إمكانية الوصول على هذا الجهاز.</string>
-    <string name="accessibility_route_app_info_started">تم فتح معلومات نسخة AL-thmany الحالية. تحقق من شارة العمل/القفل للتأكد أنك في النسخة الصحيحة.</string>
+    <string name="accessibility_route_app_info_started">تم فتح معلومات نسخة Al-othmany Sender الحالية. تحقق من شارة العمل/القفل للتأكد أنك في النسخة الصحيحة.</string>
     <string name="accessibility_route_app_info_unavailable">تعذر فتح معلومات التطبيق للنسخة الحالية.</string>
     <string name="accessibility_settings_unavailable">تعذر فتح إعدادات Accessibility من هذا الملف.</string>
     <string name="profile_accessibility_policy_placeholder">فحص ملف العمل وسياسة Accessibility: بانتظار الفحص.</string>
     <string name="profile_accessibility_policy_format">مكوّن الخدمة ظاهر في هذا الملف: %1$s
-إعداد الخدمات المفعلة يحتوي AL-thmany: %2$s
+إعداد الخدمات المفعلة يحتوي Al-othmany Sender: %2$s
 حالة سياسة العمل: %3$s
 مدير السياسة الظاهر: %4$s
 الإجراء المطلوب: %5$s</string>
     <string name="accessibility_policy_not_managed">هذا ليس Work Profile؛ لا توجد سياسة عمل هنا.</string>
     <string name="accessibility_policy_all_allowed">قائمة المدير تسمح بكل خدمات Accessibility.</string>
-    <string name="accessibility_policy_app_allowed">سياسة المدير تسمح بحزمة AL-thmany.</string>
-    <string name="accessibility_policy_blocked">BLOCKED_BY_POLICY — سياسة المدير تستبعد AL-thmany.</string>
+    <string name="accessibility_policy_app_allowed">سياسة المدير تسمح بحزمة Al-othmany Sender.</string>
+    <string name="accessibility_policy_blocked">BLOCKED_BY_POLICY — سياسة المدير تستبعد Al-othmany Sender.</string>
     <string name="accessibility_policy_query_unavailable">غير قابل للقراءة من تطبيق عادي؛ Android يسمح بقراءة allowlist فقط لمالك الجهاز/الملف. لا يتم افتراض الحظر بدون دليل.</string>
     <string name="accessibility_activation_ready">READY — الخدمة المحلية تعمل داخل هذا الملف.</string>
     <string name="accessibility_activation_component_missing">SERVICE_COMPONENT_NOT_VISIBLE — نسخة الخدمة غير ظاهرة لـ Accessibility داخل هذا الملف.</string>
-    <string name="accessibility_activation_parent_toggle_required">PARENT_ACCESSIBILITY_TOGGLE_REQUIRED — فعّل AL-thmany من إعدادات Accessibility التي يديرها الملف الرئيسي، ثم ارجع لنسخة العمل.</string>
+    <string name="accessibility_activation_parent_toggle_required">PARENT_ACCESSIBILITY_TOGGLE_REQUIRED — فعّل Al-othmany Sender من إعدادات Accessibility التي يديرها الملف الرئيسي، ثم ارجع لنسخة العمل.</string>
     <string name="accessibility_activation_setting_present_not_active">ENABLED_SETTING_PRESENT_BUT_MANAGER_DISABLED — اسم الخدمة موجود في إعداد Android لكن AccessibilityManager لا يعتبرها فعالة داخل الملف؛ أعد إيقاف/تشغيل الخدمة من الإعدادات الرئيسية بعد تثبيت نسخة العمل.</string>
-    <string name="accessibility_activation_local_not_connected">LOCAL_SERVICE_NOT_CONNECTED — النظام يعتبر الخدمة مفعلة لكن عملية AL-thmany المحلية لم تتصل بعد.</string>
+    <string name="accessibility_activation_local_not_connected">LOCAL_SERVICE_NOT_CONNECTED — النظام يعتبر الخدمة مفعلة لكن عملية Al-othmany Sender المحلية لم تتصل بعد.</string>
     <string name="accessibility_activation_waiting_bind">WAITING_FOR_LOCAL_BIND — فعّل الخدمة أو أعد تشغيلها ثم ارجع للتطبيق.</string>
 
     <string name="native_profile_engine_title">المحرك الأصلي متعدد الملفات 2.4</string>
-    <string name="native_profile_engine_description">يفحص الملف الحالي ثم يختار فقط محركًا يعمل داخل نفس Android Profile: Accessibility المحلية أولًا، ثم Shizuku المحمي عند الحاجة. في Work Profile يستطيع Work Controller تعديل allowlist فقط إذا كان AL-thmany هو Profile Owner. لا يتم تجاوز Knox أو سياسة مدير خارجي.</string>
+    <string name="native_profile_engine_description">يفحص الملف الحالي ثم يختار فقط محركًا يعمل داخل نفس Android Profile: Accessibility المحلية أولًا، ثم Shizuku المحمي عند الحاجة. في Work Profile يستطيع Work Controller تعديل allowlist فقط إذا كان Al-othmany Sender هو Profile Owner. لا يتم تجاوز Knox أو سياسة مدير خارجي.</string>
     <string name="native_profile_engine_waiting">جارٍ تحليل أفضل محرك أصلي لهذه البيئة…</string>
     <string name="native_profile_engine_format">الملف: %1$s
 النوع: %2$s
 Accessibility محلية: %3$s
 Shizuku جاهز: %4$s
-AL-thmany Profile Owner: %5$s
+Al-othmany Sender Profile Owner: %5$s
 مدير العمل: %6$s
 حالة سياسة Accessibility: %7$s
 المحرك المقترح: %8$s
 الإجراء المطلوب: %9$s
 السبب: %10$s</string>
     <string name="use_recommended_native_engine">فحص واعتماد أفضل محرك لهذه البيئة</string>
-    <string name="apply_work_accessibility_policy">Work Controller: السماح بخدمة AL-thmany</string>
+    <string name="apply_work_accessibility_policy">Work Controller: السماح بخدمة Al-othmany Sender</string>
     <string name="use_work_shizuku_runtime">Work Controller: استخدام محرك Shizuku</string>
     <string name="work_runtime_shizuku_selected">تم تفعيل محرك Shizuku لملف العمل. سيستخدم المسار المتوافق عند اختفاء شجرة Work Profile ويضغط فقط بعد إثبات واجهة واتساب.</string>
-    <string name="work_profile_admin_label">AL-thmany Work Controller</string>
-    <string name="work_profile_admin_description">مكوّن اختياري لإدارة سياسة AL-thmany داخل Work Profile عندما يعيّنه Android كـ Profile Owner.</string>
+    <string name="work_profile_admin_label">Al-othmany Sender Work Controller</string>
+    <string name="work_profile_admin_description">مكوّن اختياري لإدارة سياسة Al-othmany Sender داخل Work Profile عندما يعيّنه Android كـ Profile Owner.</string>
     <string name="native_engine_accessibility_selected">تم اعتماد الوضع التلقائي؛ Accessibility المحلية هي المحرك الجاهز.</string>
     <string name="native_engine_shizuku_selected">تم اعتماد الوضع التلقائي؛ Shizuku هو المحرك الأصلي الجاهز لهذه البيئة وسيجري فحص UI قبل أي ضغط.</string>
-    <string name="native_engine_open_accessibility">هذه البيئة تحتاج تفعيل Accessibility المحلية لنفس نسخة AL-thmany.</string>
-    <string name="native_engine_start_shizuku">لا يوجد محرك محلي جاهز. شغّل Shizuku وامنح AL-thmany الإذن ثم أعد الفحص.</string>
-    <string name="native_engine_apply_work_policy">هذه نسخة Work Profile وAL-thmany يملك صلاحية الإدارة؛ اضغط زر Work Controller للسماح بالخدمة ثم فعّلها من النظام.</string>
+    <string name="native_engine_open_accessibility">هذه البيئة تحتاج تفعيل Accessibility المحلية لنفس نسخة Al-othmany Sender.</string>
+    <string name="native_engine_start_shizuku">لا يوجد محرك محلي جاهز. شغّل Shizuku وامنح Al-othmany Sender الإذن ثم أعد الفحص.</string>
+    <string name="native_engine_apply_work_policy">هذه نسخة Work Profile وAl-othmany Sender يملك صلاحية الإدارة؛ اضغط زر Work Controller للسماح بالخدمة ثم فعّلها من النظام.</string>
     <string name="native_engine_blocked">لا يوجد Backend أصلي مسموح وجاهز داخل هذا الملف. التطبيق لن يحاول التحكم عبر ملف آخر.</string>
-    <string name="work_policy_not_owner">لا يمكن تعديل سياسة ملف العمل الحالي لأن AL-thmany ليس Profile Owner. يجب أن يسمح مدير ملف العمل الحالي بالخدمة أو استخدام Shizuku إذا نجح فحصه.</string>
-    <string name="work_policy_applied">تم السماح بحزمة AL-thmany في سياسة Accessibility لملف العمل. ما زال Android يتطلب تفعيل الخدمة يدويًا.</string>
-    <string name="work_policy_already_allowed">سياسة ملف العمل تسمح بخدمة AL-thmany بالفعل. فعّل الخدمة من إعدادات النظام ثم أعد الفحص.</string>
+    <string name="work_policy_not_owner">لا يمكن تعديل سياسة ملف العمل الحالي لأن Al-othmany Sender ليس Profile Owner. يجب أن يسمح مدير ملف العمل الحالي بالخدمة أو استخدام Shizuku إذا نجح فحصه.</string>
+    <string name="work_policy_applied">تم السماح بحزمة Al-othmany Sender في سياسة Accessibility لملف العمل. ما زال Android يتطلب تفعيل الخدمة يدويًا.</string>
+    <string name="work_policy_already_allowed">سياسة ملف العمل تسمح بخدمة Al-othmany Sender بالفعل. فعّل الخدمة من إعدادات النظام ثم أعد الفحص.</string>
     <string name="work_policy_apply_failed">تعذر تعديل سياسة Accessibility لملف العمل. راجع حالة Profile Owner/مدير العمل في التشخيص.</string>
 
     <string name="runtime_speed_title">سرعة المحرك</string>
@@ -521,4 +521,5 @@ AL-thmany Profile Owner: %5$s
     <string name="resume_last_run">استئناف من آخر رابط</string>
     <string name="continue_on_restriction">تخطي Restriction والاستمرار</string>
     <string name="continue_on_restriction_hint">إذا أوقفته، تتوقف الجولة عند Restriction. لا يتم تجاوز قيود واتساب في الحالتين.</string>
+    <string name="sender_add_links">إضافة روابط</string>
 </resources>

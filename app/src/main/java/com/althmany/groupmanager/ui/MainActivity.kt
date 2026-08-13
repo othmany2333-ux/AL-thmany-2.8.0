@@ -197,6 +197,9 @@ class MainActivity : AppCompatActivity() {
     private fun configureToolbar() {
         val displayVersion = BuildConfig.VERSION_NAME.removeSuffix("-debug")
         binding.toolbar.subtitle = getString(R.string.unified_toolbar_subtitle, displayVersion)
+        binding.toolbar.setNavigationOnClickListener {
+            startActivity(Intent(this, HistoryActivity::class.java))
+        }
 
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
@@ -576,11 +579,18 @@ class MainActivity : AppCompatActivity() {
 
         linksEditText.doAfterTextChanged {
             val text = it?.toString().orEmpty()
+            if (text.isNotBlank() && linksInputLayout.visibility != View.VISIBLE) {
+                linksInputLayout.visibility = View.VISIBLE
+            }
             scheduleLinkAnalysis(text)
             if (text.isBlank()) lastAutomaticInputHash = null
             scheduleSmartAutoStart()
         }
 
+        addLinksButton.setOnClickListener {
+            linksInputLayout.visibility = View.VISIBLE
+            linksEditText.requestFocus()
+        }
         pasteButton.setOnClickListener { pasteFromClipboard() }
         importButton.setOnClickListener {
             importDocumentsLauncher.launch(
@@ -665,9 +675,9 @@ class MainActivity : AppCompatActivity() {
         val snapshot = state.snapshot
         val showSession = snapshot != null
         if (showSession && sessionCard.visibility != View.VISIBLE) {
-            sessionCard.alpha = 0f
+            sessionCard.animate().cancel()
+            sessionCard.alpha = 1f
             sessionCard.visibility = View.VISIBLE
-            sessionCard.animate().alpha(1f).setDuration(220L).start()
         } else if (!showSession) {
             sessionCard.visibility = View.GONE
         }

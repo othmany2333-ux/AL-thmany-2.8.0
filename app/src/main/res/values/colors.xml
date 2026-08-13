@@ -64,4 +64,20 @@
     <color name="swift_border">#CFE4DF</color>
     <color name="swift_progress_track">#DDEEEA</color>
     <color name="swift_divider">#E3ECE9</color>
+
+    <!-- Al-othmany Sender 3.1 -->
+    <color name="sender_bg_deep">#031519</color>
+    <color name="sender_bg">#061F25</color>
+    <color name="sender_header">#082B33</color>
+    <color name="sender_card">#0B2A31</color>
+    <color name="sender_card_alt">#0E323A</color>
+    <color name="sender_border">#174650</color>
+    <color name="sender_accent">#10B7C1</color>
+    <color name="sender_accent_dark">#078995</color>
+    <color name="sender_accent_soft">#163E46</color>
+    <color name="sender_text_primary">#F3FAFB</color>
+    <color name="sender_text_secondary">#AFC6CB</color>
+    <color name="sender_text_tertiary">#819CA3</color>
+    <color name="sender_progress_track">#16383F</color>
+    <color name="sender_settings_surface">#F7FAFA</color>
 </resources>

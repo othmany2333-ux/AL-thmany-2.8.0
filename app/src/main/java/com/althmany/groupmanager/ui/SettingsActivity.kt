@@ -2,8 +2,13 @@ package com.althmany.groupmanager.ui
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.provider.Settings
+import android.view.Gravity
+import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -57,6 +62,17 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.setDimAmount(0.46f)
+        window.setGravity(Gravity.RIGHT)
+        binding.root.post {
+            val metrics = resources.displayMetrics
+            val phoneWidth = (metrics.widthPixels * 0.92f).toInt()
+            val maxPanelWidth = (560f * metrics.density).toInt()
+            window.setLayout(minOf(phoneWidth, maxPanelWidth), ViewGroup.LayoutParams.MATCH_PARENT)
+        }
 
         binding.toolbar.setNavigationOnClickListener { finish() }
         Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)

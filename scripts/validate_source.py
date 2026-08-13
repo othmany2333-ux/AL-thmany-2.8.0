@@ -190,8 +190,9 @@ checks = {
     "profile-key launch continuity": "expectedProfileKey" in whatsapp_launcher,
     "AL-thmany namespace": 'namespace = "com.althmany.groupmanager"' in build,
     "AL-thmany application id": 'applicationId = "com.althmany.groupmanager"' in build,
-    "versionCode 304": "versionCode = 304" in build,
-    "versionName 3.0.4": 'versionName = "3.0.4"' in build,
+    "Al-othmany Sender stable package": 'applicationId = "com.althmany.groupmanager"' in build and "Theme.AlOthmanySender.Main" in manifest,
+    "versionCode 310": "versionCode = 310" in build,
+    "versionName 3.1.0": 'versionName = "3.1.0"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),
@@ -228,7 +229,7 @@ checks = {
     "persistent Shizuku UiAutomation bridge": (JAVA / "com/althmany/groupmanager/shizuku/PersistentUiAutomationBridge.kt").exists() and "fastSnapshot" in shizuku_service and "SHIZUKU_FAST_UI_ACTIVE" in shizuku_service,
     "persistent Shizuku direct input": "fastTap" in shizuku_service and "fastBack" in shizuku_service and "fastClickNode" in shizuku_service and "cachedClickableNodes" in (JAVA / "com/althmany/groupmanager/shizuku/PersistentUiAutomationBridge.kt").read_text(encoding="utf-8"),
     "Shizuku compact parity event frame": "waitAndSnapshot" in shizuku_service and "EVENT_TREE_COALESCE_MS = 0L" in shizuku_fast_policy and "EVENT_SCAN_MS = 12L" in shizuku_fast_policy and "STABLE_SCAN_MS = 30L" in shizuku_fast_policy and "FALLBACK_POLL_MS = 80L" in shizuku_fast_policy,
-    "Shizuku 3.0.4 reliable parity cadence preset": all(token in shizuku_fast_policy for token in ["CLICK_THROTTLE_MS = 60L", "GESTURE_DURATION_MS = 72L", "RESULT_ANALYSIS_FALLBACK_MS = 72L", "ACTION_RETRY_AFTER_MS = 95L", "POST_JOIN_MIN_EVIDENCE_MS = 30L", "NON_LOADING_WATCHDOG_MS = 1_000L", "UNKNOWN_TIMEOUT_MS = 2_000L", "LOADING_TIMEOUT_MS = 20_000L", "USER_INSTANT_ADVANCE_SETTLE_MS = 0L"]),
+    "Shizuku 3.1 reliable cadence preset": all(token in shizuku_fast_policy for token in ["CLICK_THROTTLE_MS = 60L", "GESTURE_DURATION_MS = 72L", "RESULT_ANALYSIS_FALLBACK_MS = 72L", "ACTION_RETRY_AFTER_MS = 95L", "POST_JOIN_MIN_EVIDENCE_MS = 30L", "NON_LOADING_WATCHDOG_MS = 1_000L", "UNKNOWN_TIMEOUT_MS = 2_000L", "LOADING_TIMEOUT_MS = 20_000L", "USER_INSTANT_ADVANCE_SETTLE_MS = 0L"]),
     "Shizuku 2.7.1 continuity policy": all(token in shizuku_continuity for token in ["FOREGROUND_REOPEN_AFTER_MS = 260L", "MAX_FOREGROUND_REOPEN_ATTEMPTS = 1", "FOREGROUND_ADVANCE_AFTER_MS = 1_100L", "NO_ROOT_ADVANCE_AFTER_MS = 1_200L", "UI_TREE_ADVANCE_AFTER_MS = 1_600L", "DIRECT_CONVERSATION_MIN_AGE_MS = 35L"]),
     "Shizuku 2.7.1 transition fast path": all(token in shizuku_service for token in ["SHIZUKU_FAST_UI_ARMED", "resultCommitExecuting", "armFastEventSequence", "forceResolvedActivity = true", "window=skipped-fast", "sequence > currentLaunchEventBaseline"]) and "TARGET_HIDDEN_FOREGROUND_REPROBE_MS = 260L" in shizuku_continuity,
     "Shizuku Work Profile compatibility repair 2.7.3": all(token in shizuku_service for token in ["SHIZUKU_PROFILE_COMPAT_PROBE", "SHIZUKU_PROFILE_COMPAT_ACTIVE", "profileCompatibilityProbe", "fastUiMode = FastUiMode.DISABLED"]) and all(token in shizuku_continuity for token in ["PROFILE_COMPAT_COMMAND_PROBE_AFTER_MS = 180L", "MAX_PROFILE_COMPAT_COMMAND_PROBES = 2", "shouldProbeProfileCompatibleTree"]),

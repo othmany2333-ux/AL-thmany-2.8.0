@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">AL-thmany</string>
+    <string name="app_name">Al-othmany Sender</string>
     <string name="main_title">Group Link Manager</string>
     <string name="history_title">Session history</string>
     <string name="settings_title">Settings</string>
@@ -37,7 +37,7 @@
     <string name="share_report">Share report</string>
     <string name="clear_session">Clear session</string>
     <string name="safety_title">Safe workflow</string>
-    <string name="safety_note">In normal mode, the app opens the link and you press Join. When the optional Accessibility add-on is enabled manually, it clicks only “View group”, “Join group”, or “Request to join” inside WhatsApp, can queue up to 1,000,000 links and processes no more than 1000 links per explicit run before stopping until the user explicitly continues.</string>
+    <string name="safety_note">The engine opens only invitations you explicitly supplied, acts only on known invitation controls, preserves progress, pauses when you leave WhatsApp, and never attempts to bypass WhatsApp restrictions.</string>
     <string name="link_number">Link %1$d</string>
     <string name="open_attempts">Open attempts: %1$d</string>
     <string name="status_pending">Waiting</string>
@@ -129,7 +129,7 @@
     <string name="quick_notification_channel_name">Quick session</string>
     <string name="quick_notification_channel_description">Status and controls for group and community invitation processing.</string>
     <string name="quick_notification_title">WhatsApp invitation in progress</string>
-    <string name="quick_notification_body">AL-thmany is processing the current invitation and will advance automatically.</string>
+    <string name="quick_notification_body">Al-othmany Sender is processing the current invitation and will advance automatically.</string>
     <string name="quick_notification_progress">Invitation %1$d of %2$d is being processed automatically.</string>
     <string name="quick_action_joined">Joined &amp; next</string>
     <string name="quick_action_skip">Skip</string>
@@ -145,7 +145,7 @@
     <string name="accessibility_status_system_only">Status: system permission is enabled, but in-app automation is off.</string>
     <string name="accessibility_status_permission_needed">Status: enable the service in Accessibility settings.</string>
     <string name="accessibility_status_off">Status: off.</string>
-    <string name="accessibility_service_name">AL-thmany — Groups &amp; Communities Engine</string>
+    <string name="accessibility_service_name">Al-othmany Sender — Groups &amp; Communities Engine</string>
     <string name="accessibility_service_description">Runs up to 1000 links per explicit run inside the selected WhatsApp app in the same Android profile. It detects group/community invitations and Join/Request/Confirm controls; when Community mode is enabled it processes semantically identified subgroup rows one by one, returns, and continues. It does not read messages, send content, or bypass WhatsApp restrictions.</string>
     <string name="start_automatic_batch">Start automatic run (up to 1000 of 1,000,000)</string>
     <string name="continue_automatic_batch">Continue automatic session</string>
@@ -158,7 +158,7 @@
     <string name="save_delay">Save</string>
     <string name="join_delay_error">Enter a number from %1$d to %2$d seconds.</string>
     <string name="join_delay_saved">Delay saved.</string>
-    <string name="automation_notification_title">AL-thmany engine is running</string>
+    <string name="automation_notification_title">Al-othmany Sender engine is running</string>
     <string name="automation_notification_progress">Processed %1$d of %2$d in this session • link %3$d of %4$d • %5$d-second delay</string>
     <string name="automation_notification_waiting">Processed %1$d of %2$d in this session • %3$d-second delay</string>
     <string name="automation_action_stop">Stop session</string>
@@ -210,17 +210,17 @@ Processed in run: %2$d/%3$d
     <string name="automation_notification_paused">Run paused • processed %1$d of %2$d</string>
     <string name="automation_action_pause">Pause</string>
     <string name="automation_action_resume">Resume</string>
-    <string name="autopilot_toolbar_title">AL-thmany</string>
+    <string name="autopilot_toolbar_title">Al-othmany Sender</string>
     <string name="autopilot_toolbar_subtitle">Queue up to 1,000,000 links • explicit runs of up to 1000</string>
     <string name="autopilot_icon_description">Autopilot icon</string>
-    <string name="autopilot_hero_title">AL-thmany Smart Engine</string>
-    <string name="autopilot_hero_badge">AL-THMANY CORE</string>
+    <string name="autopilot_hero_title">Al-othmany Sender Smart Engine</string>
+    <string name="autopilot_hero_badge">AL-OTHMANY SENDER CORE</string>
     <string name="autopilot_hero_description">Add links, choose the WhatsApp app and timing. The engine opens each invitation, detects group or community actions, presses Join, Request to join or confirmation, then advances automatically.</string>
     <string name="autopilot_service_ready">● Join service is ready</string>
     <string name="autopilot_service_needs_setup">● One-time service setup required</string>
     <string name="autopilot_service_reconnecting">● Accessibility is enabled — reconnecting the local service</string>
     <string name="autopilot_recheck_service">Recheck service</string>
-    <string name="accessibility_enabled_but_not_bound">Accessibility is already enabled, but Android has not rebound the service yet. If this continues, turn AL-thmany Accessibility off and on once.</string>
+    <string name="accessibility_enabled_but_not_bound">Accessibility is already enabled, but Android has not rebound the service yet. If this continues, turn Al-othmany Sender Accessibility off and on once.</string>
     <string name="autopilot_setup_once">Set up once</string>
     <string name="autopilot_service_enabled_button">Service enabled</string>
     <string name="autopilot_choose_app_title">1. Choose WhatsApp</string>
@@ -251,12 +251,12 @@ Processed in run: %2$d/%3$d
     <string name="autopilot_remaining">Remaining</string>
     <string name="autopilot_skip_current">Skip current</string>
     <string name="autopilot_links_results_title">Links and results</string>
-    <string name="autopilot_footer">AL-thmany 2.8.0 • 1,000,000-link queue • 1000 per explicit run • direct input and Work continuity</string>
+    <string name="autopilot_footer">Al-othmany Sender 2.8.0 • 1,000,000-link queue • 1000 per explicit run • direct input and Work continuity</string>
     <string name="autopilot_session_ready">Prepared %1$d links • duplicates %2$d • invalid %3$d • over limit %4$d</string>
     <string name="autopilot_already_running">Autopilot is already running.</string>
     <string name="autopilot_selected_app_missing">The selected WhatsApp application is not installed.</string>
     <string name="autopilot_setup_dialog_title">One-time service setup</string>
-    <string name="autopilot_setup_dialog_message">Android requires Accessibility to be enabled manually once. If restricted settings appear, open App info, allow restricted settings, then enable AL-thmany. After that, add links, choose WhatsApp and timing.</string>
+    <string name="autopilot_setup_dialog_message">Android requires Accessibility to be enabled manually once. If restricted settings appear, open App info, allow restricted settings, then enable Al-othmany Sender. After that, add links, choose WhatsApp and timing.</string>
     <string name="autopilot_open_app_info">App info</string>
     <string name="autopilot_files_imported">Files were merged and imported.</string>
     <string name="stop_automation">Stop</string>
@@ -280,9 +280,9 @@ Processed in run: %2$d/%3$d
     <string name="autopilot_recovering">Stabilizing the screen before skipping without reopening the same link</string>
     <string name="autopilot_auto_start_enabled">Zero-touch mode enabled.</string>
     <string name="autopilot_auto_start_disabled">Automatic start disabled; use the Run button.</string>
-    <string name="aurora_toolbar_title">AL-thmany</string>
+    <string name="aurora_toolbar_title">Al-othmany Sender</string>
     <string name="aurora_toolbar_subtitle">Smart flow • Groups &amp; communities • 1,000,000-link queue • 1000 per explicit run</string>
-    <string name="aurora_badge">AL-THMANY CORE</string>
+    <string name="aurora_badge">AL-OTHMANY SENDER CORE</string>
     <string name="aurora_hero_title">Precise sequential flow within each explicit run</string>
     <string name="aurora_hero_description">Paste links, choose WhatsApp and set the time. The engine opens the invitation, presses View group/community, Join or Request to join and confirmation, then opens the next link automatically.</string>
     <string name="aurora_links_title">Session links</string>
@@ -302,8 +302,8 @@ Processed in run: %2$d/%3$d
     <string name="aurora_start_button">Start smart automation</string>
     <string name="aurora_start_scheduled_button">Save and run on schedule</string>
     <string name="aurora_idle_message">Everything is on one screen: links, app, start time, link interval and a smart timeout for each invitation. Accessibility is enabled once.</string>
-    <string name="aurora_live_title">AL-thmany live operations center</string>
-    <string name="aurora_footer">AL-thmany 2.8.0 • Groups &amp; communities • direct input • close and sequential handoff</string>
+    <string name="aurora_live_title">Al-othmany Sender live operations center</string>
+    <string name="aurora_footer">Al-othmany Sender 2.8.0 • Groups &amp; communities • direct input • close and sequential handoff</string>
     <string name="aurora_delay_seconds_format">%1$d seconds</string>
     <string name="aurora_start_delay_format">After %1$d seconds</string>
     <string name="aurora_schedule_at_format">Starts automatically at %1$s • in %2$s</string>
@@ -312,7 +312,7 @@ Processed in run: %2$d/%3$d
     <string name="aurora_schedule_already_active">A session is already scheduled. Cancel it or wait for its start time.</string>
     <string name="aurora_service_required_for_schedule">Enable Accessibility before scheduling automation.</string>
     <string name="automation_stage_scheduled">Scheduled</string>
-    <string name="automation_notification_scheduled_title">AL-thmany session scheduled</string>
+    <string name="automation_notification_scheduled_title">Al-othmany Sender session scheduled</string>
     <string name="automation_notification_scheduled_body">Automation starts at %1$s • %2$d-second interval</string>
     <string name="automation_action_cancel_schedule">Cancel schedule</string>
     <string name="nebula_action_timeout_title">Join control timeout</string>
@@ -341,7 +341,7 @@ Processed in run: %2$d/%3$d
     <string name="quantum_fast_mode_enabled">Fast hands-free mode enabled.</string>
     <string name="quantum_fast_mode_disabled">Balanced speed restored.</string>
 
-    <string name="swift_toolbar_title">AL-thmany</string>
+    <string name="swift_toolbar_title">Al-othmany Sender</string>
     <string name="swift_toolbar_subtitle">Fast • auto close • 1,000,000 queued • 1000 per run</string>
     <string name="swift_status_title">Swift engine</string>
     <string name="swift_links_title">Links — up to 1,000,000 queued</string>
@@ -353,10 +353,10 @@ Processed in run: %2$d/%3$d
     <string name="swift_idle_message">Compact workflow: add links, select WhatsApp, and choose 1–60 seconds. After joining, the engine closes the invitation sheet and advances automatically.</string>
     <string name="swift_live_title">Live execution</string>
 
-    <string name="unified_toolbar_title">AL-thmany</string>
-    <string name="unified_toolbar_subtitle">v%1$s • Adaptive Multi-WhatsApp Runtime • 1000 links per run</string>
+    <string name="unified_toolbar_title">Al-othmany Sender</string>
+    <string name="unified_toolbar_subtitle">v%1$s • Adaptive Multi-WhatsApp Runtime • stable auto-resume</string>
     <string name="unified_links_title">Link management</string>
-    <string name="unified_links_subtitle">Paste or import up to 1,000,000 group or community invitations. Duplicates are removed automatically; up to 1000 are processed per explicit run.</string>
+    <string name="unified_links_subtitle">Paste or import up to 1,000,000 group or community invitations. Duplicates are removed automatically and progress is preserved through the full session.</string>
     <string name="unified_target_title">Target app</string>
     <string name="unified_target_subtitle">Choose the WhatsApp installation used to open invitations.</string>
     <string name="unified_personal_target">Primary WhatsApp</string>
@@ -383,7 +383,7 @@ Processed in run: %2$d/%3$d
     <string name="clear_runtime_diagnostics">Clear log</string>
     <string name="runtime_diagnostics_empty">No diagnostic data yet</string>
     <string name="runtime_diagnostics_cleared">Diagnostic journal cleared</string>
-    <string name="runtime_diagnostics_subject">AL-thmany — Smart Runtime diagnostics</string>
+    <string name="runtime_diagnostics_subject">Al-othmany Sender — Smart Runtime diagnostics</string>
     <string name="runtime_health_format">Smart Runtime: %1$s • action %2$s • confidence %3$s • screen stability %4$d • watchdog %5$s</string>
     <string name="choose_installed_whatsapp">Choose from installed WhatsApp apps</string>
     <string name="selected_whatsapp_auto">Current target: automatic WhatsApp selection</string>
@@ -393,11 +393,11 @@ Processed in run: %2$d/%3$d
     <string name="whatsapp_picker_title">Choose WhatsApp app</string>
     <string name="whatsapp_picker_auto">Use automatic selection</string>
     <string name="profile_support_default">WhatsApp apps are discovered inside the current Android profile only.</string>
-    <string name="profile_support_managed">Current profile: Work/Managed Profile. Install AL-thmany and enable Accessibility inside this profile.</string>
+    <string name="profile_support_managed">Current profile: Work/Managed Profile. Install Al-othmany Sender and enable Accessibility inside this profile.</string>
     <string name="profile_support_secondary">Current profile: secondary/isolated profile. Apps are discovered inside this profile only.</string>
     <string name="auto_pause_outside_title">Pause when leaving WhatsApp</string>
     <string name="auto_pause_outside_hint">Pauses as soon as another app becomes foreground. Resume from the notification or automatically on return when Auto Resume is enabled.</string>
-    <string name="return_to_app_title">Return to AL-thmany when run finishes</string>
+    <string name="return_to_app_title">Return to Al-othmany Sender when run finishes</string>
     <string name="return_to_app_hint">When the explicit run window or the whole queue completes, the app attempts to reopen the dashboard.</string>
     <string name="turbo_runtime_label">Turbo Runtime • ultra responsive</string>
 
@@ -405,7 +405,7 @@ Processed in run: %2$d/%3$d
     <string name="target_test_success">The selected WhatsApp app opened successfully inside the current profile.</string>
     <string name="target_test_failed">The selected WhatsApp app could not be opened in this profile. Choose it again.</string>
     <string name="profile_explicit_target_required">Inside Secure Folder/Work Profile, select an explicit WhatsApp app before starting.</string>
-    <string name="profile_support_secure_samsung">Current profile: isolated Samsung environment (often Secure Folder). Install AL-thmany and WhatsApp in the same environment. Use Accessibility when available; otherwise probe Shizuku. Automation does not start if the target WhatsApp UI is not readable.</string>
+    <string name="profile_support_secure_samsung">Current profile: isolated Samsung environment (often Secure Folder). Install Al-othmany Sender and WhatsApp in the same environment. Use Accessibility when available; otherwise probe Shizuku. Automation does not start if the target WhatsApp UI is not readable.</string>
     <string name="profile_target_verified">Target verified inside the current profile: %1$s</string>
     <string name="profile_target_not_verified">Target is not ready in the current profile. Choose a specific WhatsApp app and test it.</string>
     <string name="community_traversal_title">Smart join for Community groups</string>
@@ -419,26 +419,26 @@ Processed in run: %2$d/%3$d
     <string name="request_shizuku_permission">Grant Shizuku permission</string>
     <string name="test_shizuku">Test Shizuku</string>
     <string name="shizuku_status_off">Shizuku: offline. Start Shizuku first.</string>
-    <string name="shizuku_status_permission">Shizuku: running, but AL-thmany permission is required.</string>
+    <string name="shizuku_status_permission">Shizuku: running, but Al-othmany Sender permission is required.</string>
     <string name="shizuku_status_ready">Shizuku: ready • UID %1$d%2$s</string>
     <string name="shizuku_status_bound"> • UserService connected</string>
     <string name="shizuku_probe_result">Shizuku probe: %1$s</string>
     <string name="shizuku_permission_requested">Shizuku permission request sent.</string>
     <string name="shizuku_start_first">Start the Shizuku service first.</string>
-    <string name="shizuku_permission_denied">AL-thmany was not granted Shizuku permission.</string>
+    <string name="shizuku_permission_denied">Al-othmany Sender was not granted Shizuku permission.</string>
     <string name="shizuku_backend_warning">The 2.3 engine never assumes it bypasses Knox. It validates package, foreground and display bounds, requires two matching UI dumps before action taps, and preserves the current link when UIAutomator is unreadable.</string>
-    <string name="shizuku_backend_not_ready">Shizuku is not ready. Open Settings, start Shizuku, grant AL-thmany permission, and run the test.</string>
+    <string name="shizuku_backend_not_ready">Shizuku is not ready. Open Settings, start Shizuku, grant Al-othmany Sender permission, and run the test.</string>
     <string name="shizuku_schedule_not_supported">Scheduled start is not enabled yet for the experimental Shizuku engine. Use Start now.</string>
-    <string name="shizuku_notification_channel">AL-thmany — Shizuku</string>
-    <string name="shizuku_notification_title">AL-thmany • Shizuku Engine</string>
+    <string name="shizuku_notification_channel">Al-othmany Sender — Shizuku</string>
+    <string name="shizuku_notification_title">Al-othmany Sender • Shizuku Engine</string>
     <string name="shizuku_service_starting">Connecting Shizuku and checking this environment…</string>
     <string name="shizuku_service_paused">Automation paused</string>
     <string name="shizuku_service_opened_link">Opened link %1$d; inspecting the WhatsApp screen</string>
     <string name="shizuku_service_completed_link">Completed %1$d links in this run</string>
 
 
-    <string name="accessibility_status_active_local_profile">Status: AL-thmany Accessibility is connected inside the current Android profile and ready for control.</string>
-    <string name="accessibility_status_wrong_profile">Status: Android reports the service as enabled, but no local AL-thmany Accessibility connection exists in this profile. Open the profile-specific page for this service and enable it here.</string>
+    <string name="accessibility_status_active_local_profile">Status: Al-othmany Sender Accessibility is connected inside the current Android profile and ready for control.</string>
+    <string name="accessibility_status_wrong_profile">Status: Android reports the service as enabled, but no local Al-othmany Sender Accessibility connection exists in this profile. Open the profile-specific page for this service and enable it here.</string>
     <string name="profile_control_diagnostic_placeholder">Profile control diagnostics: waiting for the local service probe.</string>
     <string name="profile_control_diagnostic_format">Profile: %1$s
 System enabled: %2$s
@@ -448,62 +448,62 @@ UI tree: %5$s
 Capability: %6$s</string>
 
     <string name="unknown">Unknown</string>
-    <string name="open_accessibility_service_details">1. Open AL-thmany service details</string>
+    <string name="open_accessibility_service_details">1. Open Al-othmany Sender service details</string>
     <string name="open_accessibility_services_list">2. Open Accessibility services list</string>
-    <string name="open_current_profile_app_info">3. Open this profile\'s AL-thmany app info</string>
-    <string name="accessibility_route_service_details_started">Requested the AL-thmany service page. If Samsung redirects to the personal profile, that is a system/profile restriction, not an app redirect.</string>
+    <string name="open_current_profile_app_info">3. Open this profile\'s Al-othmany Sender app info</string>
+    <string name="accessibility_route_service_details_started">Requested the Al-othmany Sender service page. If Samsung redirects to the personal profile, that is a system/profile restriction, not an app redirect.</string>
     <string name="accessibility_route_service_details_unavailable">The service-detail Accessibility page is unavailable on this device. Use the Accessibility services list instead.</string>
     <string name="accessibility_route_list_started">Opened Accessibility settings. In a Work Profile Android may manage this list from the parent profile.</string>
     <string name="accessibility_route_list_unavailable">Unable to open Accessibility settings on this device.</string>
-    <string name="accessibility_route_app_info_started">Opened app info for the current AL-thmany instance. Check the work/lock badge to confirm the correct profile.</string>
+    <string name="accessibility_route_app_info_started">Opened app info for the current Al-othmany Sender instance. Check the work/lock badge to confirm the correct profile.</string>
     <string name="accessibility_route_app_info_unavailable">Unable to open app info for the current profile instance.</string>
     <string name="accessibility_settings_unavailable">Unable to open Accessibility settings from this profile.</string>
     <string name="profile_accessibility_policy_placeholder">Work-profile Accessibility policy probe: waiting for inspection.</string>
     <string name="profile_accessibility_policy_format">Service component visible in this profile: %1$s
-Enabled-services setting contains AL-thmany: %2$s
+Enabled-services setting contains Al-othmany Sender: %2$s
 Work policy status: %3$s
 Visible policy manager: %4$s
 Required action: %5$s</string>
     <string name="accessibility_policy_not_managed">This is not a Work Profile; no work policy applies here.</string>
     <string name="accessibility_policy_all_allowed">The readable admin policy allows all Accessibility services.</string>
-    <string name="accessibility_policy_app_allowed">The readable admin policy explicitly allows AL-thmany.</string>
-    <string name="accessibility_policy_blocked">BLOCKED_BY_POLICY — the readable admin policy excludes AL-thmany.</string>
+    <string name="accessibility_policy_app_allowed">The readable admin policy explicitly allows Al-othmany Sender.</string>
+    <string name="accessibility_policy_blocked">BLOCKED_BY_POLICY — the readable admin policy excludes Al-othmany Sender.</string>
     <string name="accessibility_policy_query_unavailable">Not readable by a normal app; Android exposes the Accessibility allowlist only to the device/profile owner. No policy block is guessed without evidence.</string>
     <string name="accessibility_activation_ready">READY — the local service is active in this profile.</string>
     <string name="accessibility_activation_component_missing">SERVICE_COMPONENT_NOT_VISIBLE — Accessibility cannot see this profile\'s service component.</string>
-    <string name="accessibility_activation_parent_toggle_required">PARENT_ACCESSIBILITY_TOGGLE_REQUIRED — enable AL-thmany from the Accessibility settings controlled by the parent profile, then return to the work copy.</string>
+    <string name="accessibility_activation_parent_toggle_required">PARENT_ACCESSIBILITY_TOGGLE_REQUIRED — enable Al-othmany Sender from the Accessibility settings controlled by the parent profile, then return to the work copy.</string>
     <string name="accessibility_activation_setting_present_not_active">ENABLED_SETTING_PRESENT_BUT_MANAGER_DISABLED — Android\'s setting names the service, but AccessibilityManager does not treat it as active here. Toggle the service off/on in the main Accessibility settings after the work copy is installed.</string>
-    <string name="accessibility_activation_local_not_connected">LOCAL_SERVICE_NOT_CONNECTED — Android reports the service enabled but this profile\'s AL-thmany service process has not connected.</string>
+    <string name="accessibility_activation_local_not_connected">LOCAL_SERVICE_NOT_CONNECTED — Android reports the service enabled but this profile\'s Al-othmany Sender service process has not connected.</string>
     <string name="accessibility_activation_waiting_bind">WAITING_FOR_LOCAL_BIND — enable or restart the service, then return to the app.</string>
 
     <string name="native_profile_engine_title">Native Multi-Profile Engine 2.4</string>
-    <string name="native_profile_engine_description">Inspects the current profile and selects only a backend that operates from that same Android profile: local Accessibility first, then guarded Shizuku when needed. In a Work Profile, Work Controller can adjust the allowlist only when AL-thmany is the Profile Owner. It never bypasses Knox or another administrator policy.</string>
+    <string name="native_profile_engine_description">Inspects the current profile and selects only a backend that operates from that same Android profile: local Accessibility first, then guarded Shizuku when needed. In a Work Profile, Work Controller can adjust the allowlist only when Al-othmany Sender is the Profile Owner. It never bypasses Knox or another administrator policy.</string>
     <string name="native_profile_engine_waiting">Analyzing the best native engine for this environment…</string>
     <string name="native_profile_engine_format">Profile: %1$s
 Type: %2$s
 Local Accessibility: %3$s
 Shizuku ready: %4$s
-AL-thmany Profile Owner: %5$s
+Al-othmany Sender Profile Owner: %5$s
 Work policy manager: %6$s
 Accessibility policy state: %7$s
 Recommended engine: %8$s
 Required action: %9$s
 Reason: %10$s</string>
     <string name="use_recommended_native_engine">Analyze and use the best engine for this environment</string>
-    <string name="apply_work_accessibility_policy">Work Controller: permit AL-thmany Accessibility</string>
+    <string name="apply_work_accessibility_policy">Work Controller: permit Al-othmany Sender Accessibility</string>
     <string name="use_work_shizuku_runtime">Work Controller: use Shizuku runtime</string>
     <string name="work_runtime_shizuku_selected">Shizuku is selected for the Work Profile. The compatible hierarchy path is used when the persistent Work tree is hidden, and input still requires proven WhatsApp UI evidence.</string>
-    <string name="work_profile_admin_label">AL-thmany Work Controller</string>
-    <string name="work_profile_admin_description">Optional policy component used only when Android provisions AL-thmany as the Work Profile owner.</string>
+    <string name="work_profile_admin_label">Al-othmany Sender Work Controller</string>
+    <string name="work_profile_admin_description">Optional policy component used only when Android provisions Al-othmany Sender as the Work Profile owner.</string>
     <string name="native_engine_accessibility_selected">Auto mode selected; local Accessibility is the ready engine.</string>
     <string name="native_engine_shizuku_selected">Auto mode selected; Shizuku is the ready native engine for this environment and will preflight the target UI before any tap.</string>
-    <string name="native_engine_open_accessibility">This environment needs local Accessibility enabled for this AL-thmany instance.</string>
-    <string name="native_engine_start_shizuku">No local backend is ready. Start Shizuku, grant AL-thmany permission, then analyze again.</string>
-    <string name="native_engine_apply_work_policy">This Work Profile is owned by AL-thmany; use Work Controller to permit the service, then enable it in Android settings.</string>
+    <string name="native_engine_open_accessibility">This environment needs local Accessibility enabled for this Al-othmany Sender instance.</string>
+    <string name="native_engine_start_shizuku">No local backend is ready. Start Shizuku, grant Al-othmany Sender permission, then analyze again.</string>
+    <string name="native_engine_apply_work_policy">This Work Profile is owned by Al-othmany Sender; use Work Controller to permit the service, then enable it in Android settings.</string>
     <string name="native_engine_blocked">No permitted native backend is ready inside this profile. The app will not attempt cross-profile control.</string>
-    <string name="work_policy_not_owner">AL-thmany cannot change the existing Work Profile policy because it is not the Profile Owner. The current work administrator must permit the service, or use Shizuku if its runtime probe succeeds.</string>
-    <string name="work_policy_applied">AL-thmany was added to the Work Profile Accessibility policy. Android still requires the service to be enabled by the user.</string>
-    <string name="work_policy_already_allowed">The Work Profile policy already permits AL-thmany. Enable the service in Android settings, then analyze again.</string>
+    <string name="work_policy_not_owner">Al-othmany Sender cannot change the existing Work Profile policy because it is not the Profile Owner. The current work administrator must permit the service, or use Shizuku if its runtime probe succeeds.</string>
+    <string name="work_policy_applied">Al-othmany Sender was added to the Work Profile Accessibility policy. Android still requires the service to be enabled by the user.</string>
+    <string name="work_policy_already_allowed">The Work Profile policy already permits Al-othmany Sender. Enable the service in Android settings, then analyze again.</string>
     <string name="work_policy_apply_failed">Unable to update the Work Profile Accessibility policy. Check the Profile Owner/work-manager status in diagnostics.</string>
 
     <string name="runtime_speed_title">Engine speed</string>
@@ -521,4 +521,5 @@ Reason: %10$s</string>
     <string name="resume_last_run">Resume from last link</string>
     <string name="continue_on_restriction">Skip Restriction and continue</string>
     <string name="continue_on_restriction_hint">When off, the run stops on Restriction. WhatsApp restrictions are never bypassed.</string>
+    <string name="sender_add_links">Add links</string>
 </resources>

@@ -18,13 +18,42 @@
 
     <style name="TextAppearance.ALthmany.Toolbar.Title" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textColor">@color/white</item>
-        <item name="android:textSize">27sp</item>
+        <item name="android:textSize">22sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">0.02</item>
+        <item name="android:letterSpacing">0.01</item>
     </style>
 
     <style name="TextAppearance.ALthmany.Toolbar.Subtitle" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:textColor">@color/aurora_text_soft</item>
         <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="Theme.AlOthmanySender.Main" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/sender_accent</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/nebula_mint</item>
+        <item name="colorSurface">@color/sender_bg</item>
+        <item name="colorOnSurface">@color/sender_text_primary</item>
+        <item name="colorSurfaceContainer">@color/sender_card</item>
+        <item name="colorOutline">@color/sender_border</item>
+        <item name="android:statusBarColor">@color/sender_bg_deep</item>
+        <item name="android:navigationBarColor">@color/sender_bg_deep</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="Theme.AlOthmanySender.SettingsPanel" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/sender_settings_surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceContainer">@color/white</item>
+        <item name="colorOutline">@color/card_border</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowDimAmount">0.46</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@drawable/bg_sender_settings_panel</item>
     </style>
 </resources>
