@@ -421,7 +421,11 @@ checks = {
     "live runtime health line": (JAVA / "com/althmany/groupmanager/util/RuntimeHealthMonitor.kt").exists() and "runtime_health_format" in (RES / "values/strings.xml").read_text(encoding="utf-8") and "RuntimeHealthMonitor.snapshot" in main_activity,
     "adaptive event-first cadence": all(token in runtime_speed_profile for token in ("eventScanMs", "stableScanMs", "fallbackPollMs", "clickThrottleMs")) and all(token in service for token in ("runtimeSpeed()", "speed.eventScanMs", "speed.stableScanMs", "runtimeSpeed().fallbackPollMs")),
     "missing-root self recovery": "handleUnavailableRoot" in service and "FAST_ROOT_UNAVAILABLE_TIMEOUT_MS = 2_500L" in runtime_recovery,
-    "recoverable accessibility interruption": "Accessibility was interrupted temporarily; recovery is armed" in service and "onServiceConnected() resumes" in service,
+    "recoverable accessibility interruption": all(token in service for token in [
+        "override fun onInterrupt()",
+        "Do not destroy the persisted run state here",
+        "override fun onServiceConnected()"
+    ]),
     "actionable stalled-screen recovery": "shouldAdvanceStalledUnknown" in runtime_recovery and "Self-recovery advanced an inert WhatsApp screen" in service,
     "stable post-action force advance": "MIN_STABLE_SCANS_FOR_FORCE_ADVANCE = 2" in continuous_handoff and "stableWatchScans" in service,
     "auto-pause outside WhatsApp default": "getBoolean(KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP, true)" in preferences_source,
