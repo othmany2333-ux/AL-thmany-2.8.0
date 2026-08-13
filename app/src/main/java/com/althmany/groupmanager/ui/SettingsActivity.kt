@@ -65,12 +65,12 @@ class SettingsActivity : AppCompatActivity() {
 
         window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        window.setDimAmount(0.46f)
+        window.setDimAmount(0.38f)
         window.setGravity(Gravity.RIGHT)
         binding.root.post {
             val metrics = resources.displayMetrics
-            val phoneWidth = (metrics.widthPixels * 0.92f).toInt()
-            val maxPanelWidth = (560f * metrics.density).toInt()
+            val phoneWidth = (metrics.widthPixels * 0.84f).toInt()
+            val maxPanelWidth = (480f * metrics.density).toInt()
             window.setLayout(minOf(phoneWidth, maxPanelWidth), ViewGroup.LayoutParams.MATCH_PARENT)
         }
 

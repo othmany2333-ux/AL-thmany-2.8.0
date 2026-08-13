@@ -310,6 +310,73 @@ class AppPreferences(context: Context) {
         }.apply()
 
     /** Never fall back to a resolver/browser when a profile-local WhatsApp target is expected. */
+
+    /**
+     * Remote Secure Folder target.
+     *
+     * Al-othmany stays in the host Android user where Shizuku is available.
+     * The Shizuku engine may target one explicitly selected secondary/Knox user.
+     * The target is never guessed during automation and is re-verified by the service.
+     */
+    var remoteSecureFolderEnabled: Boolean
+        get() = preferences.getBoolean(KEY_REMOTE_SECURE_ENABLED, false)
+        private set(value) = preferences.edit().putBoolean(KEY_REMOTE_SECURE_ENABLED, value).apply()
+
+    var remoteSecureAndroidUserId: Int
+        get() = preferences.getInt(KEY_REMOTE_SECURE_USER_ID, -1)
+        private set(value) = preferences.edit().putInt(KEY_REMOTE_SECURE_USER_ID, value).apply()
+
+    var remoteSecureWhatsAppPackage: String?
+        get() = preferences.getString(KEY_REMOTE_SECURE_WHATSAPP_PACKAGE, null)
+        private set(value) = preferences.edit()
+            .apply {
+                if (value.isNullOrBlank()) remove(KEY_REMOTE_SECURE_WHATSAPP_PACKAGE)
+                else putString(KEY_REMOTE_SECURE_WHATSAPP_PACKAGE, value)
+            }
+            .apply()
+
+    var remoteSecureUserLabel: String?
+        get() = preferences.getString(KEY_REMOTE_SECURE_USER_LABEL, null)
+        private set(value) = preferences.edit()
+            .apply {
+                if (value.isNullOrBlank()) remove(KEY_REMOTE_SECURE_USER_LABEL)
+                else putString(KEY_REMOTE_SECURE_USER_LABEL, value.take(80))
+            }
+            .apply()
+
+    fun setRemoteSecureTarget(userId: Int, packageName: String, label: String?) {
+        require(userId >= 0) { "Remote Secure user id must be non-negative." }
+        require(packageName in setOf("com.whatsapp", "com.whatsapp.w4b", "com.whatsapp2")) {
+            "Unsupported Remote Secure WhatsApp package."
+        }
+        preferences.edit()
+            .putBoolean(KEY_REMOTE_SECURE_ENABLED, true)
+            .putInt(KEY_REMOTE_SECURE_USER_ID, userId)
+            .putString(KEY_REMOTE_SECURE_WHATSAPP_PACKAGE, packageName)
+            .putString(KEY_REMOTE_SECURE_USER_LABEL, label?.take(80).orEmpty())
+            .remove(KEY_RUNTIME_LOCKED_ANDROID_USER_ID)
+            .remove(KEY_RUNTIME_LOCKED_WHATSAPP_PACKAGE)
+            .remove(KEY_RUNTIME_LOCKED_PROFILE_KEY)
+            .apply()
+    }
+
+    fun clearRemoteSecureTarget() {
+        preferences.edit()
+            .putBoolean(KEY_REMOTE_SECURE_ENABLED, false)
+            .remove(KEY_REMOTE_SECURE_USER_ID)
+            .remove(KEY_REMOTE_SECURE_WHATSAPP_PACKAGE)
+            .remove(KEY_REMOTE_SECURE_USER_LABEL)
+            .remove(KEY_RUNTIME_LOCKED_ANDROID_USER_ID)
+            .remove(KEY_RUNTIME_LOCKED_WHATSAPP_PACKAGE)
+            .remove(KEY_RUNTIME_LOCKED_PROFILE_KEY)
+            .apply()
+    }
+
+    fun hasValidRemoteSecureTarget(): Boolean =
+        remoteSecureFolderEnabled &&
+            remoteSecureAndroidUserId >= 0 &&
+            remoteSecureWhatsAppPackage in setOf("com.whatsapp", "com.whatsapp.w4b", "com.whatsapp2")
+
     var strictProfileTargeting: Boolean
         get() = preferences.getBoolean(KEY_STRICT_PROFILE_TARGETING, true)
         set(value) = preferences.edit().putBoolean(KEY_STRICT_PROFILE_TARGETING, value).apply()
@@ -926,6 +993,10 @@ class AppPreferences(context: Context) {
         private const val KEY_RETURN_TO_APP_ON_COMPLETE = "return_to_app_on_complete"
         private const val KEY_SELECTED_WHATSAPP_PACKAGE = "selected_whatsapp_package"
         private const val KEY_SELECTED_WHATSAPP_LABEL = "selected_whatsapp_label"
+        private const val KEY_REMOTE_SECURE_ENABLED = "remote_secure_enabled"
+        private const val KEY_REMOTE_SECURE_USER_ID = "remote_secure_user_id"
+        private const val KEY_REMOTE_SECURE_WHATSAPP_PACKAGE = "remote_secure_whatsapp_package"
+        private const val KEY_REMOTE_SECURE_USER_LABEL = "remote_secure_user_label"
         private const val KEY_STRICT_PROFILE_TARGETING = "strict_profile_targeting"
         private const val KEY_RUNTIME_LOCKED_WHATSAPP_PACKAGE = "runtime_locked_whatsapp_package"
         private const val KEY_RUNTIME_LOCKED_PROFILE_KEY = "runtime_locked_profile_key"

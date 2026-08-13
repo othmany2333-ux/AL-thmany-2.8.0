@@ -357,6 +357,13 @@ class ShizukuAutomationService : Service() {
 
     private suspend fun preflightRuntime(targetPackage: String): Boolean {
         if (!ShizukuBridge.status().ready || !ShizukuBridge.ensureBound(this)) {
+            if (app.preferences.hasValidRemoteSecureTarget()) {
+                stopRun(
+                    AutomationStopReason.SERVICE_DISABLED,
+                    "Remote Secure requires the host Shizuku service; local Accessibility fallback is intentionally disabled"
+                )
+                return false
+            }
             if (fallbackToAccessibility("Shizuku is not running, permission is missing, or UserService could not bind")) return false
             stopRun(AutomationStopReason.SERVICE_DISABLED, "Shizuku is not running, permission is missing, or UserService could not bind")
             return false
@@ -1573,10 +1580,22 @@ class ShizukuAutomationService : Service() {
                     (b.centerX <= displayWidth * 28 / 100 ||
                      b.centerX >= displayWidth * 72 / 100) &&
                     b.centerY <= displayHeight * 32 / 100
+                val requestSheetCorner =
+                    snapshot.screenKind == AutomationScreenKind.REQUEST_SUBMITTED &&
+                    (b.centerX <= displayWidth * 20 / 100 ||
+                     b.centerX >= displayWidth * 80 / 100) &&
+                    b.centerY in (displayHeight * 26 / 100)..(displayHeight * 78 / 100) &&
+                    (node.clickable ||
+                     node.className.contains("Image", ignoreCase = true) ||
+                     node.resourceId.contains("close", ignoreCase = true) ||
+                     node.resourceId.contains("dismiss", ignoreCase = true))
                 val compact = w in 1..(displayWidth * 18 / 100).coerceAtLeast(1) &&
                     h in 1..(displayHeight * 12 / 100).coerceAtLeast(1)
+                val requestCompact = w in 1..(displayWidth * 14 / 100).coerceAtLeast(1) &&
+                    h in 1..(displayHeight * 9 / 100).coerceAtLeast(1)
                 val roughlySquare = w <= h * 2 && h <= w * 2
-                nearTopCorner && compact && roughlySquare
+                (nearTopCorner && compact && roughlySquare) ||
+                    (requestSheetCorner && requestCompact && roughlySquare)
             }
             .minByOrNull { node ->
                 val b = node.bounds!!
@@ -1650,6 +1669,19 @@ class ShizukuAutomationService : Service() {
                 val after = quickResultSnapshot(targetPackage)
                 if (after == null) return true
                 snapshot = after
+                if (!snapshot.inviteContext && !snapshot.conversationSurface) return true
+            }
+        }
+
+        if (snapshot.screenKind == AutomationScreenKind.REQUEST_SUBMITTED) {
+            // Exact flow: Request sent -> X -> verify. If X is unavailable, Back.
+            // Never press "Cancel request"; that would withdraw the submitted request.
+            if (pressResultBack(targetPackage, current, "REQUEST_SENT_SHEET_BACK_FALLBACK")) {
+                val settle = runtimeSpeed().postTapWaitMs.coerceIn(6L, 120L)
+                if (settle > 0L) delay(settle)
+                val afterRequestBack = quickResultSnapshot(targetPackage)
+                if (afterRequestBack == null) return true
+                snapshot = afterRequestBack
                 if (!snapshot.inviteContext && !snapshot.conversationSurface) return true
             }
         }
@@ -1779,7 +1811,11 @@ class ShizukuAutomationService : Service() {
         if (userId == null) {
             stopRun(
                 AutomationStopReason.TARGET_UNSUPPORTED,
-                "Shizuku cannot find AL-thmany and the selected WhatsApp package in the same Android user/profile"
+                if (app.preferences.hasValidRemoteSecureTarget()) {
+                    "Remote Secure target could not be verified. Knox may block this Android user/package from the host Shizuku shell."
+                } else {
+                    "Shizuku cannot find AL-thmany and the selected WhatsApp package in the same Android user/profile"
+                }
             )
             return false
         }
@@ -1902,10 +1938,57 @@ class ShizukuAutomationService : Service() {
     }
 
     private suspend fun resolveAndroidUserId(targetPackage: String): Int? {
-        if (cachedTargetPackage == targetPackage && cachedAndroidUserId != null) return cachedAndroidUserId
+        val prefs = app.preferences
+        val remoteRequested = prefs.hasValidRemoteSecureTarget() &&
+            prefs.remoteSecureWhatsAppPackage == targetPackage
+        if (cachedTargetPackage == targetPackage && cachedAndroidUserId != null &&
+            (!remoteRequested || cachedAndroidUserId == prefs.remoteSecureAndroidUserId)
+        ) return cachedAndroidUserId
         val appPackage = BuildConfig.APPLICATION_ID
         val processUid = Process.myUid()
         if (!PACKAGE_NAME.matches(appPackage) || !PACKAGE_NAME.matches(targetPackage) || processUid <= 0) return null
+
+
+        if (remoteRequested) {
+            val remoteUserId = prefs.remoteSecureAndroidUserId
+            val verify = ShizukuBridge.execute(
+                this,
+                "pm list packages --user $remoteUserId ${shellQuote(targetPackage)} 2>/dev/null",
+                2_500
+            )
+            val exactPackagePresent = verify.success && verify.output.lineSequence()
+                .map(String::trim)
+                .any { it == "package:$targetPackage" }
+            if (!exactPackagePresent) {
+                RuntimeDiagnosticStore.append(
+                    this,
+                    "SHIZUKU_REMOTE_SECURE_PACKAGE_MISSING",
+                    "user=$remoteUserId; target=$targetPackage; exit=${verify.exitCode}"
+                )
+                return null
+            }
+            if (!prefs.lockRuntimeAndroidUserId(remoteUserId)) {
+                RuntimeDiagnosticStore.append(
+                    this,
+                    "SHIZUKU_REMOTE_SECURE_USER_MISMATCH",
+                    "expected=${prefs.runtimeLockedAndroidUserId}; requested=$remoteUserId; target=$targetPackage"
+                )
+                return null
+            }
+            if (cachedTargetPackage != targetPackage || cachedAndroidUserId != remoteUserId) {
+                cachedResolvedActivityUserId = null
+                cachedResolvedActivityTargetPackage = null
+                cachedResolvedActivityName = null
+            }
+            cachedTargetPackage = targetPackage
+            cachedAndroidUserId = remoteUserId
+            RuntimeDiagnosticStore.append(
+                this,
+                "SHIZUKU_REMOTE_SECURE_USER_READY",
+                "hostUid=$processUid; remoteUser=$remoteUserId; target=$targetPackage; capability=package-visible"
+            )
+            return remoteUserId
+        }
 
         // Do not choose the first Android user that happens to contain both package names. On a
         // Samsung device the same APK can exist in Personal, Work and Secure Folder at once. Match
@@ -2364,10 +2447,16 @@ class ShizukuAutomationService : Service() {
         val startY = bounds.top + ((bounds.bottom - bounds.top) * 74 / 100)
         val endY = bounds.top + ((bounds.bottom - bounds.top) * 30 / 100)
         if (startY <= endY) return false
+        val selectedGestureMs = runtimeSpeed().gestureDurationMs.coerceIn(8L, 72L)
         val persistent = fastUiMode == FastUiMode.ACTIVE &&
-            ShizukuBridge.fastSwipe(this, x, startY, x, endY, ShizukuFastUiPolicy.GESTURE_DURATION_MS.toInt())
+            ShizukuBridge.fastSwipe(this, x, startY, x, endY, selectedGestureMs.toInt())
         val shell = if (!persistent) {
-            ShizukuBridge.execute(this, "input swipe $x $startY $x $endY 160", 3_000)
+            val shellGestureMs = (selectedGestureMs * 4L).coerceIn(60L, 160L)
+            ShizukuBridge.execute(
+                this,
+                "input swipe $x $startY $x $endY $shellGestureMs",
+                3_000
+            )
         } else null
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true

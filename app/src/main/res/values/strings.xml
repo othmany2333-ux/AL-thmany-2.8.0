@@ -522,4 +522,18 @@ Al-othmany Sender Profile Owner: %5$s
     <string name="continue_on_restriction">تخطي Restriction والاستمرار</string>
     <string name="continue_on_restriction_hint">إذا أوقفته، تتوقف الجولة عند Restriction. لا يتم تجاوز قيود واتساب في الحالتين.</string>
     <string name="sender_add_links">إضافة روابط</string>
+
+    <!-- Al-othmany Sender 3.2.1 Secure Remote -->
+    <string name="secure_remote_detect_button">المجلد الآمن عبر Shizuku الخارجي</string>
+    <string name="secure_remote_rescan_button">المجلد الآمن محدد • تغيير</string>
+    <string name="secure_remote_shizuku_required">شغّل Shizuku خارج المجلد الآمن وامنح Al-othmany الإذن أولًا.</string>
+    <string name="secure_remote_none_found">لم يتم العثور على WhatsApp في مستخدم Android آخر. تأكد أنه مثبت داخل المجلد الآمن.</string>
+    <string name="secure_remote_picker_title">اختر مستخدم المجلد الآمن</string>
+    <string name="secure_remote_selected_format">المجلد الآمن • %1$s • user %2$d</string>
+    <string name="secure_remote_verified_format">Secure Remote جاهز • %1$s • user %2$d</string>
+    <string name="secure_remote_selected_toast">تم تحديد واتساب المجلد الآمن. هذه الجولة ستستخدم Shizuku الخارجي فقط.</string>
+    <string name="secure_remote_clear_action">إلغاء وضع المجلد الآمن</string>
+    <string name="secure_remote_cleared_toast">تم إلغاء وضع المجلد الآمن.</string>
+    <string name="sender_session_counter_format">%1$d / %2$d</string>
+    <string name="sender_failed_processing">تعذر المعالجة</string>
 </resources>

@@ -191,8 +191,14 @@ checks = {
     "AL-thmany namespace": 'namespace = "com.althmany.groupmanager"' in build,
     "AL-thmany application id": 'applicationId = "com.althmany.groupmanager"' in build,
     "Al-othmany Sender stable package": 'applicationId = "com.althmany.groupmanager"' in build and "Theme.AlOthmanySender.Main" in manifest,
-    "versionCode 310": "versionCode = 310" in build,
-    "versionName 3.1.0": 'versionName = "3.1.0"' in build,
+    "3.2 Remote Secure host-Shizuku lane": all(token in preferences_source for token in [
+        "remoteSecureFolderEnabled", "remoteSecureAndroidUserId", "remoteSecureWhatsAppPackage", "setRemoteSecureTarget"
+    ]) and all(token in shizuku_service for token in [
+        "SHIZUKU_REMOTE_SECURE_USER_READY", "Remote Secure target could not be verified"
+    ]) and "secureRemoteButton" in main_layout,
+    "3.2 request-sheet close rescue": "looksLikeRequestSheetCloseCandidate" in service and "requestSheetCorner" in shizuku_service,
+    "versionCode 321": "versionCode = 321" in build,
+    "versionName 3.2.1": 'versionName = "3.2.1"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),
@@ -283,7 +289,7 @@ checks = {
     "scheduled target validation before queue mutation": service.find("val targetValidation = WhatsAppLauncher.validateTarget") < service.find("val launchState = withContext(Dispatchers.IO)"),
     "community traversal UI control": "communityTraversalSwitch" in main_layout and "communityTraversalEnabled" in preferences_source,
     "community traversal matcher": all(token in community_matcher for token in ("isCommunityHomeAcross", "looksLikeGroupRow", "isAnnouncement", "isBlocked", "stableGroupKey")),
-    "community traversal bounded policy": all(token in community_policy for token in ("MAX_GROUPS_PER_COMMUNITY = 256", "MAX_SCROLL_ATTEMPTS = 40", "MAX_RETURN_BACK_STEPS = 3", "GROUP_OPEN_TIMEOUT_MS")),
+    "community traversal bounded policy": all(token in community_policy for token in ("MAX_GROUPS_PER_COMMUNITY = 512", "MAX_SCROLL_ATTEMPTS = 80", "MAX_RETURN_BACK_STEPS = 3", "GROUP_OPEN_TIMEOUT_MS")),
     "community traversal state machine": all(token in service for token in ("maybeHandleCommunityTraversal", "handleCommunityHome", "completeCommunitySubgroupAndContinue", "finishCommunityTraversal", "CommunityTraversalStage.OPENING_GROUP", "CommunityTraversalStage.RETURNING_TO_COMMUNITY")),
     "community subgroup exactly-once tracking": "if (safeKey in current)" in preferences_source and "KEY_COMMUNITY_PROCESSED_GROUP_KEYS" in preferences_source,
     "community destructive-row exclusion": all(token in community_matcher for token in ("announcements", "add group", "manage groups", "leave community", "report", "delete", "remove", "block")),

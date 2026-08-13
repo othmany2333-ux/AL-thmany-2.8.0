@@ -250,6 +250,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.targetCloneButton -> PreferredTarget.CLONED
                 else -> PreferredTarget.AUTO
             }
+            app.preferences.clearRemoteSecureTarget()
             app.preferences.selectedWhatsAppPackage = null
             app.preferences.selectedWhatsAppLabel = null
             viewModel.setPreferredTarget(target)
@@ -260,6 +261,15 @@ class MainActivity : AppCompatActivity() {
 
         binding.chooseInstalledWhatsAppButton.setOnClickListener { showInstalledWhatsAppPicker() }
         binding.testWhatsAppTargetButton.setOnClickListener { testSelectedWhatsAppTarget() }
+        binding.secureRemoteButton.setOnClickListener { detectRemoteSecureTarget() }
+        binding.secureRemoteButton.setOnLongClickListener {
+            if (app.preferences.remoteSecureFolderEnabled) {
+                app.preferences.clearRemoteSecureTarget()
+                renderInstalledTargets()
+                toast(R.string.secure_remote_cleared_toast)
+            }
+            true
+        }
         binding.communityTraversalSwitch.isChecked = app.preferences.communityTraversalEnabled
         binding.communityTraversalSwitch.setOnCheckedChangeListener { _, checked ->
             app.preferences.communityTraversalEnabled = checked
@@ -680,12 +690,22 @@ class MainActivity : AppCompatActivity() {
             sessionCard.visibility = View.VISIBLE
         } else if (!showSession) {
             sessionCard.visibility = View.GONE
+            linkCountText.text = getString(
+                R.string.autopilot_detected_links_format,
+                detectedLinkCount,
+                AutomationPolicy.MAX_LINKS_PER_SESSION
+            )
         }
         idleCard.visibility = if (snapshot == null) View.VISIBLE else View.GONE
         linksAdapter.submitList(snapshot?.let(::uiLinkWindow).orEmpty())
 
         if (snapshot != null) {
             val stats = snapshot.stats
+            linkCountText.text = getString(
+                R.string.sender_session_counter_format,
+                stats.completed,
+                stats.total
+            )
             sessionProgressIndicator.progress = stats.progressPercent
             sessionProgressText.text = getString(
                 R.string.autopilot_progress_format,
@@ -695,7 +715,7 @@ class MainActivity : AppCompatActivity() {
             )
             joinedCountText.text = "${stats.joined}\n${getString(R.string.status_joined)}"
             requestedCountText.text = "${stats.requested}\n${getString(R.string.status_requested)}"
-            failedCountText.text = "${stats.failed}\n${getString(R.string.status_failed)}"
+            failedCountText.text = "${stats.failed}\n${getString(R.string.sender_failed_processing)}"
             remainingCountText.text = "${stats.remaining}\n${getString(R.string.autopilot_remaining)}"
 
             val current = SessionRules.currentOpened(snapshot.links)
@@ -716,6 +736,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isAnyAutomationEngineReady(): Boolean {
+        if (app.preferences.hasValidRemoteSecureTarget()) {
+            return runCatching { ShizukuBridge.status().ready }.getOrDefault(false)
+        }
         val accessibilityReady =
             AccessibilityStatus.isQuickJoinServiceConnectedLocally(this@MainActivity)
         if (accessibilityReady) return true
@@ -841,12 +864,22 @@ class MainActivity : AppCompatActivity() {
             app.preferences.selectedWhatsAppPackage
         )
 
+        val remoteSecure = app.preferences.hasValidRemoteSecureTarget()
+        val remoteUserId = app.preferences.remoteSecureAndroidUserId
+        val remotePackage = app.preferences.remoteSecureWhatsAppPackage
+
         binding.targetAutoButton.isEnabled = unlocked && !profile.requiresExplicitAutoTarget
         binding.targetPersonalButton.isEnabled = unlocked && personal
         binding.targetBusinessButton.isEnabled = unlocked && business
         binding.targetCloneButton.isEnabled = unlocked && cloned
         binding.chooseInstalledWhatsAppButton.isEnabled = unlocked
-        binding.testWhatsAppTargetButton.isEnabled = unlocked && validation.packageName != null
+        binding.testWhatsAppTargetButton.isEnabled =
+            unlocked && !remoteSecure && validation.packageName != null
+        binding.secureRemoteButton.isEnabled = unlocked
+        binding.secureRemoteButton.setText(
+            if (remoteSecure) R.string.secure_remote_rescan_button
+            else R.string.secure_remote_detect_button
+        )
         binding.communityTraversalSwitch.isEnabled = unlocked
         binding.targetAutoButton.alpha = if (!profile.requiresExplicitAutoTarget) 1f else 0.45f
         binding.targetPersonalButton.alpha = if (personal) 1f else 0.45f
@@ -856,6 +889,11 @@ class MainActivity : AppCompatActivity() {
         val selectedPackage = app.preferences.selectedWhatsAppPackage
         val selectedLabel = app.preferences.selectedWhatsAppLabel
         binding.selectedWhatsAppTargetText.text = when {
+            remoteSecure -> getString(
+                R.string.secure_remote_selected_format,
+                app.preferences.remoteSecureUserLabel ?: remotePackage.orEmpty(),
+                remoteUserId
+            )
             !selectedPackage.isNullOrBlank() -> getString(
                 R.string.selected_whatsapp_format,
                 selectedLabel ?: selectedPackage,
@@ -875,10 +913,14 @@ class MainActivity : AppCompatActivity() {
         )
 
         binding.targetAppsStatusText.visibility = android.view.View.VISIBLE
-        binding.targetAppsStatusText.text = if (validation.valid) {
-            getString(R.string.profile_target_verified, validation.packageName ?: "")
-        } else {
-            getString(R.string.profile_target_not_verified)
+        binding.targetAppsStatusText.text = when {
+            remoteSecure -> getString(
+                R.string.secure_remote_verified_format,
+                remotePackage.orEmpty(),
+                remoteUserId
+            )
+            validation.valid -> getString(R.string.profile_target_verified, validation.packageName ?: "")
+            else -> getString(R.string.profile_target_not_verified)
         }
         binding.communityTraversalSwitch.isChecked = app.preferences.communityTraversalEnabled
         renderReadiness(isAnyAutomationEngineReady())
@@ -899,6 +941,7 @@ class MainActivity : AppCompatActivity() {
                 if (profile.requiresExplicitAutoTarget) {
                     toast(R.string.profile_explicit_target_required)
                 } else {
+                    app.preferences.clearRemoteSecureTarget()
                     app.preferences.selectedWhatsAppPackage = null
                     app.preferences.selectedWhatsAppLabel = null
                     viewModel.setPreferredTarget(PreferredTarget.AUTO)
@@ -910,6 +953,7 @@ class MainActivity : AppCompatActivity() {
             }
             .setAdapter(adapter) { shownDialog, which ->
                 val target = apps[which]
+                app.preferences.clearRemoteSecureTarget()
                 app.preferences.selectedWhatsAppPackage = target.packageName
                 app.preferences.selectedWhatsAppLabel = target.label
                 viewModel.setPreferredTarget(PreferredTarget.AUTO)
@@ -946,6 +990,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun lockValidatedRuntimeTarget(): Boolean {
+        if (app.preferences.hasValidRemoteSecureTarget()) {
+            val userId = app.preferences.remoteSecureAndroidUserId
+            val packageName = app.preferences.remoteSecureWhatsAppPackage ?: return false
+            app.preferences.lockRuntimeTarget(packageName, "REMOTE_SECURE:u$userId")
+            return app.preferences.lockRuntimeAndroidUserId(userId)
+        }
+
         val validation = WhatsAppLauncher.validateTarget(
             this,
             app.preferences.preferredTarget,
@@ -963,6 +1014,116 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+
+    private data class RemoteSecureCandidate(
+        val userId: Int,
+        val userName: String,
+        val packageName: String
+    )
+
+    private fun detectRemoteSecureTarget() {
+        if (!runCatching { ShizukuBridge.status().ready }.getOrDefault(false)) {
+            toast(R.string.secure_remote_shizuku_required)
+            return
+        }
+
+        lifecycleScope.launch {
+            binding.secureRemoteButton.isEnabled = false
+            try {
+                val usersResult = withContext(Dispatchers.IO) {
+                    ShizukuBridge.execute(this@MainActivity, "pm list users", 3_000)
+                }
+                if (!usersResult.success) {
+                    toast(R.string.secure_remote_none_found)
+                    return@launch
+                }
+
+                val userRegex = Regex("UserInfo\\{([0-9]+):([^:}]*)")
+                val userNames = userRegex.findAll(usersResult.output)
+                    .mapNotNull { match ->
+                        val id = match.groupValues[1].toIntOrNull() ?: return@mapNotNull null
+                        id to match.groupValues[2].trim()
+                    }
+                    .toMap()
+
+                val scan = listOf(
+                    "for u in \$(pm list users | sed -n 's/.*UserInfo{\\([0-9][0-9]*\\):.*/\\1/p'); do",
+                    "for p in com.whatsapp com.whatsapp.w4b com.whatsapp2; do",
+                    "pm list packages --user \$u \$p 2>/dev/null | grep -qx \"package:\$p\" && echo \"\$u|\$p\";",
+                    "done; done"
+                ).joinToString(" ")
+
+                val packageResult = withContext(Dispatchers.IO) {
+                    ShizukuBridge.execute(this@MainActivity, scan, 6_000)
+                }
+                val hostUserId = android.os.Process.myUid() / 100000
+                val candidates = packageResult.output.lineSequence()
+                    .map(String::trim)
+                    .mapNotNull { line ->
+                        val parts = line.split('|')
+                        if (parts.size != 2) return@mapNotNull null
+                        val userId = parts[0].toIntOrNull() ?: return@mapNotNull null
+                        val packageName = parts[1]
+                        if (userId == hostUserId ||
+                            packageName !in setOf("com.whatsapp", "com.whatsapp.w4b", "com.whatsapp2")
+                        ) return@mapNotNull null
+                        RemoteSecureCandidate(
+                            userId = userId,
+                            userName = userNames[userId].orEmpty().ifBlank { "Android user $userId" },
+                            packageName = packageName
+                        )
+                    }
+                    .distinctBy { "${it.userId}:${it.packageName}" }
+                    .toList()
+
+                if (candidates.isEmpty()) {
+                    toast(R.string.secure_remote_none_found)
+                    return@launch
+                }
+
+                val strongSecure = candidates.filter { candidate ->
+                    val name = candidate.userName.lowercase()
+                    listOf("secure", "knox", "folder", "مجلد", "آمن", "امن").any(name::contains)
+                }
+                val choices = if (strongSecure.isNotEmpty()) strongSecure else candidates
+
+                if (choices.size == 1) {
+                    selectRemoteSecureTarget(choices.first())
+                } else {
+                    val labels = choices.map { candidate ->
+                        "${candidate.userName}  •  user ${candidate.userId}\n${candidate.packageName}"
+                    }.toTypedArray()
+                    MaterialAlertDialogBuilder(this@MainActivity)
+                        .setTitle(R.string.secure_remote_picker_title)
+                        .setItems(labels) { _, which ->
+                            selectRemoteSecureTarget(choices[which])
+                        }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+                }
+            } finally {
+                binding.secureRemoteButton.isEnabled =
+                    !app.preferences.accessibilityBatchRunning && !app.preferences.hasScheduledStart
+            }
+        }
+    }
+
+    private fun selectRemoteSecureTarget(candidate: RemoteSecureCandidate) {
+        app.preferences.setRemoteSecureTarget(
+            candidate.userId,
+            candidate.packageName,
+            candidate.userName
+        )
+        app.preferences.selectedWhatsAppPackage = candidate.packageName
+        app.preferences.selectedWhatsAppLabel = candidate.userName
+        viewModel.setPreferredTarget(PreferredTarget.AUTO)
+        bindingTargetSelection = true
+        binding.targetToggleGroup.check(R.id.targetAutoButton)
+        bindingTargetSelection = false
+        renderInstalledTargets()
+        toast(R.string.secure_remote_selected_toast)
+    }
+
     private fun installedMark(installed: Boolean): String =
         getString(if (installed) R.string.autopilot_installed_mark else R.string.autopilot_missing_mark)
 
@@ -975,7 +1136,8 @@ class MainActivity : AppCompatActivity() {
         // instead of forcing WhatsApp back to foreground, then resumes only when the user returns
         // to the same locked WhatsApp target.
         app.preferences.autoPauseOutsideWhatsApp = true
-        app.preferences.interLinkDelayMs = AutomationPolicy.FAST_INTER_LINK_DELAY_MS
+        // 3.2: the selected RuntimeSpeedProfile is the single cadence source.
+        app.preferences.interLinkDelayMs = app.preferences.runtimeSpeedProfile().interLinkDelayMs.toInt()
         app.preferences.accessibilityActionTimeoutSeconds = AutomationPolicy.FAST_ACTION_TIMEOUT_SECONDS
 
         if (app.preferences.hasScheduledStart) {
@@ -1094,6 +1256,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun resolveAutomationBackendForStart(): AutomationBackend? {
+        if (app.preferences.hasValidRemoteSecureTarget()) {
+            if (runCatching { ShizukuBridge.status().ready }.getOrDefault(false)) {
+                return AutomationBackend.SHIZUKU
+            }
+            toast(R.string.secure_remote_shizuku_required)
+            startActivity(Intent(this, SettingsActivity::class.java))
+            return null
+        }
+
         val requested = app.preferences.automationBackend
         val snapshot = NativeProfileEngineRouter.inspect(this, requested)
         val decision = snapshot.decision
@@ -1156,12 +1327,14 @@ class MainActivity : AppCompatActivity() {
             snapshot.stats.remaining > 0
     }
 
-    private fun isSelectedTargetAvailable(target: PreferredTarget): Boolean =
-        WhatsAppLauncher.validateTarget(
+    private fun isSelectedTargetAvailable(target: PreferredTarget): Boolean {
+        if (app.preferences.hasValidRemoteSecureTarget()) return true
+        return WhatsAppLauncher.validateTarget(
             this,
             target,
             app.preferences.selectedWhatsAppPackage
         ).valid
+    }
 
     private fun handleEvent(event: MainEvent) {
         when (event) {

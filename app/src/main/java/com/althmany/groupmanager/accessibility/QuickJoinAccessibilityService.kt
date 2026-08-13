@@ -2723,10 +2723,14 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         if ((inviteContext || terminalEvidenceKinds.isNotEmpty()) &&
             !conversationSurface && closeNode == null
         ) {
+            val requestTerminal = "REQUEST_SUBMITTED" in terminalEvidenceKinds
             closeNode = nodes.asSequence()
                 .map { it.node }
                 .filter { it.isVisibleToUser && it.isEnabled }
-                .filter(::looksLikeTopRightCloseCandidate)
+                .filter { node ->
+                    looksLikeTopRightCloseCandidate(node) ||
+                        (requestTerminal && looksLikeRequestSheetCloseCandidate(node))
+                }
                 .maxByOrNull(::visualCloseCandidateScore)
         }
 
@@ -2790,6 +2794,38 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             bounds.centerY() <= topBand &&
             bounds.width() in dpToPx(18)..maxSize &&
             bounds.height() in dpToPx(18)..maxSize
+    }
+
+
+    /**
+     * Rescue for WhatsApp's request-sent / waiting-for-admin bottom sheet.
+     * The X can sit halfway down the physical display. Wide controls are rejected,
+     * therefore "Cancel request" can never be selected by this geometry path.
+     */
+    private fun looksLikeRequestSheetCloseCandidate(node: AccessibilityNodeInfo): Boolean {
+        if (!node.isVisibleToUser || !node.isEnabled) return false
+        val imageLike = node.className?.toString()?.contains("Image", ignoreCase = true) == true
+        val id = node.viewIdResourceName.orEmpty()
+        val closeId = id.contains("close", ignoreCase = true) || id.contains("dismiss", ignoreCase = true)
+        if (!node.isClickable && node.parent?.isClickable != true && !imageLike && !closeId) return false
+
+        val bounds = Rect().also(node::getBoundsInScreen)
+        if (bounds.isEmpty) return false
+        val metrics = resources.displayMetrics
+        val width = metrics.widthPixels.coerceAtLeast(1)
+        val height = metrics.heightPixels.coerceAtLeast(1)
+        val nearEdge = bounds.centerX() <= (width * 0.20f).toInt() ||
+            bounds.centerX() >= (width * 0.80f).toInt()
+        val inSheetTopBand = bounds.centerY() in
+            (height * 0.26f).toInt()..(height * 0.78f).toInt()
+        val maxWidth = minOf((width * 0.14f).toInt(), dpToPx(96))
+        val maxHeight = minOf((height * 0.09f).toInt(), dpToPx(96))
+        val compact = bounds.width() in dpToPx(16)..maxWidth &&
+            bounds.height() in dpToPx(16)..maxHeight
+        val roughlySquare =
+            bounds.width() <= bounds.height() * 2 &&
+                bounds.height() <= bounds.width() * 2
+        return nearEdge && inSheetTopBand && compact && roughlySquare
     }
 
     private fun visualCloseCandidateScore(node: AccessibilityNodeInfo): Int {
@@ -2871,7 +2907,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             moveTo(x.toFloat(), startY.toFloat())
             lineTo(x.toFloat(), endY.toFloat())
         }
-        val duration = maxOf(72L, runtimeSpeed().gestureDurationMs)
+        val duration = runtimeSpeed().gestureDurationMs.coerceIn(48L, 96L)
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, duration))
             .build()

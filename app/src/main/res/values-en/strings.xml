@@ -522,4 +522,18 @@ Reason: %10$s</string>
     <string name="continue_on_restriction">Skip Restriction and continue</string>
     <string name="continue_on_restriction_hint">When off, the run stops on Restriction. WhatsApp restrictions are never bypassed.</string>
     <string name="sender_add_links">Add links</string>
+
+    <!-- Al-othmany Sender 3.2.1 Secure Remote -->
+    <string name="secure_remote_detect_button">Secure Folder via host Shizuku</string>
+    <string name="secure_remote_rescan_button">Secure Folder selected • Change</string>
+    <string name="secure_remote_shizuku_required">Start Shizuku outside Secure Folder and authorize Al-othmany first.</string>
+    <string name="secure_remote_none_found">No WhatsApp installation was found in another Android user. Make sure it is installed inside Secure Folder.</string>
+    <string name="secure_remote_picker_title">Choose Secure Folder user</string>
+    <string name="secure_remote_selected_format">Secure Folder • %1$s • user %2$d</string>
+    <string name="secure_remote_verified_format">Secure Remote ready • %1$s • user %2$d</string>
+    <string name="secure_remote_selected_toast">Secure Folder WhatsApp selected. This run will use host Shizuku only.</string>
+    <string name="secure_remote_clear_action">Disable Secure Folder mode</string>
+    <string name="secure_remote_cleared_toast">Secure Folder mode disabled.</string>
+    <string name="sender_session_counter_format">%1$d / %2$d</string>
+    <string name="sender_failed_processing">Processing failed</string>
 </resources>
