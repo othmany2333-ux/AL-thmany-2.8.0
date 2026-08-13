@@ -151,7 +151,6 @@ append_before_resources_close(P["themes"], '''
         <item name="android:windowIsFloating">true</item>
         <item name="android:windowCloseOnTouchOutside">true</item>
         <item name="android:backgroundDimEnabled">true</item>
-        <item name="android:windowDimAmount">0.46</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@drawable/bg_sender_settings_panel</item>
     </style>
