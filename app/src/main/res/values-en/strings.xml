@@ -536,4 +536,8 @@ Reason: %10$s</string>
     <string name="secure_remote_cleared_toast">Secure Folder mode disabled.</string>
     <string name="sender_session_counter_format">%1$d / %2$d</string>
     <string name="sender_failed_processing">Processing failed</string>
+    <!-- Al-othmany Sender 3.3 -->
+    <string name="keep_screen_awake">Keep screen awake while running</string>
+    <string name="keep_screen_awake_description">Keeps the display on during an active join session and releases it automatically on pause or stop.</string>
+    <string name="secure_remote_knox_hidden">Samsung Secure Folder is not visible through ADB. Island, Work Profile, and Dual App were ignored because they are not Secure Folder, and no wrong user will be selected automatically.</string>
 </resources>

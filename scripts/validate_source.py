@@ -197,8 +197,21 @@ checks = {
         "SHIZUKU_REMOTE_SECURE_USER_READY", "Remote Secure target could not be verified"
     ]) and "secureRemoteButton" in main_layout,
     "3.2 request-sheet close rescue": "looksLikeRequestSheetCloseCandidate" in service and "requestSheetCorner" in shizuku_service,
-    "versionCode 321": "versionCode = 321" in build,
-    "versionName 3.2.1": 'versionName = "3.2.1"' in build,
+    "3.3 screen awake runtime": "keepScreenAwake" in preferences_source and
+        (JAVA / "com/althmany/groupmanager/util/AutomationScreenAwakeGuard.kt").exists() and
+        "keepScreenAwakeSwitch" in settings_layout and
+        "AutomationScreenAwakeGuard" in service and
+        "AutomationScreenAwakeGuard" in shizuku_service,
+    "3.3 request X Back continuity": "fastExitPendingRequestSurface(screen: ScreenInspection): Boolean" in service and
+        "X/Back handoff opened the next invitation" in service and
+        "REQUEST_SENT_SHEET_BACK_FALLBACK" in shizuku_service,
+    "3.3 secure classifier": "never relabel Work/Island/Dual Messenger as Secure Folder" in main_activity and
+        "secure_remote_knox_hidden" in main_activity,
+    "3.3 evidence counter repair": "visualExpectedAction" in shizuku_service and
+        "not counted as a false request" in shizuku_service and
+        "Fast watchdog recovered a verified exact-user WhatsApp conversation after Join" in shizuku_service,
+    "versionCode 330": "versionCode = 330" in build,
+    "versionName 3.3.0": 'versionName = "3.3.0"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),
@@ -340,7 +353,7 @@ checks = {
     "joined conversation return": "isConversationComposer" in matcher and "isConversationAction" in matcher and "conversationSurface" in service and "returnFromJoinedConversationAndAdvance" in service,
     "continuous handoff watchdog": "scheduleContinuousHandoffWatchdog" in service and "TURBO_NON_LOADING_HARD_LIMIT_MS = 1_000L" in continuous_handoff,
     "fast joined-conversation continuity": "ConversationFastExitPolicy.settleMs" in service and "surfaceAlreadyExited = true" in service,
-    "request-pending immediate handoff": "inspection.requestSubmitted" in service and "Join request is pending; continuity handoff opened the next invitation" in service,
+    "request-pending immediate handoff": "inspection.requestSubmitted" in service and "Join request is pending; X/Back handoff opened the next invitation" in service,
     "structural failures continue instead of parking run": "CIRCUIT_BREAKER_CONTINUE" in service and "consecutiveRuntimeFailures = 0" in service,
     "single-scan conversation confirmation": "CONVERSATION_STABLE_SCANS = 1" in (JAVA / "com/althmany/groupmanager/domain/InvitationStabilityPolicy.kt").read_text(encoding="utf-8"),
     "input link de-duplication": "putIfAbsent" in (JAVA / "com/althmany/groupmanager/domain/WhatsAppLinkParser.kt").read_text(encoding="utf-8"),

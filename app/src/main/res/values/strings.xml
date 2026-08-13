@@ -536,4 +536,8 @@ Al-othmany Sender Profile Owner: %5$s
     <string name="secure_remote_cleared_toast">تم إلغاء وضع المجلد الآمن.</string>
     <string name="sender_session_counter_format">%1$d / %2$d</string>
     <string name="sender_failed_processing">تعذر المعالجة</string>
+    <!-- Al-othmany Sender 3.3 -->
+    <string name="keep_screen_awake">منع سكون الشاشة أثناء التشغيل</string>
+    <string name="keep_screen_awake_description">تبقى الشاشة مضاءة طوال جلسة الانضمام النشطة، وتُحرر تلقائيًا عند الإيقاف أو الإيقاف المؤقت.</string>
+    <string name="secure_remote_knox_hidden">لم يظهر Samsung Secure Folder عبر ADB. تم تجاهل Island وWork Profile وDual App لأنها ليست المجلد الآمن، ولن يتم اختيار مستخدم خاطئ تلقائيًا.</string>
 </resources>

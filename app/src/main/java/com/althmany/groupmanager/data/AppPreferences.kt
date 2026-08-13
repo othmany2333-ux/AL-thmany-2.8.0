@@ -35,6 +35,14 @@ class AppPreferences(context: Context) {
         get() = preferences.getBoolean(KEY_QUICK_JOIN_NOTIFICATION, true)
         set(value) = preferences.edit().putBoolean(KEY_QUICK_JOIN_NOTIFICATION, value).apply()
 
+    /**
+     * Keep the physical display awake while an explicit automation run is active.
+     * Enabled by default and released automatically when the run pauses/stops.
+     */
+    var keepScreenAwake: Boolean
+        get() = preferences.getBoolean(KEY_KEEP_SCREEN_AWAKE, true)
+        set(value) = preferences.edit().putBoolean(KEY_KEEP_SCREEN_AWAKE, value).apply()
+
     var notificationPermissionAsked: Boolean
         get() = preferences.getBoolean(KEY_NOTIFICATION_PERMISSION_ASKED, false)
         set(value) = preferences.edit().putBoolean(KEY_NOTIFICATION_PERMISSION_ASKED, value).apply()
@@ -964,6 +972,7 @@ class AppPreferences(context: Context) {
         private const val KEY_ACTIVE_SESSION_ID = "active_session_id"
         private const val KEY_AUTO_ADVANCE = "auto_advance"
         private const val KEY_QUICK_JOIN_NOTIFICATION = "quick_join_notification"
+        private const val KEY_KEEP_SCREEN_AWAKE = "keep_screen_awake"
         private const val KEY_NOTIFICATION_PERMISSION_ASKED = "notification_permission_asked"
         const val START_MODE_NOW = 0
         const val START_MODE_DELAY = 1

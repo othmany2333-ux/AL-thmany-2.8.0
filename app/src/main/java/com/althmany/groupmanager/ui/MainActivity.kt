@@ -1086,9 +1086,23 @@ class MainActivity : AppCompatActivity() {
 
                 val strongSecure = candidates.filter { candidate ->
                     val name = candidate.userName.lowercase()
-                    listOf("secure", "knox", "folder", "مجلد", "آمن", "امن").any(name::contains)
+                    val secureName = listOf(
+                        "secure", "knox", "folder", "مجلد", "آمن", "امن"
+                    ).any(name::contains)
+                    val knownNonSecure = listOf(
+                        "island", "work", "managed", "dual_app", "dual app", "clone", "cloned"
+                    ).any(name::contains)
+                    secureName && !knownNonSecure
                 }
-                val choices = if (strongSecure.isNotEmpty()) strongSecure else candidates
+
+                // 3.3: never relabel Work/Island/Dual Messenger as Secure Folder.
+                if (strongSecure.isEmpty()) {
+                    app.preferences.clearRemoteSecureTarget()
+                    toast(R.string.secure_remote_knox_hidden)
+                    renderInstalledTargets()
+                    return@launch
+                }
+                val choices = strongSecure
 
                 if (choices.size == 1) {
                     selectRemoteSecureTarget(choices.first())
@@ -1135,6 +1149,8 @@ class MainActivity : AppCompatActivity() {
         // Keep semantic verification, but remove artificial inter-link waiting.
         app.preferences.runtimeShadowMode = false
         app.preferences.fastHandsFreeMode = true
+        app.preferences.autoResumeCurrentRun = true
+        app.preferences.restrictionHandlingMode = RestrictionHandlingMode.SKIP_AND_CONTINUE
         // Explicit hands-free runs must respect a manual Home/app switch. The engine pauses
         // instead of forcing WhatsApp back to foreground, then resumes only when the user returns
         // to the same locked WhatsApp target.

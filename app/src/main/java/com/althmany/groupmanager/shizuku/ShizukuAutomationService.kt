@@ -45,6 +45,7 @@ import com.althmany.groupmanager.model.LinkStatus
 import com.althmany.groupmanager.receiver.AutomationActionReceiver
 import com.althmany.groupmanager.ui.MainActivity
 import com.althmany.groupmanager.util.GroupJoinerResultStore
+import com.althmany.groupmanager.util.AutomationScreenAwakeGuard
 import com.althmany.groupmanager.util.QuickJoinNotification
 import com.althmany.groupmanager.util.RuntimeDiagnosticStore
 import kotlinx.coroutines.CoroutineScope
@@ -132,6 +133,7 @@ class ShizukuAutomationService : Service() {
     private var lastVisualProbeAtElapsed = 0L
     private var visualActionTappedAtElapsed = 0L
     private var visualTapAttempts = 0
+    private var visualExpectedAction: AccessibilityJoinAction? = null
 
     private var communityHomeStableScans = 0
     private var communityEmptyStableScans = 0
@@ -158,6 +160,7 @@ class ShizukuAutomationService : Service() {
     }
 
     override fun onDestroy() {
+        AutomationScreenAwakeGuard.release()
         runJob?.cancel()
         serviceScope.cancel()
         super.onDestroy()
@@ -188,6 +191,10 @@ class ShizukuAutomationService : Service() {
         while (serviceScope.isActive && prefs.accessibilityBatchRunning &&
             prefs.runtimeAutomationBackend == AutomationBackend.SHIZUKU
         ) {
+            AutomationScreenAwakeGuard.sync(
+                this,
+                prefs.keepScreenAwake && !prefs.accessibilityPaused
+            )
             if (!runtimeHeartbeat(targetPackage)) {
                 delay(ShizukuContinuityPolicy.RUNTIME_RECOVERY_POLL_MS)
                 continue
@@ -596,6 +603,21 @@ class ShizukuAutomationService : Service() {
         }
 
         if (fastUiMode == FastUiMode.ACTIVE && shouldFastWatchdogAdvance(snapshot, pending)) {
+            // Samsung can temporarily hide the UI tree immediately after a successful Join.
+            // Prove the exact package/user Conversation activity before calling it a timeout.
+            if (pending == AccessibilityJoinAction.JOIN &&
+                probeJoinedConversationActivity(targetPackage, current)
+            ) {
+                exitConversationBeforeDirectHandoff(targetPackage, current)
+                completeCurrent(
+                    current,
+                    LinkStatus.JOINED,
+                    LinkResultCode.JOIN_ACTION_COMPLETED,
+                    "Fast watchdog recovered a verified exact-user WhatsApp conversation after Join"
+                )
+                return false
+            }
+
             runtimeDiagnostic(
                 current,
                 "SHIZUKU_FAST_WATCHDOG_HANDOFF",
@@ -646,7 +668,7 @@ class ShizukuAutomationService : Service() {
                     if (fastUiMode == FastUiMode.ACTIVE &&
                         action in setOf(AccessibilityJoinAction.JOIN, AccessibilityJoinAction.REQUEST) &&
                         consecutiveAmbiguousActions >= 2 &&
-                        handleVisualProfileFallback(current, targetPackage)
+                        handleVisualProfileFallback(current, targetPackage, action)
                     ) {
                         runtimeDiagnostic(
                             current,
@@ -2243,7 +2265,8 @@ class ShizukuAutomationService : Service() {
      */
     private suspend fun handleVisualProfileFallback(
         current: GroupLink,
-        targetPackage: String
+        targetPackage: String,
+        expectedAction: AccessibilityJoinAction? = null
     ): Boolean {
         val now = SystemClock.elapsedRealtime()
         if (visualProbeLinkId != current.id) {
@@ -2252,6 +2275,9 @@ class ShizukuAutomationService : Service() {
             lastVisualProbeAtElapsed = 0L
             visualActionTappedAtElapsed = 0L
             visualTapAttempts = 0
+            visualExpectedAction = expectedAction
+        } else if (expectedAction != null) {
+            visualExpectedAction = expectedAction
         }
 
         if (visualActionTappedAtElapsed > 0L) {
@@ -2287,18 +2313,30 @@ class ShizukuAutomationService : Service() {
                 return true
             }
 
+            val expected = visualExpectedAction ?: readPendingAction(current)
             val joinedConversation = probeJoinedConversationActivity(targetPackage, current)
             dismissVisualActionSurface(targetPackage, current, "VISUAL_ACTION_COMPLETED")
-            completeCurrent(
-                current,
-                if (joinedConversation) LinkStatus.JOINED else LinkStatus.REQUESTED,
-                if (joinedConversation) LinkResultCode.JOIN_ACTION_COMPLETED else LinkResultCode.REQUEST_SENT,
-                if (joinedConversation) {
-                    "Wide WhatsApp Join action disappeared and the exact-user conversation activity was proved; surface closed and next link opened"
-                } else {
-                    "Wide WhatsApp Join/Request action disappeared after protected direct input; pending surface closed and next link opened"
-                }
-            )
+
+            when {
+                joinedConversation -> completeCurrent(
+                    current,
+                    LinkStatus.JOINED,
+                    LinkResultCode.JOIN_ACTION_COMPLETED,
+                    "Wide WhatsApp action disappeared and the exact-user conversation activity proved Join success"
+                )
+                expected == AccessibilityJoinAction.REQUEST -> completeCurrent(
+                    current,
+                    LinkStatus.REQUESTED,
+                    LinkResultCode.REQUEST_SENT,
+                    "Known Request action disappeared after protected input; recorded as requested"
+                )
+                else -> completeCurrent(
+                    current,
+                    LinkStatus.FAILED,
+                    LinkResultCode.UNKNOWN_SCREEN,
+                    "Visual positive action disappeared but its Join/Request result could not be proved; not counted as a false request"
+                )
+            }
             return true
         }
 
@@ -2333,11 +2371,13 @@ class ShizukuAutomationService : Service() {
         visualActionTappedAtElapsed = SystemClock.elapsedRealtime()
         consecutiveDumpFailures = 0
         emptyDumpStartedAt = 0L
-        app.preferences.setAccessibilityPending(
-            current.id,
-            AccessibilityJoinAction.JOIN.name,
-            AccessibilityInviteTarget.UNKNOWN
-        )
+        visualExpectedAction?.let { expected ->
+            app.preferences.setAccessibilityPending(
+                current.id,
+                expected.name,
+                AccessibilityInviteTarget.UNKNOWN
+            )
+        }
         app.preferences.transitionAutomation(
             AutomationStage.VERIFYING_RESULT,
             "Protected visual WhatsApp Join/Request input dispatched; verifying disappearance before direct handoff",
@@ -2671,6 +2711,7 @@ class ShizukuAutomationService : Service() {
         lastVisualProbeAtElapsed = 0L
         visualActionTappedAtElapsed = 0L
         visualTapAttempts = 0
+        visualExpectedAction = null
     }
 
     private suspend fun armFastEventSequence(targetPackage: String) {
@@ -2820,6 +2861,7 @@ class ShizukuAutomationService : Service() {
         (System.currentTimeMillis() - app.preferences.accessibilityPendingAt).coerceAtLeast(0L)
 
     private fun stopRun(reason: AutomationStopReason, diagnostic: String) {
+        AutomationScreenAwakeGuard.release()
         app.preferences.stopAccessibilityBatch(reason, diagnostic)
         updateNotification(diagnostic, force = true)
         stopForeground(Service.STOP_FOREGROUND_REMOVE)
@@ -2827,6 +2869,7 @@ class ShizukuAutomationService : Service() {
     }
 
     private fun completeRun(reason: AutomationStopReason, diagnostic: String) {
+        AutomationScreenAwakeGuard.release()
         app.preferences.completeAccessibilityBatch(reason, diagnostic)
         updateNotification(diagnostic, force = true)
         stopForeground(Service.STOP_FOREGROUND_REMOVE)

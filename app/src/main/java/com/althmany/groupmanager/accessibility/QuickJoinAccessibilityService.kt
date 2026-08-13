@@ -61,6 +61,7 @@ import com.althmany.groupmanager.ui.MainActivity
 import com.althmany.groupmanager.shizuku.ShizukuAutomationService
 import com.althmany.groupmanager.shizuku.ShizukuBridge
 import com.althmany.groupmanager.util.GroupJoinerResultStore
+import com.althmany.groupmanager.util.AutomationScreenAwakeGuard
 import com.althmany.groupmanager.util.LaunchDestination
 import com.althmany.groupmanager.util.QuickJoinNotification
 import com.althmany.groupmanager.util.ProfileEnvironment
@@ -260,6 +261,12 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         requestScheduledStart()
         pollJob = serviceScope.launch {
             while (isActive) {
+                AutomationScreenAwakeGuard.sync(
+                    this@QuickJoinAccessibilityService,
+                    app.preferences.keepScreenAwake &&
+                        app.preferences.accessibilityBatchRunning &&
+                        !app.preferences.accessibilityPaused
+                )
                 delay(runtimeSpeed().fallbackPollMs)
                 ProfileAccessibilityRuntime.heartbeat(this@QuickJoinAccessibilityService)
                 requestScheduledStart()
@@ -466,6 +473,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        AutomationScreenAwakeGuard.release()
         runtimeConnected = false
         if (liveInstance === this) liveInstance = null
         ProfileAccessibilityRuntime.markDisconnected(this)
@@ -978,11 +986,11 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 terminalEscapeAdvance = terminalEscape.bypassInterLinkDelay
             )
             "REQUEST_SUBMITTED" -> {
-                fastExitPendingRequestSurface(screen)
+                val requestSurfaceExited = fastExitPendingRequestSurface(screen)
                 completeAndAdvance(
                     current, LinkStatus.REQUESTED, LinkResultCode.REQUEST_SENT, "Join request sent",
                     fastAdvance = true,
-                    surfaceAlreadyExited = true,
+                    surfaceAlreadyExited = requestSurfaceExited,
                     terminalEscapeAdvance = terminalEscape.bypassInterLinkDelay
                 )
             }
@@ -1264,6 +1272,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         serviceScope.launch {
             var lastWatchFingerprint = 0L
             var stableWatchScans = 0
+            var noInspectionStartedAtElapsed = 0L
             while (isActive) {
                 delay(runtimeSpeed().watchdogIntervalMs)
                 if (!app.preferences.accessibilityBatchRunning || app.preferences.accessibilityPaused) return@launch
@@ -1281,9 +1290,56 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 }
 
                 if (inspection == null) {
+                    val now = SystemClock.elapsedRealtime()
+                    if (noInspectionStartedAtElapsed == 0L) noInspectionStartedAtElapsed = now
+                    val missingAge = (now - noInspectionStartedAtElapsed).coerceAtLeast(0L)
+
+                    // A fresh WhatsApp Conversation window event is independent proof that Join
+                    // succeeded even when rootInActiveWindow is temporarily unavailable.
+                    val activityProofFresh =
+                        lastClickAt > 0L &&
+                            lastAutomationWindowStateAtElapsed >= lastClickAt &&
+                            now - lastAutomationWindowStateAtElapsed <= 3_000L
+                    if (action == AccessibilityJoinAction.JOIN &&
+                        activityProofFresh &&
+                        isKnownConversationActivity(lastAutomationWindowClassName)
+                    ) {
+                        val backSent = withContext(Dispatchers.Main.immediate) {
+                            performGlobalAction(GLOBAL_ACTION_BACK)
+                        }
+                        if (backSent) delay(exitSettleDelayMs())
+                        completeAndAdvance(
+                            current,
+                            LinkStatus.JOINED,
+                            LinkResultCode.JOIN_ACTION_COMPLETED,
+                            "Accessibility root disappeared but a fresh WhatsApp Conversation activity proved Join success",
+                            fastAdvance = true,
+                            surfaceAlreadyExited = backSent
+                        )
+                        return@launch
+                    }
+
+                    // Never park forever when Samsung temporarily withholds the accessibility tree.
+                    if (missingAge >= 1_800L) {
+                        val backSent = withContext(Dispatchers.Main.immediate) {
+                            performGlobalAction(GLOBAL_ACTION_BACK)
+                        }
+                        if (backSent) delay(exitSettleDelayMs())
+                        completeAndAdvance(
+                            current,
+                            LinkStatus.FAILED,
+                            LinkResultCode.ACTION_TIMEOUT,
+                            "Accessibility UI acquisition stayed unavailable after the action; bounded Back recovery advanced to the next link",
+                            fastAdvance = true,
+                            surfaceAlreadyExited = backSent
+                        )
+                        return@launch
+                    }
+
                     requestScan()
                     continue
                 }
+                noInspectionStartedAtElapsed = 0L
 
                 if (inspection.fingerprint == lastWatchFingerprint) {
                     stableWatchScans = (stableWatchScans + 1).coerceAtMost(20)
@@ -1293,15 +1349,26 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 }
 
                 if (inspection.restricted) {
-                    withContext(Dispatchers.IO) {
-                        app.repository.markStatus(
-                            current.id,
+                    if (app.preferences.restrictionHandlingMode == RestrictionHandlingMode.SKIP_AND_CONTINUE) {
+                        completeAndAdvance(
+                            current,
                             LinkStatus.FAILED,
                             LinkResultCode.RESTRICTED,
-                            "WhatsApp displayed a restriction while the continuity watchdog was active"
+                            "Restriction recorded by the continuity watchdog; continuing without bypass",
+                            fastAdvance = true,
+                            terminalEscapeAdvance = true
                         )
+                    } else {
+                        withContext(Dispatchers.IO) {
+                            app.repository.markStatus(
+                                current.id,
+                                LinkStatus.FAILED,
+                                LinkResultCode.RESTRICTED,
+                                "WhatsApp displayed a restriction while the continuity watchdog was active"
+                            )
+                        }
+                        stopBatch(AutomationStopReason.RESTRICTED_SCREEN, "Restriction screen detected")
                     }
-                    stopBatch(AutomationStopReason.RESTRICTED_SCREEN, "Restriction screen detected")
                     return@launch
                 }
 
@@ -1313,12 +1380,14 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 // Request sent / Cancel request is a strong terminal state. Do not wait for another
                 // event burst before handing off to the next invitation.
                 if (inspection.requestSubmitted) {
+                    val requestSurfaceExited = fastExitPendingRequestSurface(inspection)
                     completeAndAdvance(
                         current,
                         LinkStatus.REQUESTED,
                         LinkResultCode.REQUEST_SENT,
-                        "Join request is pending; continuity handoff opened the next invitation",
-                        fastAdvance = true
+                        "Join request is pending; X/Back handoff opened the next invitation",
+                        fastAdvance = true,
+                        surfaceAlreadyExited = requestSurfaceExited
                     )
                     return@launch
                 }
@@ -3320,18 +3389,44 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         idempotencyGuard.clear()
     }
 
-    private suspend fun fastExitPendingRequestSurface(screen: ScreenInspection) {
-        if (screen.loading || screen.restricted) return
+    private suspend fun fastExitPendingRequestSurface(screen: ScreenInspection): Boolean {
+        if (screen.loading || screen.restricted) return false
+        val settle = maxOf(
+            8L,
+            ConversationFastExitPolicy.settleMs(app.preferences.fastHandsFreeMode)
+        )
+
+        suspend fun requestSurfaceStillVisible(): Boolean {
+            val root = withContext(Dispatchers.Main.immediate) { rootInActiveWindow } ?: return false
+            if (!isAutomationWhatsAppPackage(root.packageName?.toString().orEmpty())) return false
+            val after = inspectScreen(root)
+            return after.requestSubmitted || after.inviteContext
+        }
+
+        // Required sequence: X first.
         val closeClicked = screen.closeNode?.let { node ->
             withContext(Dispatchers.Main.immediate) {
                 clickNodeParentOrGesture(node, allowSafeClose = true)
             }
         } == true
-        if (!closeClicked) {
-            withContext(Dispatchers.Main.immediate) { performGlobalAction(GLOBAL_ACTION_BACK) }
+
+        if (closeClicked) {
+            if (settle > 0L) delay(settle)
+            if (!requestSurfaceStillVisible()) return true
         }
-        val settle = ConversationFastExitPolicy.settleMs(app.preferences.fastHandsFreeMode)
-        if (settle > 0L) delay(settle)
+
+        // If X was absent or did not close the sheet, Back is the bounded fallback.
+        // This never presses the visible "Cancel request" button.
+        repeat(2) {
+            val backSent = withContext(Dispatchers.Main.immediate) {
+                performGlobalAction(GLOBAL_ACTION_BACK)
+            }
+            if (!backSent) return@repeat
+            if (settle > 0L) delay(settle)
+            if (!requestSurfaceStillVisible()) return true
+        }
+
+        return false
     }
 
     private fun readPendingAction(current: GroupLink): AccessibilityJoinAction? {

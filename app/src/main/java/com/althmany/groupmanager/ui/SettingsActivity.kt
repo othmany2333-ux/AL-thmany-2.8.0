@@ -65,13 +65,14 @@ class SettingsActivity : AppCompatActivity() {
 
         window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        window.setDimAmount(0.38f)
-        window.setGravity(Gravity.RIGHT)
+        window.setDimAmount(0.30f)
+        window.setGravity(Gravity.END or Gravity.CENTER_VERTICAL)
         binding.root.post {
             val metrics = resources.displayMetrics
-            val phoneWidth = (metrics.widthPixels * 0.84f).toInt()
-            val maxPanelWidth = (480f * metrics.density).toInt()
-            window.setLayout(minOf(phoneWidth, maxPanelWidth), ViewGroup.LayoutParams.MATCH_PARENT)
+            val panelWidth = (metrics.widthPixels * 0.72f).toInt()
+            val maxPanelWidth = (360f * metrics.density).toInt()
+            val panelHeight = (metrics.heightPixels * 0.88f).toInt()
+            window.setLayout(minOf(panelWidth, maxPanelWidth), panelHeight)
         }
 
         binding.toolbar.setNavigationOnClickListener { finish() }
@@ -105,6 +106,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun bindCurrentSettings() {
         isBinding = true
         binding.autoAdvanceSwitch.isChecked = app.preferences.autoAdvance
+        binding.keepScreenAwakeSwitch.isChecked = app.preferences.keepScreenAwake
         binding.quickJoinNotificationSwitch.isChecked = app.preferences.quickJoinNotification
         binding.runtimeDiagnosticSwitch.isChecked = app.preferences.runtimeDiagnosticJournal
         binding.runtimeShadowSwitch.isChecked = app.preferences.runtimeShadowMode
@@ -139,6 +141,10 @@ class SettingsActivity : AppCompatActivity() {
     private fun configureListeners() {
         binding.autoAdvanceSwitch.setOnCheckedChangeListener { _, checked ->
             if (!isBinding) app.preferences.autoAdvance = checked
+        }
+
+        binding.keepScreenAwakeSwitch.setOnCheckedChangeListener { _, checked ->
+            if (!isBinding) app.preferences.keepScreenAwake = checked
         }
 
         binding.quickJoinNotificationSwitch.setOnCheckedChangeListener { _, checked ->
