@@ -140,6 +140,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
     private var lastAccessibilityVisualProbeAtElapsed = 0L
     private var accessibilityVisualActionTappedAtElapsed = 0L
     private var accessibilityVisualTapAttempts = 0
+    private var accessibilityVisualExpectedAction: AccessibilityJoinAction? = null
     private var lastAutomationWindowClassName: String? = null
     private var lastAutomationWindowStateAtElapsed = 0L
 
@@ -995,7 +996,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 )
             }
             "ALREADY_MEMBER" -> completeAndAdvance(
-                current, LinkStatus.JOINED, LinkResultCode.ALREADY_MEMBER, "Already a member",
+                current, LinkStatus.SKIPPED, LinkResultCode.ALREADY_MEMBER, "Already a member",
                 fastAdvance = true, terminalEscapeAdvance = terminalEscape.bypassInterLinkDelay
             )
         }
@@ -2685,8 +2686,17 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         // A visible Cancel request control means a request is already pending only when
         // WhatsApp is not simultaneously offering a fresh Request to join action. This avoids
         // confusing the pre-request admin-approval notice with a submitted request.
+        val pendingRequestWasPressed =
+            app.preferences.accessibilityPendingLinkId > 0L &&
+                app.preferences.accessibilityPendingAction == AccessibilityJoinAction.REQUEST.name
+        val postClickApprovalVariant =
+            pendingRequestWasPressed &&
+                requestApprovalNoticeSeen &&
+                action != AccessibilityJoinAction.REQUEST
+
         val requestSubmitted = strongRequestSubmitted ||
-            (cancelRequestSeen && action != AccessibilityJoinAction.REQUEST)
+            (cancelRequestSeen && action != AccessibilityJoinAction.REQUEST) ||
+            postClickApprovalVariant
         if (requestSubmitted) terminalEvidenceKinds += "REQUEST_SUBMITTED"
 
         // “موافق/OK” on a terminal error is a dismissal control, not a new workflow action.
@@ -2814,6 +2824,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             restricted = restricted,
             alreadyMember = alreadyMember,
             requestSubmitted = requestSubmitted,
+            requestApprovalNoticeSeen = requestApprovalNoticeSeen,
             failure = failure,
             loading = loading,
             homeSurface = homeSurface,
@@ -3054,6 +3065,10 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             lastAccessibilityVisualProbeAtElapsed = 0L
             accessibilityVisualActionTappedAtElapsed = 0L
             accessibilityVisualTapAttempts = 0
+            accessibilityVisualExpectedAction = when {
+                screen.requestApprovalNoticeSeen -> AccessibilityJoinAction.REQUEST
+                else -> readPendingAction(current)
+            }
         }
         if (accessibilityVisualActionTappedAtElapsed > 0L) return true
 
@@ -3214,23 +3229,33 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                     return@launch
                 }
 
-                // The protected positive control disappeared. If WhatsApp did not expose enough
-                // semantics to distinguish Request from Join, mirror the Shizuku compatibility
-                // lane: treat the non-conversation result as a submitted/pending request, close
-                // the surface once, and keep the queue moving.
+                // The protected positive control disappeared. Do not invent a successful result.
+                // REQUESTED is allowed only when the pre-click screen identified the request path.
                 accessibilityVisualActionTappedAtElapsed = 0L
+                val expected = accessibilityVisualExpectedAction ?: readPendingAction(current)
                 val backSent = withContext(Dispatchers.Main.immediate) {
                     performGlobalAction(GLOBAL_ACTION_BACK)
                 }
                 if (backSent) delay(exitSettleDelayMs())
-                completeAndAdvance(
-                    current,
-                    LinkStatus.REQUESTED,
-                    LinkResultCode.REQUEST_SENT,
-                    "Visual Join/Request control disappeared; no conversation semantics were exposed, so the result was recorded as pending/requested and the queue continued",
-                    fastAdvance = true,
-                    surfaceAlreadyExited = true
-                )
+                if (expected == AccessibilityJoinAction.REQUEST) {
+                    completeAndAdvance(
+                        current,
+                        LinkStatus.REQUESTED,
+                        LinkResultCode.REQUEST_SENT,
+                        "Known Request visual action disappeared; request recorded and queue continued",
+                        fastAdvance = true,
+                        surfaceAlreadyExited = backSent
+                    )
+                } else {
+                    completeAndAdvance(
+                        current,
+                        LinkStatus.FAILED,
+                        LinkResultCode.UNKNOWN_SCREEN,
+                        "Visual positive action disappeared without verified Join/Request evidence; not counted as a random success",
+                        fastAdvance = true,
+                        surfaceAlreadyExited = backSent
+                    )
+                }
                 return@launch
             }
         }
@@ -3976,6 +4001,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         val restricted: Boolean,
         val alreadyMember: Boolean,
         val requestSubmitted: Boolean,
+        val requestApprovalNoticeSeen: Boolean,
         val failure: AccessibilityFailureType?,
         val loading: Boolean,
         val homeSurface: Boolean,

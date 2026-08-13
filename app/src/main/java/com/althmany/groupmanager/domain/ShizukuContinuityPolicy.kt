@@ -26,7 +26,7 @@ object ShizukuContinuityPolicy {
     const val MAX_PROFILE_COMPAT_COMMAND_PROBES = 2
 
     const val NO_ROOT_ADVANCE_AFTER_MS = 1_200L
-    const val UI_TREE_ADVANCE_AFTER_MS = 1_600L
+    const val UI_TREE_ADVANCE_AFTER_MS = 2_200L
     const val MAX_UI_TREE_FAILURES = 8
     const val RUNTIME_RECOVERY_POLL_MS = 240L
 

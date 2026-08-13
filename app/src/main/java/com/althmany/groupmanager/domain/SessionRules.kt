@@ -12,13 +12,41 @@ object SessionRules {
         currentOpened(links)
             ?: links.firstOrNull { it.status == LinkStatus.PENDING }
 
-    fun stats(links: List<GroupLink>): SessionStats = SessionStats(
-        total = links.size,
-        pending = links.count { it.status == LinkStatus.PENDING },
-        opened = links.count { it.status == LinkStatus.OPENED },
-        joined = links.count { it.status == LinkStatus.JOINED },
-        requested = links.count { it.status == LinkStatus.REQUESTED },
-        skipped = links.count { it.status == LinkStatus.SKIPPED },
-        failed = links.count { it.status == LinkStatus.FAILED }
-    )
+    fun stats(links: List<GroupLink>): SessionStats {
+        val joined = links.count {
+            it.status == LinkStatus.JOINED &&
+                it.resultCode in setOf(
+                    com.althmany.groupmanager.model.LinkResultCode.JOIN_ACTION_COMPLETED,
+                    com.althmany.groupmanager.model.LinkResultCode.MANUAL_JOINED
+                )
+        }
+        val requested = links.count {
+            it.status == LinkStatus.REQUESTED &&
+                it.resultCode == com.althmany.groupmanager.model.LinkResultCode.REQUEST_SENT
+        }
+        val alreadyMember = links.count {
+            it.status == LinkStatus.JOINED &&
+                it.resultCode == com.althmany.groupmanager.model.LinkResultCode.ALREADY_MEMBER
+        }
+        val skipped = links.count { it.status == LinkStatus.SKIPPED } + alreadyMember
+        val unverifiedTerminal = links.count {
+            (it.status == LinkStatus.JOINED &&
+                it.resultCode !in setOf(
+                    com.althmany.groupmanager.model.LinkResultCode.JOIN_ACTION_COMPLETED,
+                    com.althmany.groupmanager.model.LinkResultCode.MANUAL_JOINED,
+                    com.althmany.groupmanager.model.LinkResultCode.ALREADY_MEMBER
+                )) ||
+                (it.status == LinkStatus.REQUESTED &&
+                    it.resultCode != com.althmany.groupmanager.model.LinkResultCode.REQUEST_SENT)
+        }
+        return SessionStats(
+            total = links.size,
+            pending = links.count { it.status == LinkStatus.PENDING },
+            opened = links.count { it.status == LinkStatus.OPENED },
+            joined = joined,
+            requested = requested,
+            skipped = skipped,
+            failed = links.count { it.status == LinkStatus.FAILED } + unverifiedTerminal
+        )
+    }
 }

@@ -210,8 +210,28 @@ checks = {
     "3.3 evidence counter repair": "visualExpectedAction" in shizuku_service and
         "not counted as a false request" in shizuku_service and
         "Fast watchdog recovered a verified exact-user WhatsApp conversation after Join" in shizuku_service,
-    "versionCode 330": "versionCode = 330" in build,
-    "versionName 3.3.0": 'versionName = "3.3.0"' in build,
+    "3.4 long-run Shizuku recovery": all(token in shizuku_service for token in [
+        "SHIZUKU_UI_DUMP_KILL_SELF_HEAL",
+        "SHIZUKU_COMMAND_DUMP_COOLDOWN",
+        "SHIZUKU_UI_TREE_BACK_HANDOFF",
+        "SHIZUKU_PERIODIC_UI_REFRESH",
+        "treeFailureIsNotUserExit=true"
+    ]) and "UI_TREE_ADVANCE_AFTER_MS = 2_200L" in shizuku_continuity,
+    "3.4 accurate counters": "val unverifiedTerminal = links.count" in
+        (JAVA / "com/althmany/groupmanager/domain/SessionRules.kt").read_text(encoding="utf-8") and
+        "result_code IN" in database and
+        "not counted as a random success" in service,
+    "3.4 Dual Messenger remote user": "dualRemoteButton" in main_layout and
+        "detectRemoteDualTarget" in main_activity and
+        "DUAL_APP" in main_activity,
+    "3.4 Secure multi-source discovery": "pm list users" in main_activity and
+        "cmd user list" in main_activity and
+        "dumpsys user" in main_activity and
+        "secureMarker" in main_activity,
+    "3.4 pending approval post-click": "postClickApprovalVariant" in service and
+        "pendingApprovalVariant" in shizuku_service,
+    "versionCode 340": "versionCode = 340" in build,
+    "versionName 3.4.0": 'versionName = "3.4.0"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),

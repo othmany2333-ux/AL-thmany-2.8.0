@@ -540,4 +540,14 @@ Al-othmany Sender Profile Owner: %5$s
     <string name="keep_screen_awake">منع سكون الشاشة أثناء التشغيل</string>
     <string name="keep_screen_awake_description">تبقى الشاشة مضاءة طوال جلسة الانضمام النشطة، وتُحرر تلقائيًا عند الإيقاف أو الإيقاف المؤقت.</string>
     <string name="secure_remote_knox_hidden">لم يظهر Samsung Secure Folder عبر ADB. تم تجاهل Island وWork Profile وDual App لأنها ليست المجلد الآمن، ولن يتم اختيار مستخدم خاطئ تلقائيًا.</string>
+
+    <!-- Al-othmany Sender 3.4 Samsung profiles -->
+    <string name="dual_remote_detect_button">Samsung Dual Messenger عبر Shizuku</string>
+    <string name="dual_remote_rescan_button">Dual Messenger محدد • تغيير</string>
+    <string name="dual_remote_picker_title">اختر WhatsApp داخل Dual Messenger</string>
+    <string name="dual_remote_none_found">لم يتم العثور على DUAL_APP يحتوي WhatsApp. فعّل Samsung Dual Messenger لواتساب أولًا.</string>
+    <string name="dual_remote_selected_format">Dual Messenger • %1$s • user %2$d</string>
+    <string name="dual_remote_verified_format">Dual Remote جاهز • %1$s • user %2$d</string>
+    <string name="dual_remote_selected_toast">تم تحديد WhatsApp داخل Samsung Dual Messenger. سيتم قفل الجولة على نفس Android user.</string>
+    <string name="secure_remote_knox_ladder">لم يظهر Secure Folder الحقيقي عبر ADB/Shizuku الخارجي. تم فحص pm/cmd user/dumpsys user ولم يتم اختيار Work أو Island أو Dual بالخطأ. البديل غير الجذري هو تشغيل نفس Al-othmany Sender داخل Secure Folder مع Accessibility المحلية إذا سمحت Samsung بها.</string>
 </resources>

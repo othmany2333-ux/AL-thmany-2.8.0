@@ -456,10 +456,25 @@ class GroupLinkDatabase(context: Context) :
                 s.source_label,
                 s.total_count,
                 s.status,
-                SUM(CASE WHEN l.status = '${LinkStatus.JOINED.name}' THEN 1 ELSE 0 END) AS joined_count,
-                SUM(CASE WHEN l.status = '${LinkStatus.REQUESTED.name}' THEN 1 ELSE 0 END) AS requested_count,
-                SUM(CASE WHEN l.status = '${LinkStatus.SKIPPED.name}' THEN 1 ELSE 0 END) AS skipped_count,
-                SUM(CASE WHEN l.status = '${LinkStatus.FAILED.name}' THEN 1 ELSE 0 END) AS failed_count
+                SUM(CASE WHEN l.status = '${LinkStatus.JOINED.name}'
+                          AND l.result_code IN ('${LinkResultCode.JOIN_ACTION_COMPLETED.name}', '${LinkResultCode.MANUAL_JOINED.name}')
+                         THEN 1 ELSE 0 END) AS joined_count,
+                SUM(CASE WHEN l.status = '${LinkStatus.REQUESTED.name}'
+                          AND l.result_code = '${LinkResultCode.REQUEST_SENT.name}'
+                         THEN 1 ELSE 0 END) AS requested_count,
+                SUM(CASE WHEN l.status = '${LinkStatus.SKIPPED.name}'
+                          OR (l.status = '${LinkStatus.JOINED.name}' AND l.result_code = '${LinkResultCode.ALREADY_MEMBER.name}')
+                         THEN 1 ELSE 0 END) AS skipped_count,
+                SUM(CASE WHEN l.status = '${LinkStatus.FAILED.name}'
+                          OR (l.status = '${LinkStatus.JOINED.name}' AND
+                              (l.result_code IS NULL OR l.result_code NOT IN (
+                                  '${LinkResultCode.JOIN_ACTION_COMPLETED.name}',
+                                  '${LinkResultCode.MANUAL_JOINED.name}',
+                                  '${LinkResultCode.ALREADY_MEMBER.name}'
+                              )))
+                          OR (l.status = '${LinkStatus.REQUESTED.name}' AND
+                              (l.result_code IS NULL OR l.result_code != '${LinkResultCode.REQUEST_SENT.name}'))
+                         THEN 1 ELSE 0 END) AS failed_count
             FROM sessions s
             LEFT JOIN links l ON l.session_id = s.id
             GROUP BY s.id
@@ -612,10 +627,25 @@ class GroupLinkDatabase(context: Context) :
             SELECT COUNT(*) AS total_count,
                    SUM(CASE WHEN status = '${LinkStatus.PENDING.name}' THEN 1 ELSE 0 END) AS pending_count,
                    SUM(CASE WHEN status = '${LinkStatus.OPENED.name}' THEN 1 ELSE 0 END) AS opened_count,
-                   SUM(CASE WHEN status = '${LinkStatus.JOINED.name}' THEN 1 ELSE 0 END) AS joined_count,
-                   SUM(CASE WHEN status = '${LinkStatus.REQUESTED.name}' THEN 1 ELSE 0 END) AS requested_count,
-                   SUM(CASE WHEN status = '${LinkStatus.SKIPPED.name}' THEN 1 ELSE 0 END) AS skipped_count,
-                   SUM(CASE WHEN status = '${LinkStatus.FAILED.name}' THEN 1 ELSE 0 END) AS failed_count
+                   SUM(CASE WHEN status = '${LinkStatus.JOINED.name}'
+                             AND result_code IN ('${LinkResultCode.JOIN_ACTION_COMPLETED.name}', '${LinkResultCode.MANUAL_JOINED.name}')
+                            THEN 1 ELSE 0 END) AS joined_count,
+                   SUM(CASE WHEN status = '${LinkStatus.REQUESTED.name}'
+                             AND result_code = '${LinkResultCode.REQUEST_SENT.name}'
+                            THEN 1 ELSE 0 END) AS requested_count,
+                   SUM(CASE WHEN status = '${LinkStatus.SKIPPED.name}'
+                             OR (status = '${LinkStatus.JOINED.name}' AND result_code = '${LinkResultCode.ALREADY_MEMBER.name}')
+                            THEN 1 ELSE 0 END) AS skipped_count,
+                   SUM(CASE WHEN status = '${LinkStatus.FAILED.name}'
+                             OR (status = '${LinkStatus.JOINED.name}' AND
+                                 (result_code IS NULL OR result_code NOT IN (
+                                     '${LinkResultCode.JOIN_ACTION_COMPLETED.name}',
+                                     '${LinkResultCode.MANUAL_JOINED.name}',
+                                     '${LinkResultCode.ALREADY_MEMBER.name}'
+                                 )))
+                             OR (status = '${LinkStatus.REQUESTED.name}' AND
+                                 (result_code IS NULL OR result_code != '${LinkResultCode.REQUEST_SENT.name}'))
+                            THEN 1 ELSE 0 END) AS failed_count
             FROM links
             WHERE session_id = ?
             """.trimIndent(),

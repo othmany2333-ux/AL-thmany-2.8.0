@@ -94,6 +94,9 @@ class ShizukuAutomationService : Service() {
     private var foregroundWaitStartedAt = 0L
     private var lastForegroundProbeSummary = "not-run"
     private var consecutiveDumpFailures = 0
+    private var commandDumpKillRecoveryAttempts = 0
+    private var commandDumpSuppressedUntilElapsed = 0L
+    private var lastPeriodicUiRefreshProcessed = 0
     private var consecutiveAmbiguousActions = 0
     private var consecutiveInputFailures = 0
 
@@ -507,15 +510,21 @@ class ShizukuAutomationService : Service() {
         // confirmed REQUEST input, either the explicit request-sent sentence or the visible
         // Cancel-request control is sufficient terminal evidence. This mirrors Accessibility
         // semantics and prevents the run from parking on the "request sent" sheet.
+        val pendingApprovalVariant =
+            pending == AccessibilityJoinAction.REQUEST &&
+                snapshot.labels.asSequence().any(AccessibilityJoinMatcher::isRequestApprovalNotice) &&
+                snapshot.screenKind != AutomationScreenKind.REQUEST_ACTION
+
         if (pending == AccessibilityJoinAction.REQUEST &&
             (snapshot.screenKind == AutomationScreenKind.REQUEST_SUBMITTED ||
                 snapshot.labels.asSequence().any(AccessibilityJoinMatcher::isCancelRequest) ||
-                AccessibilityJoinMatcher.isRequestSubmittedAcross(snapshot.labels.asSequence()))
+                AccessibilityJoinMatcher.isRequestSubmittedAcross(snapshot.labels.asSequence()) ||
+                pendingApprovalVariant)
         ) {
             runtimeDiagnostic(
                 current,
                 "SHIZUKU_REQUEST_SUBMITTED_HANDOFF",
-                "pending=REQUEST; screen=${snapshot.screenKind.name}; cancel=${snapshot.labels.asSequence().any(AccessibilityJoinMatcher::isCancelRequest)}; directNext=true"
+                "pending=REQUEST; screen=${snapshot.screenKind.name}; cancel=${snapshot.labels.asSequence().any(AccessibilityJoinMatcher::isCancelRequest)}; approvalVariant=$pendingApprovalVariant; directNext=true"
             )
             completeTerminalResult(
                 current,
@@ -781,7 +790,7 @@ class ShizukuAutomationService : Service() {
                             delay(ACTION_SETTLE_MS)
                         }
                     } else {
-                        completeCurrent(current, LinkStatus.JOINED, LinkResultCode.ALREADY_MEMBER, decision.diagnostic)
+                        completeCurrent(current, LinkStatus.SKIPPED, LinkResultCode.ALREADY_MEMBER, decision.diagnostic)
                     }
                 } else {
                     completeResultForCurrentOrSubgroup(
@@ -812,11 +821,11 @@ class ShizukuAutomationService : Service() {
                             delay(ACTION_SETTLE_MS)
                         }
                     } else {
-                        completeCurrent(current, LinkStatus.JOINED, LinkResultCode.ALREADY_MEMBER, decision.diagnostic)
+                        completeCurrent(current, LinkStatus.SKIPPED, LinkResultCode.ALREADY_MEMBER, decision.diagnostic)
                     }
                 } else {
                     completeTerminalResult(
-                        current, LinkStatus.JOINED, LinkResultCode.ALREADY_MEMBER, decision.diagnostic, snapshot, targetPackage
+                        current, LinkStatus.SKIPPED, LinkResultCode.ALREADY_MEMBER, decision.diagnostic, snapshot, targetPackage
                     )
                 }
             }
@@ -1135,6 +1144,21 @@ class ShizukuAutomationService : Service() {
             }
         }
 
+        val commandDumpNow = SystemClock.elapsedRealtime()
+        if (commandDumpNow < commandDumpSuppressedUntilElapsed) {
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_COMMAND_DUMP_COOLDOWN",
+                "remainingMs=${commandDumpSuppressedUntilElapsed - commandDumpNow}; " +
+                    "persistent/visual/Back recovery preferred over repeatedly spawning killed uiautomator"
+            )
+            return handleDumpFailure(
+                current,
+                targetPackage,
+                "command dump temporarily suppressed after exit=137; mode=COMMAND_COOLDOWN"
+            )
+        }
+
         var result = ShizukuBridge.execute(
             this,
             "rm -f /data/local/tmp/althmany_ui.xml; " +
@@ -1192,48 +1216,125 @@ class ShizukuAutomationService : Service() {
         if (emptyDumpStartedAt == 0L) emptyDumpStartedAt = System.currentTimeMillis()
         consecutiveDumpFailures += 1
         val age = System.currentTimeMillis() - emptyDumpStartedAt
+        val commandKilled =
+            detail.contains("exit=137", ignoreCase = true) ||
+                detail.contains("Killed", ignoreCase = true)
+
         runtimeDiagnostic(
             current,
             "SHIZUKU_UI_DUMP_EMPTY",
             "ageMs=$age; count=$consecutiveDumpFailures; $detail"
         )
-        if (age >= ShizukuContinuityPolicy.UI_TREE_ADVANCE_AFTER_MS ||
-            consecutiveDumpFailures >= ShizukuContinuityPolicy.MAX_UI_TREE_FAILURES
-        ) {
-            val launchAge = if (currentLaunchElapsed > 0L) {
-                (SystemClock.elapsedRealtime() - currentLaunchElapsed).coerceAtLeast(0L)
-            } else 0L
-            if (app.preferences.autoPauseOutsideWhatsApp &&
-                launchAge >= USER_EXIT_LAUNCH_GRACE_MS &&
-                !isTargetForeground(targetPackage, forceProbe = true)
-            ) {
-                app.preferences.pauseAccessibilityBatch(
-                    diagnostic = "Paused automatically after confirmed user exit while UI acquisition was unavailable",
-                    outsideTarget = true
-                )
+
+        if (commandKilled) {
+            commandDumpSuppressedUntilElapsed =
+                SystemClock.elapsedRealtime() + COMMAND_DUMP_KILL_COOLDOWN_MS
+            if (commandDumpKillRecoveryAttempts < 1) {
+                commandDumpKillRecoveryAttempts += 1
+                val recovered = ShizukuBridge.fastResetUiAutomation(this)
                 runtimeDiagnostic(
                     current,
-                    "SHIZUKU_USER_EXIT_AUTO_PAUSE",
-                    "source=UI_TREE_FAILURE; target=$targetPackage; user=${cachedAndroidUserId ?: -1}; noReopen=true"
+                    "SHIZUKU_UI_DUMP_KILL_SELF_HEAL",
+                    "attempt=$commandDumpKillRecoveryAttempts; recovered=$recovered; " +
+                        "cooldownMs=$COMMAND_DUMP_KILL_COOLDOWN_MS; exactUser=${cachedAndroidUserId ?: -1}"
                 )
-                emptyDumpStartedAt = 0L
-                consecutiveDumpFailures = 0
-                return null
+                if (recovered) {
+                    fastUiMode = FastUiMode.UNKNOWN
+                    fastUiFailureCount = 0
+                    fastUiSessionRecoveryAttempts = 0
+                    lastFastEventSequence = 0L
+                    currentLaunchEventBaseline = 0L
+                    emptyDumpStartedAt = 0L
+                    consecutiveDumpFailures = 0
+                    armFastEventSequence(targetPackage)
+                    delay(60L)
+                    return null
+                }
             }
+        }
+
+        if (age < ShizukuContinuityPolicy.UI_TREE_ADVANCE_AFTER_MS &&
+            consecutiveDumpFailures < ShizukuContinuityPolicy.MAX_UI_TREE_FAILURES
+        ) {
+            return null
+        }
+
+        val pending = readPendingAction(current)
+
+        if (pending == AccessibilityJoinAction.JOIN &&
+            probeJoinedConversationActivity(targetPackage, current)
+        ) {
+            exitConversationBeforeDirectHandoff(targetPackage, current)
+            emptyDumpStartedAt = 0L
+            consecutiveDumpFailures = 0
+            commandDumpKillRecoveryAttempts = 0
+            completeCurrent(
+                current,
+                LinkStatus.JOINED,
+                LinkResultCode.JOIN_ACTION_COMPLETED,
+                "UI hierarchy unavailable, but exact-user WhatsApp Conversation proved Join success"
+            )
+            return null
+        }
+
+        // UI-tree failure is NOT user-exit evidence. The outer automation loop owns stable
+        // foreground-loss confirmation and is the only path allowed to auto-pause the run.
+        val userId = cachedAndroidUserId ?: resolveAndroidUserId(targetPackage)
+        val exactForeground =
+            (userId != null && foregroundLeaseValid(targetPackage, userId)) ||
+                isTargetForeground(targetPackage, forceProbe = true)
+
+        if (!exactForeground) {
             runtimeDiagnostic(
                 current,
-                "SHIZUKU_UI_TREE_PRESERVE_CURRENT",
-                "ageMs=$age; count=$consecutiveDumpFailures; currentPreserved=true; mode=COMMAND_COMPAT"
+                "SHIZUKU_UI_TREE_FOREGROUND_DEFER",
+                "ageMs=$age; count=$consecutiveDumpFailures; treeFailureIsNotUserExit=true; " +
+                    "deferToStableForegroundController=true"
             )
             emptyDumpStartedAt = 0L
             consecutiveDumpFailures = 0
-            completeCurrent(
-                current,
-                LinkStatus.FAILED,
-                LinkResultCode.UNKNOWN_SCREEN,
-                "Shizuku UI hierarchy remained unavailable after bounded recovery; link recorded UNKNOWN and queue continued"
-            )
+            commandDumpKillRecoveryAttempts = 0
+            return null
         }
+
+        val backSent = pressResultBack(
+            targetPackage,
+            current,
+            if (pending == AccessibilityJoinAction.REQUEST) {
+                "UI_TREE_FAILURE_REQUEST_BACK_HANDOFF"
+            } else {
+                "UI_TREE_FAILURE_BACK_HANDOFF"
+            }
+        )
+
+        val reset = ShizukuBridge.fastResetUiAutomation(this)
+        if (reset) {
+            fastUiMode = FastUiMode.UNKNOWN
+            fastUiFailureCount = 0
+            fastUiSessionRecoveryAttempts = 0
+            lastFastEventSequence = 0L
+            currentLaunchEventBaseline = 0L
+        }
+        runtimeDiagnostic(
+            current,
+            "SHIZUKU_UI_TREE_BACK_HANDOFF",
+            "back=$backSent; persistentReset=$reset; pending=${pending?.name ?: "NONE"}; " +
+                "exactForeground=true; pause=false; next=true"
+        )
+
+        emptyDumpStartedAt = 0L
+        consecutiveDumpFailures = 0
+        commandDumpKillRecoveryAttempts = 0
+        completeCurrent(
+            current,
+            LinkStatus.FAILED,
+            LinkResultCode.UNKNOWN_SCREEN,
+            if (backSent) {
+                "Unreadable WhatsApp surface dismissed by safe Back; result left unverified and next link opened"
+            } else {
+                "WhatsApp UI remained unreadable; result left unverified and next link opened without a random success count"
+            }
+        )
         return null
     }
 
@@ -1555,7 +1656,8 @@ class ShizukuAutomationService : Service() {
      */
     private fun findResultSafeCloseNode(
         snapshot: ShizukuUiSnapshot,
-        targetPackage: String
+        targetPackage: String,
+        requestPendingOverride: Boolean = false
     ): ShizukuUiNode? {
         val semantic = snapshot.nodes.asSequence()
             .filter { node ->
@@ -1603,7 +1705,8 @@ class ShizukuAutomationService : Service() {
                      b.centerX >= displayWidth * 72 / 100) &&
                     b.centerY <= displayHeight * 32 / 100
                 val requestSheetCorner =
-                    snapshot.screenKind == AutomationScreenKind.REQUEST_SUBMITTED &&
+                    (snapshot.screenKind == AutomationScreenKind.REQUEST_SUBMITTED ||
+                        requestPendingOverride) &&
                     (b.centerX <= displayWidth * 20 / 100 ||
                      b.centerX >= displayWidth * 80 / 100) &&
                     b.centerY in (displayHeight * 26 / 100)..(displayHeight * 78 / 100) &&
@@ -1678,7 +1781,12 @@ class ShizukuAutomationService : Service() {
         var snapshot = initialSnapshot
 
         // 1) Prefer WhatsApp's actual X/Close.
-        val close = findResultSafeCloseNode(snapshot, targetPackage)
+        val requestPendingSurface =
+            snapshot.screenKind == AutomationScreenKind.REQUEST_SUBMITTED ||
+                (readPendingAction(current) == AccessibilityJoinAction.REQUEST &&
+                    snapshot.labels.asSequence().any(AccessibilityJoinMatcher::isRequestApprovalNotice) &&
+                    snapshot.screenKind != AutomationScreenKind.REQUEST_ACTION)
+        val close = findResultSafeCloseNode(snapshot, targetPackage, requestPendingSurface)
         if (close?.bounds != null) {
             val closed = tapNode(close.bounds, targetPackage, current, "RESULT_SAFE_CLOSE")
             runtimeDiagnostic(
@@ -1695,7 +1803,7 @@ class ShizukuAutomationService : Service() {
             }
         }
 
-        if (snapshot.screenKind == AutomationScreenKind.REQUEST_SUBMITTED) {
+        if (requestPendingSurface) {
             // Exact flow: Request sent -> X -> verify. If X is unavailable, Back.
             // Never press "Cancel request"; that would withdraw the submitted request.
             if (pressResultBack(targetPackage, current, "REQUEST_SENT_SHEET_BACK_FALLBACK")) {
@@ -2623,6 +2731,27 @@ class ShizukuAutomationService : Service() {
         updateNotification(getString(R.string.shizuku_service_completed_link, state.processed))
         resetPerLinkEvidence()
 
+        if (state.processed > 0 &&
+            state.processed % PERIODIC_UI_REFRESH_EVERY == 0 &&
+            lastPeriodicUiRefreshProcessed != state.processed
+        ) {
+            lastPeriodicUiRefreshProcessed = state.processed
+            val refreshed = ShizukuBridge.fastResetUiAutomation(this)
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_PERIODIC_UI_REFRESH",
+                "processed=${state.processed}; refreshed=$refreshed; preventiveLongRunMaintenance=true"
+            )
+            if (refreshed) {
+                fastUiMode = FastUiMode.UNKNOWN
+                fastUiFailureCount = 0
+                fastUiSessionRecoveryAttempts = 0
+                lastFastEventSequence = 0L
+                currentLaunchEventBaseline = 0L
+                commandDumpSuppressedUntilElapsed = 0L
+            }
+        }
+
         if (state.limitReached) {
             if (prefs.autoResumeCurrentRun && state.next != null) {
                 prefs.accessibilityProcessedCount = 0
@@ -2688,6 +2817,7 @@ class ShizukuAutomationService : Service() {
         foregroundWaitStartedAt = 0L
         emptyDumpStartedAt = 0L
         consecutiveDumpFailures = 0
+        commandDumpKillRecoveryAttempts = 0
         consecutiveAmbiguousActions = 0
         consecutiveInputFailures = 0
         invalidateForegroundLease()
@@ -2982,6 +3112,8 @@ class ShizukuAutomationService : Service() {
         private const val VISUAL_DISMISS_SETTLE_MS = 30L
         private const val FAST_UI_DISABLE_AFTER_FAILURES = 4
         private const val FAST_UI_SESSION_RECOVERY_MAX = 1
+        private const val COMMAND_DUMP_KILL_COOLDOWN_MS = 12_000L
+        private const val PERIODIC_UI_REFRESH_EVERY = 100
         private const val USER_EXIT_LAUNCH_GRACE_MS = 650L
         private const val USER_EXIT_CONFIRM_MS = 140L
         private const val USER_EXIT_PROBE_INTERVAL_MS = 70L

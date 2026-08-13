@@ -540,4 +540,14 @@ Reason: %10$s</string>
     <string name="keep_screen_awake">Keep screen awake while running</string>
     <string name="keep_screen_awake_description">Keeps the display on during an active join session and releases it automatically on pause or stop.</string>
     <string name="secure_remote_knox_hidden">Samsung Secure Folder is not visible through ADB. Island, Work Profile, and Dual App were ignored because they are not Secure Folder, and no wrong user will be selected automatically.</string>
+
+    <!-- Al-othmany Sender 3.4 Samsung profiles -->
+    <string name="dual_remote_detect_button">Samsung Dual Messenger via Shizuku</string>
+    <string name="dual_remote_rescan_button">Dual Messenger selected • Change</string>
+    <string name="dual_remote_picker_title">Choose WhatsApp in Dual Messenger</string>
+    <string name="dual_remote_none_found">No DUAL_APP user containing WhatsApp was found. Enable Samsung Dual Messenger for WhatsApp first.</string>
+    <string name="dual_remote_selected_format">Dual Messenger • %1$s • user %2$d</string>
+    <string name="dual_remote_verified_format">Dual Remote ready • %1$s • user %2$d</string>
+    <string name="dual_remote_selected_toast">WhatsApp inside Samsung Dual Messenger was selected. The run will be locked to that exact Android user.</string>
+    <string name="secure_remote_knox_ladder">The real Secure Folder was not visible through host ADB/Shizuku. pm/cmd user/dumpsys user were checked and Work, Island, or Dual were not selected by mistake. The non-root fallback is the same Al-othmany Sender APK inside Secure Folder using local Accessibility if Samsung allows it.</string>
 </resources>

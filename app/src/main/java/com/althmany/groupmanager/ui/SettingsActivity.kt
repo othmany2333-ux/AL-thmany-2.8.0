@@ -65,13 +65,14 @@ class SettingsActivity : AppCompatActivity() {
 
         window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        window.setDimAmount(0.30f)
+        window.setDimAmount(0.26f)
         window.setGravity(Gravity.END or Gravity.CENTER_VERTICAL)
         binding.root.post {
             val metrics = resources.displayMetrics
-            val panelWidth = (metrics.widthPixels * 0.72f).toInt()
-            val maxPanelWidth = (360f * metrics.density).toInt()
-            val panelHeight = (metrics.heightPixels * 0.88f).toInt()
+            // 3.4: visibly smaller floating settings sheet; content remains scrollable.
+            val panelWidth = (metrics.widthPixels * 0.66f).toInt()
+            val maxPanelWidth = (330f * metrics.density).toInt()
+            val panelHeight = (metrics.heightPixels * 0.80f).toInt()
             window.setLayout(minOf(panelWidth, maxPanelWidth), panelHeight)
         }
 

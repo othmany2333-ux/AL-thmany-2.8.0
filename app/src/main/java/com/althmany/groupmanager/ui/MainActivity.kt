@@ -251,7 +251,6 @@ class MainActivity : AppCompatActivity() {
                 else -> PreferredTarget.AUTO
             }
             app.preferences.clearRemoteSecureTarget()
-            app.preferences.clearRemoteSecureTarget()
             app.preferences.selectedWhatsAppPackage = null
             app.preferences.selectedWhatsAppLabel = null
             viewModel.setPreferredTarget(target)
@@ -263,7 +262,16 @@ class MainActivity : AppCompatActivity() {
         binding.chooseInstalledWhatsAppButton.setOnClickListener { showInstalledWhatsAppPicker() }
         binding.testWhatsAppTargetButton.setOnClickListener { testSelectedWhatsAppTarget() }
         binding.secureRemoteButton.setOnClickListener { detectRemoteSecureTarget() }
+        binding.dualRemoteButton.setOnClickListener { detectRemoteDualTarget() }
         binding.secureRemoteButton.setOnLongClickListener {
+            if (app.preferences.remoteSecureFolderEnabled) {
+                app.preferences.clearRemoteSecureTarget()
+                renderInstalledTargets()
+                toast(R.string.secure_remote_cleared_toast)
+            }
+            true
+        }
+        binding.dualRemoteButton.setOnLongClickListener {
             if (app.preferences.remoteSecureFolderEnabled) {
                 app.preferences.clearRemoteSecureTarget()
                 renderInstalledTargets()
@@ -778,8 +786,12 @@ class MainActivity : AppCompatActivity() {
         val controlsUnlocked = !running && !scheduled
         startAutomationButton.isEnabled = (!running || paused) && !scheduled
         resumeLastRunButton.visibility =
-            if (!running && !scheduled && canContinueQueuedBatch()) View.VISIBLE else View.GONE
-        resumeLastRunButton.isEnabled = !running && !scheduled
+            if (!scheduled && ((running && paused) || (!running && canContinueQueuedBatch()))) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+        resumeLastRunButton.isEnabled = !scheduled && (paused || !running)
         compactAutoResumeSwitch.isEnabled = true
         autoStartSwitch.isEnabled = controlsUnlocked
         autoResumeSwitch.isEnabled = true
@@ -868,6 +880,8 @@ class MainActivity : AppCompatActivity() {
         val remoteSecure = app.preferences.hasValidRemoteSecureTarget()
         val remoteUserId = app.preferences.remoteSecureAndroidUserId
         val remotePackage = app.preferences.remoteSecureWhatsAppPackage
+        val remoteLabel = app.preferences.remoteSecureUserLabel.orEmpty()
+        val remoteDual = remoteSecure && isDualMessengerUserLabel(remoteLabel)
 
         binding.targetAutoButton.isEnabled = unlocked && !profile.requiresExplicitAutoTarget
         binding.targetPersonalButton.isEnabled = unlocked && personal
@@ -877,9 +891,14 @@ class MainActivity : AppCompatActivity() {
         binding.testWhatsAppTargetButton.isEnabled =
             unlocked && !remoteSecure && validation.packageName != null
         binding.secureRemoteButton.isEnabled = unlocked
+        binding.dualRemoteButton.isEnabled = unlocked
         binding.secureRemoteButton.setText(
-            if (remoteSecure) R.string.secure_remote_rescan_button
+            if (remoteSecure && !remoteDual) R.string.secure_remote_rescan_button
             else R.string.secure_remote_detect_button
+        )
+        binding.dualRemoteButton.setText(
+            if (remoteDual) R.string.dual_remote_rescan_button
+            else R.string.dual_remote_detect_button
         )
         binding.communityTraversalSwitch.isEnabled = unlocked
         binding.targetAutoButton.alpha = if (!profile.requiresExplicitAutoTarget) 1f else 0.45f
@@ -890,9 +909,14 @@ class MainActivity : AppCompatActivity() {
         val selectedPackage = app.preferences.selectedWhatsAppPackage
         val selectedLabel = app.preferences.selectedWhatsAppLabel
         binding.selectedWhatsAppTargetText.text = when {
+            remoteDual -> getString(
+                R.string.dual_remote_selected_format,
+                remoteLabel.ifBlank { remotePackage.orEmpty() },
+                remoteUserId
+            )
             remoteSecure -> getString(
                 R.string.secure_remote_selected_format,
-                app.preferences.remoteSecureUserLabel ?: remotePackage.orEmpty(),
+                remoteLabel.ifBlank { remotePackage.orEmpty() },
                 remoteUserId
             )
             !selectedPackage.isNullOrBlank() -> getString(
@@ -915,6 +939,11 @@ class MainActivity : AppCompatActivity() {
 
         binding.targetAppsStatusText.visibility = android.view.View.VISIBLE
         binding.targetAppsStatusText.text = when {
+            remoteDual -> getString(
+                R.string.dual_remote_verified_format,
+                remotePackage.orEmpty(),
+                remoteUserId
+            )
             remoteSecure -> getString(
                 R.string.secure_remote_verified_format,
                 remotePackage.orEmpty(),
@@ -942,7 +971,6 @@ class MainActivity : AppCompatActivity() {
                 if (profile.requiresExplicitAutoTarget) {
                     toast(R.string.profile_explicit_target_required)
                 } else {
-                    app.preferences.clearRemoteSecureTarget()
                     app.preferences.clearRemoteSecureTarget()
                     app.preferences.selectedWhatsAppPackage = null
                     app.preferences.selectedWhatsAppLabel = null
@@ -1021,8 +1049,77 @@ class MainActivity : AppCompatActivity() {
     private data class RemoteSecureCandidate(
         val userId: Int,
         val userName: String,
-        val packageName: String
+        val packageName: String,
+        val secureMarker: Boolean = false
     )
+
+    private fun isDualMessengerUserLabel(label: String): Boolean {
+        val normalized = label.lowercase()
+        return normalized.contains("dual_app") ||
+            normalized.contains("dual app") ||
+            normalized.contains("dual messenger")
+    }
+
+    private suspend fun discoverRemoteWhatsAppCandidates(): List<RemoteSecureCandidate> {
+        val userResult = withContext(Dispatchers.IO) {
+            ShizukuBridge.execute(
+                this@MainActivity,
+                "{ pm list users 2>/dev/null; cmd user list 2>/dev/null; dumpsys user 2>/dev/null; }",
+                6_000
+            )
+        }
+        if (!userResult.success && userResult.output.isBlank()) return emptyList()
+
+        val userRegex = Regex("UserInfo\\{([0-9]+):([^:}]*)")
+        val users = userRegex.findAll(userResult.output)
+            .mapNotNull { match ->
+                val id = match.groupValues[1].toIntOrNull() ?: return@mapNotNull null
+                id to match.groupValues[2].trim().ifBlank { "Android user $id" }
+            }
+            .distinctBy { it.first }
+            .toList()
+
+        val hostUserId = android.os.Process.myUid() / 100000
+        val packages = listOf("com.whatsapp", "com.whatsapp.w4b", "com.whatsapp2")
+        val found = mutableListOf<RemoteSecureCandidate>()
+
+        for ((userId, userName) in users) {
+            if (userId == hostUserId) continue
+
+            val markerResult = withContext(Dispatchers.IO) {
+                ShizukuBridge.execute(
+                    this@MainActivity,
+                    "pm list packages --user $userId 2>/dev/null | " +
+                        "grep -E 'package:com\\.samsung\\.knox\\.securefolder' | head -n1",
+                    2_500
+                )
+            }
+            val secureMarker = markerResult.output.contains("samsung", ignoreCase = true) &&
+                markerResult.output.contains("knox", ignoreCase = true)
+
+            for (packageName in packages) {
+                val packageResult = withContext(Dispatchers.IO) {
+                    ShizukuBridge.execute(
+                        this@MainActivity,
+                        "pm list packages --user $userId $packageName 2>/dev/null",
+                        2_500
+                    )
+                }
+                val exactPresent = packageResult.output.lineSequence()
+                    .map(String::trim)
+                    .any { it == "package:$packageName" }
+                if (exactPresent) {
+                    found += RemoteSecureCandidate(
+                        userId = userId,
+                        userName = userName,
+                        packageName = packageName,
+                        secureMarker = secureMarker
+                    )
+                }
+            }
+        }
+        return found.distinctBy { "${it.userId}:${it.packageName}" }
+    }
 
     private fun detectRemoteSecureTarget() {
         if (!runCatching { ShizukuBridge.status().ready }.getOrDefault(false)) {
@@ -1032,100 +1129,95 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             binding.secureRemoteButton.isEnabled = false
+            binding.dualRemoteButton.isEnabled = false
             try {
-                val usersResult = withContext(Dispatchers.IO) {
-                    ShizukuBridge.execute(this@MainActivity, "pm list users", 3_000)
-                }
-                if (!usersResult.success) {
-                    toast(R.string.secure_remote_none_found)
-                    return@launch
-                }
-
-                val userRegex = Regex("UserInfo\\{([0-9]+):([^:}]*)")
-                val userNames = userRegex.findAll(usersResult.output)
-                    .mapNotNull { match ->
-                        val id = match.groupValues[1].toIntOrNull() ?: return@mapNotNull null
-                        id to match.groupValues[2].trim()
-                    }
-                    .toMap()
-
-                val scan = listOf(
-                    "for u in \$(pm list users | sed -n 's/.*UserInfo{\\([0-9][0-9]*\\):.*/\\1/p'); do",
-                    "for p in com.whatsapp com.whatsapp.w4b com.whatsapp2; do",
-                    "pm list packages --user \$u \$p 2>/dev/null | grep -qx \"package:\$p\" && echo \"\$u|\$p\";",
-                    "done; done"
-                ).joinToString(" ")
-
-                val packageResult = withContext(Dispatchers.IO) {
-                    ShizukuBridge.execute(this@MainActivity, scan, 6_000)
-                }
-                val hostUserId = android.os.Process.myUid() / 100000
-                val candidates = packageResult.output.lineSequence()
-                    .map(String::trim)
-                    .mapNotNull { line ->
-                        val parts = line.split('|')
-                        if (parts.size != 2) return@mapNotNull null
-                        val userId = parts[0].toIntOrNull() ?: return@mapNotNull null
-                        val packageName = parts[1]
-                        if (userId == hostUserId ||
-                            packageName !in setOf("com.whatsapp", "com.whatsapp.w4b", "com.whatsapp2")
-                        ) return@mapNotNull null
-                        RemoteSecureCandidate(
-                            userId = userId,
-                            userName = userNames[userId].orEmpty().ifBlank { "Android user $userId" },
-                            packageName = packageName
-                        )
-                    }
-                    .distinctBy { "${it.userId}:${it.packageName}" }
-                    .toList()
-
-                if (candidates.isEmpty()) {
-                    toast(R.string.secure_remote_none_found)
-                    return@launch
-                }
-
-                val strongSecure = candidates.filter { candidate ->
+                val candidates = discoverRemoteWhatsAppCandidates()
+                val secure = candidates.filter { candidate ->
                     val name = candidate.userName.lowercase()
                     val secureName = listOf(
                         "secure", "knox", "folder", "مجلد", "آمن", "امن"
                     ).any(name::contains)
                     val knownNonSecure = listOf(
-                        "island", "work", "managed", "dual_app", "dual app", "clone", "cloned"
+                        "island", "work", "managed", "dual_app", "dual app",
+                        "dual messenger", "clone", "cloned"
                     ).any(name::contains)
-                    secureName && !knownNonSecure
+                    !knownNonSecure && (secureName || candidate.secureMarker)
                 }
 
-                // 3.3: never relabel Work/Island/Dual Messenger as Secure Folder.
-                if (strongSecure.isEmpty()) {
+                // 3.4: never relabel Work/Island/Dual Messenger as Secure Folder.
+                if (secure.isEmpty()) {
                     app.preferences.clearRemoteSecureTarget()
-                    toast(R.string.secure_remote_knox_hidden)
+                    toast(R.string.secure_remote_knox_ladder)
                     renderInstalledTargets()
                     return@launch
                 }
-                val choices = strongSecure
-
-                if (choices.size == 1) {
-                    selectRemoteSecureTarget(choices.first())
-                } else {
-                    val labels = choices.map { candidate ->
-                        "${candidate.userName}  •  user ${candidate.userId}\n${candidate.packageName}"
-                    }.toTypedArray()
-                    MaterialAlertDialogBuilder(this@MainActivity)
-                        .setTitle(R.string.secure_remote_picker_title)
-                        .setItems(labels) { _, which ->
-                            selectRemoteSecureTarget(choices[which])
-                        }
-                        .setNegativeButton(R.string.cancel, null)
-                        .show()
-                }
+                showRemoteSamsungPicker(
+                    titleRes = R.string.secure_remote_picker_title,
+                    candidates = secure,
+                    dual = false
+                )
             } finally {
                 binding.secureRemoteButton.isEnabled =
+                    !app.preferences.accessibilityBatchRunning && !app.preferences.hasScheduledStart
+                binding.dualRemoteButton.isEnabled =
                     !app.preferences.accessibilityBatchRunning && !app.preferences.hasScheduledStart
             }
         }
     }
 
-    private fun selectRemoteSecureTarget(candidate: RemoteSecureCandidate) {
+    private fun detectRemoteDualTarget() {
+        if (!runCatching { ShizukuBridge.status().ready }.getOrDefault(false)) {
+            toast(R.string.secure_remote_shizuku_required)
+            return
+        }
+
+        lifecycleScope.launch {
+            binding.secureRemoteButton.isEnabled = false
+            binding.dualRemoteButton.isEnabled = false
+            try {
+                val dual = discoverRemoteWhatsAppCandidates().filter {
+                    isDualMessengerUserLabel(it.userName)
+                }
+                if (dual.isEmpty()) {
+                    toast(R.string.dual_remote_none_found)
+                    return@launch
+                }
+                showRemoteSamsungPicker(
+                    titleRes = R.string.dual_remote_picker_title,
+                    candidates = dual,
+                    dual = true
+                )
+            } finally {
+                binding.secureRemoteButton.isEnabled =
+                    !app.preferences.accessibilityBatchRunning && !app.preferences.hasScheduledStart
+                binding.dualRemoteButton.isEnabled =
+                    !app.preferences.accessibilityBatchRunning && !app.preferences.hasScheduledStart
+            }
+        }
+    }
+
+    private fun showRemoteSamsungPicker(
+        titleRes: Int,
+        candidates: List<RemoteSecureCandidate>,
+        dual: Boolean
+    ) {
+        if (candidates.size == 1) {
+            selectRemoteSamsungTarget(candidates.first(), dual)
+            return
+        }
+        val labels = candidates.map { candidate ->
+            "${candidate.userName}  •  user ${candidate.userId}\n${candidate.packageName}"
+        }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(titleRes)
+            .setItems(labels) { _, which ->
+                selectRemoteSamsungTarget(candidates[which], dual)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun selectRemoteSamsungTarget(candidate: RemoteSecureCandidate, dual: Boolean) {
         app.preferences.setRemoteSecureTarget(
             candidate.userId,
             candidate.packageName,
@@ -1138,7 +1230,10 @@ class MainActivity : AppCompatActivity() {
         binding.targetToggleGroup.check(R.id.targetAutoButton)
         bindingTargetSelection = false
         renderInstalledTargets()
-        toast(R.string.secure_remote_selected_toast)
+        toast(
+            if (dual) R.string.dual_remote_selected_toast
+            else R.string.secure_remote_selected_toast
+        )
     }
 
     private fun installedMark(installed: Boolean): String =
@@ -1148,8 +1243,9 @@ class MainActivity : AppCompatActivity() {
         // 2.8.8 Fast Parity: explicit Start always means the proven 2.4.4-style fast JOIN path.
         // Keep semantic verification, but remove artificial inter-link waiting.
         app.preferences.runtimeShadowMode = false
-        app.preferences.fastHandsFreeMode = true
-        app.preferences.autoResumeCurrentRun = true
+        app.preferences.fastHandsFreeMode =
+            RuntimeSpeedProfilePolicy.isFast(app.preferences.runtimeSpeedMode)
+        // 3.4: do not force Auto Resume. The user's switch controls automatic resume.
         app.preferences.restrictionHandlingMode = RestrictionHandlingMode.SKIP_AND_CONTINUE
         // Explicit hands-free runs must respect a manual Home/app switch. The engine pauses
         // instead of forcing WhatsApp back to foreground, then resumes only when the user returns

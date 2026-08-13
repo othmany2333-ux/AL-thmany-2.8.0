@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="10dp">
+            android:padding="8dp">
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -40,7 +40,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:padding="8dp">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -54,7 +54,7 @@
                         android:id="@+id/autoAdvanceSwitch"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:text="@string/auto_advance" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -76,7 +76,7 @@
                         android:id="@+id/quickJoinNotificationSwitch"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:text="@string/quick_join_notification" />
 
                     <TextView
@@ -146,7 +146,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="14dp"
                 app:strokeColor="@color/card_border"
@@ -156,7 +156,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:padding="8dp">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -198,7 +198,7 @@
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:text="@string/apply_work_accessibility_policy" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -206,7 +206,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="14dp"
                 app:strokeColor="@color/card_border"
@@ -216,7 +216,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:padding="8dp">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -238,7 +238,7 @@
                         android:id="@+id/automationBackendRadioGroup"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp">
+                        android:layout_marginTop="6dp">
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/backendAutoRadio"
@@ -263,14 +263,14 @@
                         android:id="@+id/shizukuStatusText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:textColor="@color/brand_primary"
                         android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
@@ -294,7 +294,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:text="@string/shizuku_backend_warning"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
@@ -304,7 +304,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="14dp"
                 app:strokeColor="@color/card_border"
@@ -314,7 +314,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:padding="8dp">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -359,7 +359,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -403,7 +403,7 @@
                         android:id="@+id/profileControlDiagnosticText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:lineSpacingExtra="2dp"
                         android:text="@string/profile_control_diagnostic_placeholder"
                         android:textColor="@color/text_secondary"
@@ -414,7 +414,7 @@
                         android:id="@+id/profileAccessibilityPolicyText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:lineSpacingExtra="2dp"
                         android:text="@string/profile_accessibility_policy_placeholder"
                         android:textColor="@color/text_secondary"
@@ -434,7 +434,7 @@
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:text="@string/open_accessibility_services_list" />
 
                     <com.google.android.material.button.MaterialButton
@@ -442,7 +442,7 @@
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:text="@string/open_current_profile_app_info" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -450,7 +450,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="14dp"
                 app:strokeColor="@color/card_border"
@@ -460,7 +460,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:padding="8dp">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -482,7 +482,7 @@
                         android:id="@+id/targetRadioGroup"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp">
+                        android:layout_marginTop="6dp">
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/targetAutoRadio"
@@ -544,7 +544,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:orientation="horizontal">
 
                         <TextView
@@ -567,7 +567,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="14dp"
                 app:strokeColor="@color/card_border"
@@ -577,7 +577,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:padding="8dp">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -591,7 +591,7 @@
                         android:id="@+id/themeRadioGroup"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp">
+                        android:layout_marginTop="6dp">
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/themeSystemRadio"
@@ -626,7 +626,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_notice_panel"
                 android:orientation="vertical"

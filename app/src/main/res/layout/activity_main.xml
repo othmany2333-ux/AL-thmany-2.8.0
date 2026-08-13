@@ -305,6 +305,19 @@
                             app:iconTint="@color/sender_accent"
                             app:strokeColor="@color/sender_accent" />
 
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/dualRemoteButton"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="44dp"
+                            android:layout_marginTop="6dp"
+                            android:gravity="start|center_vertical"
+                            android:text="@string/dual_remote_detect_button"
+                            android:textColor="@color/sender_accent"
+                            android:textSize="12sp"
+                            app:cornerRadius="16dp"
+                            app:strokeColor="@color/sender_accent" />
+
                         <TextView
                             android:id="@+id/selectedWhatsAppTargetText"
                             android:layout_width="match_parent"
