@@ -10,6 +10,7 @@ import com.althmany.groupmanager.BuildConfig
 import com.althmany.groupmanager.domain.ShizukuBounds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import rikka.shizuku.Shizuku
@@ -222,6 +223,27 @@ object ShizukuBridge {
     suspend fun fastResetUiAutomation(context: Context): Boolean = withContext(Dispatchers.IO) {
         if (!ensureBound(context)) return@withContext false
         runCatching { remote?.fastResetUiAutomation() == true }.getOrDefault(false)
+    }
+
+    suspend fun restartUserService(
+        context: Context,
+        timeoutMs: Long = 4_500L
+    ): Boolean = withContext(Dispatchers.IO) {
+        if (!status().ready) return@withContext false
+        val appContext = context.applicationContext
+        val args = userServiceArgs(appContext)
+        runCatching {
+            Shizuku::class.java.methods
+                .firstOrNull { it.name == "unbindUserService" && it.parameterTypes.size == 3 }
+                ?.invoke(null, args, serviceConnection, true)
+        }
+        synchronized(connectionLock) {
+            remote = null
+            binding?.cancel()
+            binding = null
+        }
+        delay(120L)
+        ensureBound(appContext, timeoutMs)
     }
 
     suspend fun execute(

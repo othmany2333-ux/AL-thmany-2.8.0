@@ -1064,20 +1064,34 @@ class MainActivity : AppCompatActivity() {
         val userResult = withContext(Dispatchers.IO) {
             ShizukuBridge.execute(
                 this@MainActivity,
-                "{ pm list users 2>/dev/null; cmd user list 2>/dev/null; dumpsys user 2>/dev/null; }",
-                6_000
+                "{ pm list users 2>/dev/null; cmd user list 2>/dev/null; dumpsys user 2>/dev/null; " +
+                    "dumpsys persona 2>/dev/null; }",
+                7_000
             )
         }
         if (!userResult.success && userResult.output.isBlank()) return emptyList()
 
         val userRegex = Regex("UserInfo\\{([0-9]+):([^:}]*)")
-        val users = userRegex.findAll(userResult.output)
+        val userInfoPairs = userRegex.findAll(userResult.output)
             .mapNotNull { match ->
                 val id = match.groupValues[1].toIntOrNull() ?: return@mapNotNull null
                 id to match.groupValues[2].trim().ifBlank { "Android user $id" }
             }
-            .distinctBy { it.first }
             .toList()
+
+        val personaIdRegex = Regex(
+            "(?:userId|user_id|mUserId|containerId)\\s*[=:]\\s*([0-9]+)",
+            RegexOption.IGNORE_CASE
+        )
+        val personaPairs = personaIdRegex.findAll(userResult.output)
+            .mapNotNull { match ->
+                val id = match.groupValues[1].toIntOrNull() ?: return@mapNotNull null
+                id to "Samsung Knox profile $id"
+            }
+            .toList()
+
+        val users = (userInfoPairs + personaPairs)
+            .distinctBy { it.first }
 
         val hostUserId = android.os.Process.myUid() / 100000
         val packages = listOf("com.whatsapp", "com.whatsapp.w4b", "com.whatsapp2")

@@ -96,6 +96,8 @@ class ShizukuAutomationService : Service() {
     private var consecutiveDumpFailures = 0
     private var commandDumpKillRecoveryAttempts = 0
     private var commandDumpSuppressedUntilElapsed = 0L
+    private var lastDumpFailureCountedAtElapsed = 0L
+    private var userServiceRestartAttempts = 0
     private var lastPeriodicUiRefreshProcessed = 0
     private var consecutiveAmbiguousActions = 0
     private var consecutiveInputFailures = 0
@@ -204,17 +206,14 @@ class ShizukuAutomationService : Service() {
             }
 
             if (prefs.accessibilityPaused) {
-                // A manual Pause remains manual. Only the special outside-target pause may resume
-                // itself, and only after the user brings the exact locked WhatsApp/user back.
-                if (prefs.pausedBecauseOutsideTarget &&
-                    prefs.autoPauseOutsideWhatsApp &&
-                    prefs.autoResumeCurrentRun &&
-                    tryAutoResumeAfterUserReturn(targetPackage)
-                ) {
-                    updateNotification("WhatsApp returned; resuming the saved invitation")
-                    continue
-                }
-                updateNotification(getString(R.string.shizuku_service_paused))
+                // 3.4.1: leaving WhatsApp is an explicit user pause.
+                updateNotification(
+                    if (prefs.pausedBecauseOutsideTarget) {
+                        "Paused after leaving WhatsApp • open Al-othmany Sender and tap Resume"
+                    } else {
+                        getString(R.string.shizuku_service_paused)
+                    }
+                )
                 delay(PAUSED_POLL_MS)
                 continue
             }
@@ -1152,10 +1151,13 @@ class ShizukuAutomationService : Service() {
                 "remainingMs=${commandDumpSuppressedUntilElapsed - commandDumpNow}; " +
                     "persistent/visual/Back recovery preferred over repeatedly spawning killed uiautomator"
             )
+            val remaining = (commandDumpSuppressedUntilElapsed - commandDumpNow).coerceAtLeast(1L)
+            delay(minOf(COMMAND_DUMP_COOLDOWN_POLL_MS, remaining))
             return handleDumpFailure(
                 current,
                 targetPackage,
-                "command dump temporarily suppressed after exit=137; mode=COMMAND_COOLDOWN"
+                "mode=COMMAND_COOLDOWN; command dump suppressed; remainingMs=$remaining",
+                realCommandKill = false
             )
         }
 
@@ -1184,7 +1186,14 @@ class ShizukuAutomationService : Service() {
             xml = result.output
         }
         if (!result.success || !xml.contains("<hierarchy")) {
-            return handleDumpFailure(current, targetPackage, "exit=${result.exitCode}; ${xml.take(320)}; mode=COMMAND_COMPAT")
+            val realCommandKill =
+                result.exitCode == 137 || xml.contains("Killed", ignoreCase = true)
+            return handleDumpFailure(
+                current,
+                targetPackage,
+                "exit=${result.exitCode}; ${xml.take(320)}; mode=COMMAND_COMPAT",
+                realCommandKill = realCommandKill
+            )
         }
         val snapshot = ShizukuUiDumpParser.parse(xml)
         val targetVisible = snapshot.nodes.any { it.packageName == targetPackage }
@@ -1211,32 +1220,42 @@ class ShizukuAutomationService : Service() {
     private suspend fun handleDumpFailure(
         current: GroupLink,
         targetPackage: String,
-        detail: String
+        detail: String,
+        realCommandKill: Boolean = false
     ): ShizukuUiSnapshot? {
+        val nowElapsed = SystemClock.elapsedRealtime()
+        if (lastDumpFailureCountedAtElapsed > 0L) {
+            val sinceLast = nowElapsed - lastDumpFailureCountedAtElapsed
+            if (sinceLast in 0 until DUMP_FAILURE_MIN_INTERVAL_MS) {
+                delay(DUMP_FAILURE_MIN_INTERVAL_MS - sinceLast)
+                return null
+            }
+        }
+        lastDumpFailureCountedAtElapsed = SystemClock.elapsedRealtime()
+
         if (emptyDumpStartedAt == 0L) emptyDumpStartedAt = System.currentTimeMillis()
         consecutiveDumpFailures += 1
         val age = System.currentTimeMillis() - emptyDumpStartedAt
-        val commandKilled =
-            detail.contains("exit=137", ignoreCase = true) ||
-                detail.contains("Killed", ignoreCase = true)
 
         runtimeDiagnostic(
             current,
             "SHIZUKU_UI_DUMP_EMPTY",
-            "ageMs=$age; count=$consecutiveDumpFailures; $detail"
+            "ageMs=$age; count=$consecutiveDumpFailures; realKill=$realCommandKill; $detail"
         )
 
-        if (commandKilled) {
-            commandDumpSuppressedUntilElapsed =
+        if (realCommandKill) {
+            commandDumpSuppressedUntilElapsed = maxOf(
+                commandDumpSuppressedUntilElapsed,
                 SystemClock.elapsedRealtime() + COMMAND_DUMP_KILL_COOLDOWN_MS
+            )
+
             if (commandDumpKillRecoveryAttempts < 1) {
                 commandDumpKillRecoveryAttempts += 1
                 val recovered = ShizukuBridge.fastResetUiAutomation(this)
                 runtimeDiagnostic(
                     current,
                     "SHIZUKU_UI_DUMP_KILL_SELF_HEAL",
-                    "attempt=$commandDumpKillRecoveryAttempts; recovered=$recovered; " +
-                        "cooldownMs=$COMMAND_DUMP_KILL_COOLDOWN_MS; exactUser=${cachedAndroidUserId ?: -1}"
+                    "attempt=$commandDumpKillRecoveryAttempts; recovered=$recovered; exactUser=${cachedAndroidUserId ?: -1}"
                 )
                 if (recovered) {
                     fastUiMode = FastUiMode.UNKNOWN
@@ -1246,20 +1265,60 @@ class ShizukuAutomationService : Service() {
                     currentLaunchEventBaseline = 0L
                     emptyDumpStartedAt = 0L
                     consecutiveDumpFailures = 0
+                    lastDumpFailureCountedAtElapsed = 0L
+                    userServiceRestartAttempts = 0
+                    commandDumpSuppressedUntilElapsed = 0L
                     armFastEventSequence(targetPackage)
-                    delay(60L)
+                    delay(80L)
+                    return null
+                }
+            }
+
+            if (userServiceRestartAttempts < USER_SERVICE_RESTART_MAX) {
+                userServiceRestartAttempts += 1
+                val restarted = ShizukuBridge.restartUserService(this)
+                runtimeDiagnostic(
+                    current,
+                    "SHIZUKU_USER_SERVICE_RESTART",
+                    "attempt=$userServiceRestartAttempts; restarted=$restarted; user=${cachedAndroidUserId ?: -1}"
+                )
+                if (restarted) {
+                    fastUiMode = FastUiMode.UNKNOWN
+                    fastUiFailureCount = 0
+                    fastUiSessionRecoveryAttempts = 0
+                    lastFastEventSequence = 0L
+                    currentLaunchEventBaseline = 0L
+                    commandDumpSuppressedUntilElapsed = 0L
+                    emptyDumpStartedAt = 0L
+                    consecutiveDumpFailures = 0
+                    lastDumpFailureCountedAtElapsed = 0L
+                    delay(120L)
                     return null
                 }
             }
         }
 
-        if (age < ShizukuContinuityPolicy.UI_TREE_ADVANCE_AFTER_MS &&
+        val pending = readPendingAction(current) ?: visualExpectedAction
+        val actionAge = when {
+            visualActionTappedAtElapsed > 0L ->
+                (SystemClock.elapsedRealtime() - visualActionTappedAtElapsed).coerceAtLeast(0L)
+            app.preferences.automationStage == AutomationStage.VERIFYING_RESULT && lastInputAtElapsed > 0L ->
+                (SystemClock.elapsedRealtime() - lastInputAtElapsed).coerceAtLeast(0L)
+            else -> Long.MAX_VALUE
+        }
+
+        if (app.preferences.automationStage == AutomationStage.VERIFYING_RESULT &&
+            actionAge < POST_ACTION_RESULT_GRACE_MS
+        ) {
+            delay(minOf(VERIFY_RESULT_POLL_MS, (POST_ACTION_RESULT_GRACE_MS - actionAge).coerceAtLeast(1L)))
+            return null
+        }
+
+        if (age < ShizukuContinuityPolicy.UI_TREE_ADVANCE_AFTER_MS ||
             consecutiveDumpFailures < ShizukuContinuityPolicy.MAX_UI_TREE_FAILURES
         ) {
             return null
         }
-
-        val pending = readPendingAction(current)
 
         if (pending == AccessibilityJoinAction.JOIN &&
             probeJoinedConversationActivity(targetPackage, current)
@@ -1267,18 +1326,18 @@ class ShizukuAutomationService : Service() {
             exitConversationBeforeDirectHandoff(targetPackage, current)
             emptyDumpStartedAt = 0L
             consecutiveDumpFailures = 0
+            lastDumpFailureCountedAtElapsed = 0L
             commandDumpKillRecoveryAttempts = 0
+            userServiceRestartAttempts = 0
             completeCurrent(
                 current,
                 LinkStatus.JOINED,
                 LinkResultCode.JOIN_ACTION_COMPLETED,
-                "UI hierarchy unavailable, but exact-user WhatsApp Conversation proved Join success"
+                "UI tree unavailable, but exact-user WhatsApp Conversation proved Join success"
             )
             return null
         }
 
-        // UI-tree failure is NOT user-exit evidence. The outer automation loop owns stable
-        // foreground-loss confirmation and is the only path allowed to auto-pause the run.
         val userId = cachedAndroidUserId ?: resolveAndroidUserId(targetPackage)
         val exactForeground =
             (userId != null && foregroundLeaseValid(targetPackage, userId)) ||
@@ -1288,12 +1347,23 @@ class ShizukuAutomationService : Service() {
             runtimeDiagnostic(
                 current,
                 "SHIZUKU_UI_TREE_FOREGROUND_DEFER",
-                "ageMs=$age; count=$consecutiveDumpFailures; treeFailureIsNotUserExit=true; " +
-                    "deferToStableForegroundController=true"
+                "ageMs=$age; count=$consecutiveDumpFailures; treeFailureIsNotUserExit=true"
             )
             emptyDumpStartedAt = 0L
             consecutiveDumpFailures = 0
+            lastDumpFailureCountedAtElapsed = 0L
             commandDumpKillRecoveryAttempts = 0
+            return null
+        }
+
+        if (probeJoinedConversationActivity(targetPackage, current)) {
+            exitConversationBeforeDirectHandoff(targetPackage, current)
+            completeCurrent(
+                current,
+                LinkStatus.JOINED,
+                LinkResultCode.JOIN_ACTION_COMPLETED,
+                "Final exact-user conversation proof recovered Join before UI-tree escape"
+            )
             return null
         }
 
@@ -1314,26 +1384,26 @@ class ShizukuAutomationService : Service() {
             fastUiSessionRecoveryAttempts = 0
             lastFastEventSequence = 0L
             currentLaunchEventBaseline = 0L
+            userServiceRestartAttempts = 0
+            commandDumpSuppressedUntilElapsed = 0L
         }
+
         runtimeDiagnostic(
             current,
             "SHIZUKU_UI_TREE_BACK_HANDOFF",
             "back=$backSent; persistentReset=$reset; pending=${pending?.name ?: "NONE"}; " +
-                "exactForeground=true; pause=false; next=true"
+                "actionAgeMs=$actionAge; exactForeground=true; pause=false; next=true"
         )
 
         emptyDumpStartedAt = 0L
         consecutiveDumpFailures = 0
+        lastDumpFailureCountedAtElapsed = 0L
         commandDumpKillRecoveryAttempts = 0
         completeCurrent(
             current,
             LinkStatus.FAILED,
             LinkResultCode.UNKNOWN_SCREEN,
-            if (backSent) {
-                "Unreadable WhatsApp surface dismissed by safe Back; result left unverified and next link opened"
-            } else {
-                "WhatsApp UI remained unreadable; result left unverified and next link opened without a random success count"
-            }
+            "Unreadable WhatsApp surface escaped after bounded verification; no random success counted"
         )
         return null
     }
@@ -2395,7 +2465,10 @@ class ShizukuAutomationService : Service() {
             val after = ShizukuBridge.fastFindWidePositiveAction(this)
             val remainingButton = after.scaleTo(displayWidth, displayHeight)
                 ?.takeIf { ShizukuRuntimePolicy.isSafeTapBounds(it, displayWidth, displayHeight) }
-            if (after.found && remainingButton != null && visualTapAttempts < VISUAL_MAX_TAP_ATTEMPTS) {
+            if (after.found && remainingButton != null &&
+                visualTapAttempts < VISUAL_MAX_TAP_ATTEMPTS &&
+                visualExpectedAction != null
+            ) {
                 if (tapNode(remainingButton, targetPackage, current, "VISUAL_POSITIVE_RETRY")) {
                     visualTapAttempts += 1
                     visualActionTappedAtElapsed = SystemClock.elapsedRealtime()
@@ -2817,6 +2890,7 @@ class ShizukuAutomationService : Service() {
         foregroundWaitStartedAt = 0L
         emptyDumpStartedAt = 0L
         consecutiveDumpFailures = 0
+        lastDumpFailureCountedAtElapsed = 0L
         commandDumpKillRecoveryAttempts = 0
         consecutiveAmbiguousActions = 0
         consecutiveInputFailures = 0
@@ -3107,12 +3181,18 @@ class ShizukuAutomationService : Service() {
         private const val VISUAL_PROFILE_PROBE_AFTER_MS = 140L
         private const val VISUAL_PROFILE_PROBE_INTERVAL_MS = 90L
         private const val VISUAL_MAX_PROBE_ATTEMPTS = 5
-        private const val VISUAL_POST_ACTION_VERIFY_MS = 320L
+        private const val VISUAL_POST_ACTION_VERIFY_MS = 650L
         private const val VISUAL_MAX_TAP_ATTEMPTS = 2
         private const val VISUAL_DISMISS_SETTLE_MS = 30L
         private const val FAST_UI_DISABLE_AFTER_FAILURES = 4
         private const val FAST_UI_SESSION_RECOVERY_MAX = 1
-        private const val COMMAND_DUMP_KILL_COOLDOWN_MS = 12_000L
+        private const val COMMAND_DUMP_COOLDOWN_POLL_MS = 120L
+        private const val DUMP_FAILURE_MIN_INTERVAL_MS = 120L
+        private const val UI_TREE_FAILURE_MAX = 8
+        private const val POST_ACTION_RESULT_GRACE_MS = 140L
+        private const val VERIFY_RESULT_POLL_MS = 90L
+        private const val USER_SERVICE_RESTART_MAX = 1
+        private const val COMMAND_DUMP_KILL_COOLDOWN_MS = 4_000L
         private const val PERIODIC_UI_REFRESH_EVERY = 100
         private const val USER_EXIT_LAUNCH_GRACE_MS = 650L
         private const val USER_EXIT_CONFIRM_MS = 140L

@@ -443,63 +443,14 @@ class QuickJoinAccessibilityService : AccessibilityService() {
     private fun maybeAutoResumeOnTargetReturn() {
         val prefs = app.preferences
         if (!prefs.accessibilityBatchRunning || !prefs.accessibilityPaused ||
-            !prefs.pausedBecauseOutsideTarget || !prefs.autoResumeCurrentRun
+            !prefs.pausedBecauseOutsideTarget
         ) return
-        prefs.resumeAccessibilityBatch("Selected WhatsApp returned to foreground; automatic resume")
+        runtimeDiagnostic(
+            cachedCurrentLink,
+            "ACCESSIBILITY_TARGET_RETURN_WAITING_MANUAL_RESUME",
+            "selected WhatsApp returned; paused run preserved; manual Resume required"
+        )
         refreshAutomationNotification(force = true)
-        requestScan()
-    }
-
-    override fun onInterrupt() {
-        if (app.preferences.accessibilityBatchRunning && app.preferences.autoResumeCurrentRun) {
-            // Treat Android service interruption as a recoverable checkpoint. The run remains
-            // persisted and onServiceConnected() resumes from the same current link.
-            app.preferences.transitionAutomation(
-                AutomationStage.WAITING_FOR_WHATSAPP,
-                "Accessibility was interrupted temporarily; recovery is armed from the saved link",
-                resetRetries = false
-            )
-            scanPending.set(false)
-            refreshAutomationNotification(force = true)
-        } else {
-            stopBatch(AutomationStopReason.SERVICE_DISABLED, "Accessibility service was interrupted")
-        }
-    }
-
-    override fun onUnbind(intent: Intent?): Boolean {
-        runtimeConnected = false
-        if (liveInstance === this) liveInstance = null
-        ProfileAccessibilityRuntime.markDisconnected(this)
-        return super.onUnbind(intent)
-    }
-
-    override fun onDestroy() {
-        AutomationScreenAwakeGuard.release()
-        runtimeConnected = false
-        if (liveInstance === this) liveInstance = null
-        ProfileAccessibilityRuntime.markDisconnected(this)
-        RuntimeDiagnosticStore.append(this, "PROFILE_SERVICE_DISCONNECTED", ProfileEnvironment.current(this).profileKey)
-        pollJob?.cancel()
-        outsideTargetPauseJob?.cancel()
-        if (app.preferences.accessibilityBatchRunning) {
-            // SQLite is authoritative. With auto-resume enabled, preserve the current explicit
-            // run so a transient Android service recreation can continue from the same link.
-            if (app.preferences.autoResumeCurrentRun && !app.preferences.accessibilityPaused) {
-                app.preferences.transitionAutomation(
-                    AutomationStage.WAITING_FOR_WHATSAPP,
-                    "Accessibility service restarting; automatic resume is armed"
-                )
-            } else {
-                app.preferences.stopAccessibilityBatch(
-                    AutomationStopReason.SERVICE_DISABLED,
-                    "Accessibility service stopped; progress remains saved"
-                )
-            }
-        }
-        invalidateRuntimeCache()
-        scanPending.set(false)
-        serviceScope.cancel()
-        super.onDestroy()
     }
 
     private fun requestScheduledStart() {
@@ -4090,5 +4041,15 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             "com.google.android.permissioncontroller",
             "com.samsung.android.app.sharelive"
         )
+    }
+
+
+    /**
+     * Required AccessibilityService callback.
+     * Runtime recovery is handled by the service state machine.
+     */
+    override fun onInterrupt() {
+        // Do not destroy the persisted run state here.
+        // Android may interrupt Accessibility temporarily.
     }
 }

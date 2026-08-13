@@ -230,8 +230,23 @@ checks = {
         "secureMarker" in main_activity,
     "3.4 pending approval post-click": "postClickApprovalVariant" in service and
         "pendingApprovalVariant" in shizuku_service,
-    "versionCode 340": "versionCode = 340" in build,
-    "versionName 3.4.0": 'versionName = "3.4.0"' in build,
+    "3.4.1 cooldown is non-recursive": "realCommandKill: Boolean = false" in shizuku_service and
+        "mode=COMMAND_COOLDOWN; command dump suppressed" in shizuku_service,
+    "3.4.1 verification grace": all(token in shizuku_service for token in [
+        "DUMP_FAILURE_MIN_INTERVAL_MS",
+        "POST_ACTION_RESULT_GRACE_MS",
+        "VERIFY_RESULT_POLL_MS",
+        "age < ShizukuContinuityPolicy.UI_TREE_ADVANCE_AFTER_MS ||",
+        "readPendingAction(current) ?: visualExpectedAction"
+    ]),
+    "3.4.1 UserService hard recovery": "restartUserService" in shizuku_bridge_source and
+        "SHIZUKU_USER_SERVICE_RESTART" in shizuku_service,
+    "3.4.1 manual user-exit resume": "ACCESSIBILITY_TARGET_RETURN_WAITING_MANUAL_RESUME" in service and
+        "leaving WhatsApp is an explicit user pause" in shizuku_service,
+    "3.4.1 Secure persona discovery": "dumpsys persona" in main_activity and
+        "personaIdRegex" in main_activity,
+    "versionCode 341": "versionCode = 341" in build,
+    "versionName 3.4.1": 'versionName = "3.4.1"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),

@@ -284,7 +284,7 @@ class AppPreferences(context: Context) {
      * This never extends the explicit-run window or bypasses a restriction stop.
      */
     var autoResumeCurrentRun: Boolean
-        get() = preferences.getBoolean(KEY_AUTO_RESUME_CURRENT_RUN, true)
+        get() = preferences.getBoolean(KEY_AUTO_RESUME_CURRENT_RUN, false)
         set(value) = preferences.edit().putBoolean(KEY_AUTO_RESUME_CURRENT_RUN, value).apply()
 
     /** Pause the current run when the foreground app leaves the selected WhatsApp target. */
