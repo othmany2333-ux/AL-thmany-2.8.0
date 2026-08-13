@@ -251,6 +251,7 @@ class MainActivity : AppCompatActivity() {
                 else -> PreferredTarget.AUTO
             }
             app.preferences.clearRemoteSecureTarget()
+            app.preferences.clearRemoteSecureTarget()
             app.preferences.selectedWhatsAppPackage = null
             app.preferences.selectedWhatsAppLabel = null
             viewModel.setPreferredTarget(target)
@@ -942,6 +943,7 @@ class MainActivity : AppCompatActivity() {
                     toast(R.string.profile_explicit_target_required)
                 } else {
                     app.preferences.clearRemoteSecureTarget()
+                    app.preferences.clearRemoteSecureTarget()
                     app.preferences.selectedWhatsAppPackage = null
                     app.preferences.selectedWhatsAppLabel = null
                     viewModel.setPreferredTarget(PreferredTarget.AUTO)
@@ -953,6 +955,7 @@ class MainActivity : AppCompatActivity() {
             }
             .setAdapter(adapter) { shownDialog, which ->
                 val target = apps[which]
+                app.preferences.clearRemoteSecureTarget()
                 app.preferences.clearRemoteSecureTarget()
                 app.preferences.selectedWhatsAppPackage = target.packageName
                 app.preferences.selectedWhatsAppLabel = target.label
