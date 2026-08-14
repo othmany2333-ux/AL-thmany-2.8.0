@@ -13,13 +13,13 @@
     <color name="hero_end">#003E4A</color>
     <color name="text_primary">#17323A</color>
     <color name="text_secondary">#64777D</color>
-    <color name="status_pending">#667085</color>
+    <color name="status_pending">#C24CF5</color>
     <color name="status_opened">#2E90FA</color>
-    <color name="status_joined">#039855</color>
-    <color name="status_requested">#7F56D9</color>
+    <color name="status_joined">#00E47A</color>
+    <color name="status_requested">#2DB8FF</color>
     <color name="status_skipped">#DC6803</color>
-    <color name="status_failed">#D92D20</color>
-    <color name="danger">#D92D20</color>
+    <color name="status_failed">#FF6048</color>
+    <color name="danger">#FF4C43</color>
     <color name="warning">#F79009</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
@@ -66,18 +66,21 @@
     <color name="swift_divider">#E3ECE9</color>
 
     <!-- Al-othmany Sender 3.1 -->
-    <color name="sender_bg_deep">#020812</color>
-    <color name="sender_bg">#03121B</color>
-    <color name="sender_header">#041A24</color>
-    <color name="sender_card">#061925</color>
-    <color name="sender_card_alt">#08212D</color>
-    <color name="sender_border">#0B5260</color>
-    <color name="sender_accent">#00DCE6</color>
-    <color name="sender_accent_dark">#079EAA</color>
-    <color name="sender_accent_soft">#0A3440</color>
-    <color name="sender_text_primary">#F7FBFF</color>
-    <color name="sender_text_secondary">#AFBECA</color>
-    <color name="sender_text_tertiary">#718894</color>
-    <color name="sender_progress_track">#12303A</color>
+    <color name="sender_bg_deep">#010711</color>
+    <color name="sender_bg">#020C16</color>
+    <color name="sender_header">#010713</color>
+    <color name="sender_card">#04131D</color>
+    <color name="sender_card_alt">#061824</color>
+    <color name="sender_border">#0B4656</color>
+    <color name="sender_accent">#00E6DF</color>
+    <color name="sender_accent_dark">#009E9D</color>
+    <color name="sender_accent_soft">#073B42</color>
+    <color name="sender_text_primary">#F7F9FC</color>
+    <color name="sender_text_secondary">#D5D8DE</color>
+    <color name="sender_text_tertiary">#8E98A5</color>
+    <color name="sender_progress_track">#102532</color>
     <color name="sender_settings_surface">#061925</color>
+    <color name="sender_border_soft">#173648</color>
+    <color name="sender_blue">#2D69FF</color>
+    <color name="sender_purple">#C345F3</color>
 </resources>

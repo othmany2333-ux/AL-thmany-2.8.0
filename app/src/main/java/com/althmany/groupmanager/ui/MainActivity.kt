@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.Lifecycle
@@ -129,6 +130,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         configureToolbar()
+        configureExactDashboard()
         configureLinkList()
         configureTargetSelector()
         configureTimingControls()
@@ -214,6 +216,115 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
+    }
+
+    private fun configureExactDashboard() {
+        val isNight =
+            resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+        binding.exactThemeToggle.check(if (isNight) R.id.exactNightButton else R.id.exactDayButton)
+
+        binding.exactThemeToggle.addOnButtonCheckedListener { _, id, checked ->
+            if (!checked) return@addOnButtonCheckedListener
+            AppCompatDelegate.setDefaultNightMode(
+                if (id == R.id.exactDayButton) AppCompatDelegate.MODE_NIGHT_NO
+                else AppCompatDelegate.MODE_NIGHT_YES
+            )
+        }
+
+        binding.exactLinksInput.doAfterTextChanged {
+            val value = it?.toString().orEmpty()
+            if (binding.linksEditText.text?.toString() != value) {
+                binding.linksEditText.setText(value)
+            }
+        }
+
+        binding.exactAddButton.setOnClickListener {
+            binding.linksEditText.setText(binding.exactLinksInput.text?.toString().orEmpty())
+            binding.addLinksButton.performClick()
+        }
+        binding.exactPasteButton.setOnClickListener { binding.pasteButton.performClick() }
+        binding.exactImportButton.setOnClickListener { binding.importButton.performClick() }
+
+        binding.exactStartButton.setOnClickListener { binding.startAutomationButton.performClick() }
+        binding.exactResumeButton.setOnClickListener { binding.pauseAutomationButton.performClick() }
+        binding.exactStopButton.setOnClickListener { binding.stopAutomationButton.performClick() }
+        binding.exactClearButton.setOnClickListener { binding.clearSessionButton.performClick() }
+
+        binding.exactSpeedToggle.addOnButtonCheckedListener { _, id, checked ->
+            if (!checked) return@addOnButtonCheckedListener
+            val legacyId = when (id) {
+                R.id.exactStableButton -> R.id.speedStableButton
+                R.id.exactTurboButton -> R.id.speedTurboButton
+                R.id.exactMaxButton -> R.id.speedMaxButton
+                R.id.exactCustomButton -> R.id.speedCustomButton
+                else -> R.id.speedFastButton
+            }
+            if (binding.speedModeToggleGroup.checkedButtonId != legacyId) {
+                binding.speedModeToggleGroup.check(legacyId)
+            }
+        }
+
+        binding.exactPersonalButton.setOnClickListener {
+            binding.targetToggleGroup.check(R.id.targetPersonalButton)
+        }
+        binding.exactBusinessButton.setOnClickListener {
+            binding.targetToggleGroup.check(R.id.targetBusinessButton)
+        }
+        binding.exactDualButton.setOnClickListener { binding.dualRemoteButton.performClick() }
+
+        binding.exactExportButton.setOnClickListener { binding.exportButton.performClick() }
+        binding.exactShareButton.setOnClickListener { binding.shareButton.performClick() }
+    }
+
+    private fun syncExactDashboardStatus() {
+        if (!::binding.isInitialized) return
+
+        val shizukuReady = runCatching { ShizukuBridge.status().ready }.getOrDefault(false)
+        val accessibilityReady = AccessibilityStatus.readiness(this).localServiceConnected
+
+        binding.exactShizukuStatus.text = getString(
+            if (shizukuReady) R.string.exact_connected else R.string.exact_off
+        )
+        binding.exactShizukuStatus.setTextColor(
+            ContextCompat.getColor(this, if (shizukuReady) R.color.status_joined else R.color.status_pending)
+        )
+
+        binding.exactAccessibilityStatus.text = getString(
+            if (accessibilityReady) R.string.exact_enabled else R.string.exact_off
+        )
+        binding.exactAccessibilityStatus.setTextColor(
+            ContextCompat.getColor(this, if (accessibilityReady) R.color.status_joined else R.color.status_pending)
+        )
+
+        binding.exactJoinedCount.text = binding.joinedCountText.text
+        binding.exactRequestedCount.text = binding.requestedCountText.text
+        binding.exactFailedCount.text = binding.failedCountText.text
+        binding.exactRemainingCount.text = binding.remainingCountText.text
+
+        val progress = binding.sessionProgressIndicator.progress
+        binding.exactProgress.progress = progress
+        binding.exactProgressText.text = "$progress%"
+
+        val exactSpeed = when (binding.speedModeToggleGroup.checkedButtonId) {
+            R.id.speedStableButton -> R.id.exactStableButton
+            R.id.speedTurboButton -> R.id.exactTurboButton
+            R.id.speedMaxButton -> R.id.exactMaxButton
+            R.id.speedCustomButton -> R.id.exactCustomButton
+            else -> R.id.exactFastButton
+        }
+        if (binding.exactSpeedToggle.checkedButtonId != exactSpeed) {
+            binding.exactSpeedToggle.check(exactSpeed)
+        }
+
+        binding.exactResumeButton.isEnabled =
+            app.preferences.accessibilityBatchRunning && app.preferences.accessibilityPaused
+        binding.exactStopButton.isEnabled = app.preferences.accessibilityBatchRunning
+        binding.exactClearButton.isEnabled = !app.preferences.accessibilityBatchRunning
+
+        val total = (viewModel.state.value.snapshot?.stats?.total ?: 0).coerceAtLeast(1)
+        binding.exactRangeStartText.text = "1"
+        binding.exactRangeEndText.text = minOf(total, AutomationPolicy.BATCH_SIZE).toString()
     }
 
     private fun configureLinkList() {
@@ -758,7 +869,12 @@ class MainActivity : AppCompatActivity() {
         return runCatching { ShizukuBridge.status().ready }.getOrDefault(false)
     }
 
-    private fun renderRuntimeState() = with(binding) {
+    private fun renderRuntimeState() {
+        renderLegacyRuntimeState()
+        syncExactDashboardStatus()
+    }
+
+    private fun renderLegacyRuntimeState() = with(binding) {
         val readiness = AccessibilityStatus.readiness(this@MainActivity)
         val serviceEnabled = isAnyAutomationEngineReady()
         val permissionConfigured = readiness.systemEnabled

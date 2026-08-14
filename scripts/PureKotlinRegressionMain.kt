@@ -853,5 +853,21 @@ fun main() {
     expect("large queue accepted", 5004, overCapacity.accepted.size)
     expect("large queue has no overflow", 0, overCapacity.ignoredBecauseOfLimit)
 
+    expect(
+        "3.5.3 request group Arabic variant",
+        AccessibilityJoinAction.REQUEST,
+        AccessibilityJoinMatcher.actionType("طلب الانضمام إلى القروب")
+    )
+    expect(
+        "3.5.3 request membership English variant",
+        AccessibilityJoinAction.REQUEST,
+        AccessibilityJoinMatcher.actionType("Request membership")
+    )
+    expect(
+        "3.5.3 request button resource id",
+        AccessibilityJoinAction.REQUEST,
+        AccessibilityJoinMatcher.actionType("com.whatsapp:id/request_join_button")
+    )
+
     println("PURE KOTLIN REGRESSIONS PASSED")
 }

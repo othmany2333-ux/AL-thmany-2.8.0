@@ -140,6 +140,10 @@ class ShizukuAutomationService : Service() {
     private var visualActionTappedAtElapsed = 0L
     private var visualTapAttempts = 0
     private var visualExpectedAction: AccessibilityJoinAction? = null
+    private var controlledExitLinkId = -1L
+    private var controlledExitAtElapsed = 0L
+    private var controlledExitReason = ""
+
 
     private var communityHomeStableScans = 0
     private var communityEmptyStableScans = 0
@@ -1205,12 +1209,8 @@ class ShizukuAutomationService : Service() {
             )
             val remaining = (commandDumpSuppressedUntilElapsed - commandDumpNow).coerceAtLeast(1L)
             delay(minOf(COMMAND_DUMP_COOLDOWN_POLL_MS, remaining))
-            return handleDumpFailure(
-                current,
-                targetPackage,
-                "mode=COMMAND_COOLDOWN; command dump suppressed; remainingMs=$remaining",
-                realCommandKill = false
-            )
+            // No UI dump ran during cooldown, so do not inflate consecutiveDumpFailures.
+            return null
         }
 
         var result = ShizukuBridge.execute(
@@ -1861,6 +1861,19 @@ class ShizukuAutomationService : Service() {
         return snapshot
     }
 
+    private fun markAutomationControlledExit(current: GroupLink, reason: String) {
+        controlledExitLinkId = current.id
+        controlledExitAtElapsed = SystemClock.elapsedRealtime()
+        controlledExitReason = reason
+    }
+
+    private fun automationControlledExitReason(current: GroupLink): String? {
+        if (controlledExitLinkId != current.id || controlledExitAtElapsed <= 0L) return null
+        val age = (SystemClock.elapsedRealtime() - controlledExitAtElapsed).coerceAtLeast(0L)
+        if (age > CONTROLLED_EXIT_HANDOFF_GRACE_MS) return null
+        return controlledExitReason.ifBlank { "AUTOMATION_EXIT" }
+    }
+
     private suspend fun pressResultBack(
         targetPackage: String,
         current: GroupLink,
@@ -1877,6 +1890,7 @@ class ShizukuAutomationService : Service() {
         } else null
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true
+        if (success) markAutomationControlledExit(current, purpose)
         runtimeDiagnostic(
             current,
             "SHIZUKU_RESULT_BACK",
@@ -1917,6 +1931,7 @@ class ShizukuAutomationService : Service() {
                 "found=true; clicked=$closed; semantic=${close.labels().any(AccessibilityJoinMatcher::isSafeClose)}"
             )
             if (closed) {
+                markAutomationControlledExit(current, "RESULT_SAFE_CLOSE")
                 delay(ShizukuFastUiPolicy.TERMINAL_ESCAPE_SETTLE_MS)
                 val after = quickResultSnapshot(targetPackage)
                 if (after == null) return true
@@ -1955,6 +1970,7 @@ class ShizukuAutomationService : Service() {
                 "RESULT_SAFE_CANCEL"
             )
             if (dismissed) {
+                markAutomationControlledExit(current, "RESULT_SAFE_CANCEL")
                 delay(runtimeSpeed().postTapWaitMs.coerceIn(6L, 120L))
                 val afterCancel = quickResultSnapshot(targetPackage)
                 if (afterCancel == null) return true
@@ -2548,27 +2564,39 @@ class ShizukuAutomationService : Service() {
 
             val expected = visualExpectedAction ?: readPendingAction(current)
             val joinedConversation = probeJoinedConversationActivityWithGrace(targetPackage, current)
-            dismissVisualActionSurface(targetPackage, current, "VISUAL_ACTION_COMPLETED")
 
             when {
-                joinedConversation -> completeCurrent(
-                    current,
-                    LinkStatus.JOINED,
-                    LinkResultCode.JOIN_ACTION_COMPLETED,
-                    "Wide WhatsApp action disappeared and the exact-user conversation activity proved Join success"
-                )
-                expected == AccessibilityJoinAction.REQUEST -> completeCurrent(
-                    current,
-                    LinkStatus.REQUESTED,
-                    LinkResultCode.REQUEST_SENT,
-                    "Known Request action disappeared after protected input; recorded as requested"
-                )
-                else -> completeCurrent(
-                    current,
-                    LinkStatus.FAILED,
-                    LinkResultCode.UNKNOWN_SCREEN,
-                    "Visual positive action disappeared but its Join/Request result could not be proved; not counted as a false request"
-                )
+                joinedConversation -> {
+                    exitConversationBeforeDirectHandoff(targetPackage, current)
+                    completeCurrent(
+                        current,
+                        LinkStatus.JOINED,
+                        LinkResultCode.JOIN_ACTION_COMPLETED,
+                        "Wide WhatsApp action disappeared and the exact-user conversation activity proved Join success"
+                    )
+                }
+                expected == AccessibilityJoinAction.REQUEST -> {
+                    dismissVisualActionSurface(targetPackage, current, "VISUAL_REQUEST_COMPLETED")
+                    completeCurrent(
+                        current,
+                        LinkStatus.REQUESTED,
+                        LinkResultCode.REQUEST_SENT,
+                        "Known Request action disappeared after protected input; recorded as requested"
+                    )
+                }
+                else -> {
+                    runtimeDiagnostic(
+                        current,
+                        "SHIZUKU_VISUAL_AMBIGUOUS_NO_BACK",
+                        "positive action disappeared; result unproved; no blind Back sent before direct handoff"
+                    )
+                    completeCurrent(
+                        current,
+                        LinkStatus.FAILED,
+                        LinkResultCode.UNKNOWN_SCREEN,
+                        "Visual positive action disappeared but its result could not be proved; WhatsApp was left untouched and the queue advanced safely"
+                    )
+                }
             }
             return true
         }
@@ -2638,6 +2666,7 @@ class ShizukuAutomationService : Service() {
         val shell = if (!persistent) ShizukuBridge.execute(this, "input keyevent 4", 2_500) else null
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true
+        if (success) markAutomationControlledExit(current, purpose)
         runtimeDiagnostic(
             current,
             "SHIZUKU_VISUAL_SURFACE_CLOSE",
@@ -2866,10 +2895,13 @@ class ShizukuAutomationService : Service() {
 
         updateNotification(getString(R.string.shizuku_service_completed_link, state.processed))
 
-        // Commit current result, but never reserve/open the NEXT link if the user has left WhatsApp.
+        val foregroundAfterResult = isTargetForeground(targetPackage, forceProbe = true)
+        val controlledExit = automationControlledExitReason(current)
+
         if (prefs.autoPauseOutsideWhatsApp &&
             currentLaunchSawTargetForeground &&
-            !isTargetForeground(targetPackage, forceProbe = true)
+            !foregroundAfterResult &&
+            controlledExit == null
         ) {
             prefs.pauseAccessibilityBatch(
                 diagnostic = "Paused automatically because the user left the selected WhatsApp target",
@@ -2878,11 +2910,19 @@ class ShizukuAutomationService : Service() {
             runtimeDiagnostic(
                 current,
                 "SHIZUKU_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET",
-                "current committed; next remains pending; forced return blocked"
+                "current committed; next remains pending; real foreground loss was not caused by automation"
             )
             resetPerLinkEvidence()
             updateNotification("Paused: user left WhatsApp • next link preserved")
             return
+        }
+
+        if (!foregroundAfterResult && controlledExit != null) {
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_CONTROLLED_EXIT_HANDOFF",
+                "automationExit=$controlledExit; current committed; direct next-link launch remains allowed"
+            )
         }
 
         if (!NetworkStateMonitor.isValidatedOnline(this, force = true)) {
@@ -3015,6 +3055,9 @@ class ShizukuAutomationService : Service() {
         visualActionTappedAtElapsed = 0L
         visualTapAttempts = 0
         visualExpectedAction = null
+        controlledExitLinkId = -1L
+        controlledExitAtElapsed = 0L
+        controlledExitReason = ""
     }
 
     private suspend fun armFastEventSequence(targetPackage: String) {
@@ -3104,17 +3147,32 @@ class ShizukuAutomationService : Service() {
     ): Boolean {
         if (pending !in setOf(AccessibilityJoinAction.JOIN, AccessibilityJoinAction.REQUEST)) return false
         if (pendingAgeMs() < runtimeSpeed().actionRetryAfterMs) return false
-        if (app.preferences.automationRetryCount >= ShizukuFastUiPolicy.MAX_ACTION_ATTEMPTS - 1) return false
         val expectedScreen = if (pending == AccessibilityJoinAction.JOIN) AutomationScreenKind.JOIN_ACTION else AutomationScreenKind.REQUEST_ACTION
         if (snapshot.screenKind != expectedScreen) return false
+
+        if (app.preferences.automationRetryCount >= ShizukuFastUiPolicy.MAX_ACTION_ATTEMPTS - 1) {
+            // 3.5.3: semantic taps were transported but WhatsApp still exposes the exact positive
+            // action. Use the already guarded screenshot detector instead of parking/failing.
+            return handleVisualProfileFallback(current, targetPackage, pending)
+        }
+
         val selection = snapshot.actionSelection(pending!!, targetPackage)
         val candidate = selection.candidate ?: return false
-        val required = ShizukuRuntimePolicy.actionConsensusScans(
-            candidate.score, selection.runnerUpScore, candidate.node.clickable,
-            candidate.node.packageName == targetPackage, selection.ambiguous
+        val bounds = candidate.node.bounds ?: return false
+        val guardedExactRetry =
+            !selection.ambiguous &&
+                snapshot.inviteContext &&
+                candidate.node.enabled &&
+                candidate.node.packageName == targetPackage &&
+                candidate.score >= ShizukuRuntimePolicy.MIN_ACTION_SCORE
+        if (!guardedExactRetry) return false
+
+        runtimeDiagnostic(
+            current,
+            "SHIZUKU_POSITIVE_ACTION_EXACT_RETRY",
+            "action=${pending.name}; clickable=${candidate.node.clickable}; score=${candidate.score}; screen=${snapshot.screenKind.name}"
         )
-        if (required != 1 || candidate.node.bounds == null) return false
-        if (!tapNode(candidate.node.bounds, targetPackage, current, "${pending.name}_FAST_RETRY")) return false
+        if (!tapNode(bounds, targetPackage, current, "${pending.name}_FAST_RETRY")) return false
         app.preferences.incrementAutomationRetry()
         app.preferences.setAccessibilityPending(current.id, pending.name, snapshot.inviteTarget)
         runtimeDiagnostic(
@@ -3288,7 +3346,7 @@ class ShizukuAutomationService : Service() {
         private const val COMMAND_DUMP_COOLDOWN_POLL_MS = 120L
         private const val DUMP_FAILURE_MIN_INTERVAL_MS = 120L
         private const val UI_TREE_FAILURE_MAX = 8
-        private const val POST_ACTION_RESULT_GRACE_MS = 140L
+        private const val POST_ACTION_RESULT_GRACE_MS = 650L
         private const val VERIFY_RESULT_POLL_MS = 90L
         private const val USER_SERVICE_RESTART_MAX = 1
         private const val NETWORK_PAUSE_POLL_MS = 650L
@@ -3296,6 +3354,7 @@ class ShizukuAutomationService : Service() {
         private const val PERIODIC_UI_REFRESH_EVERY = 100
         private const val USER_EXIT_LAUNCH_GRACE_MS = 650L
         private const val USER_EXIT_CONFIRM_MS = 140L
+        private const val CONTROLLED_EXIT_HANDOFF_GRACE_MS = 1_500L
         private const val USER_EXIT_PROBE_INTERVAL_MS = 70L
         private const val USER_RETURN_PROBE_INTERVAL_MS = 180L
         private const val NOTIFICATION_THROTTLE_MS = 500L

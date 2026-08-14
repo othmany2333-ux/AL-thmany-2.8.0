@@ -1236,16 +1236,29 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 inspection?.action == action -> {
                     val retry = app.preferences.incrementAutomationRetry()
                     if (retry >= MAX_CLICK_RETRIES) {
+                        if (action == AccessibilityJoinAction.REQUEST &&
+                            tryAccessibilityRequestVisualRescue(current)
+                        ) {
+                            return@launch
+                        }
                         completeAndAdvance(
                             current,
                             LinkStatus.FAILED,
                             LinkResultCode.ACTION_TIMEOUT,
-                            "The join button remained visible after repeated clicks"
+                            if (action == AccessibilityJoinAction.REQUEST) {
+                                "Request control remained visible after semantic and protected visual click attempts"
+                            } else {
+                                "The join button remained visible after repeated clicks"
+                            }
                         )
                     } else {
                         app.preferences.transitionAutomation(
                             AutomationStage.LOOKING_FOR_JOIN,
-                            "Join action still visible; retry $retry of $MAX_CLICK_RETRIES"
+                            if (action == AccessibilityJoinAction.REQUEST) {
+                                "Request to join is still visible; retry $retry of $MAX_CLICK_RETRIES"
+                            } else {
+                                "Join action still visible; retry $retry of $MAX_CLICK_RETRIES"
+                            }
                         )
                         lastClickAt = 0L
                         requestScan()
@@ -3023,7 +3036,10 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             val blocked = nodeHasBlockedAction(current, allowSafeClose)
 
             if (!blocked && safeAncestor) {
-                gestureTarget = current
+                // 3.5.3: preserve the nearest safe semantic bounds. A Request label is often a
+                // non-clickable TextView inside a MaterialButton; its center is still inside the
+                // real button. Do not replace it with a much larger ancestor before gesture-first.
+                if (gestureTarget == null) gestureTarget = current
                 if (current.isClickable) clickableCandidates += current
             }
             candidate = current.parent
@@ -3061,6 +3077,45 @@ class QuickJoinAccessibilityService : AccessibilityService() {
      * do not expose a usable semantic node. The detector is deliberately narrow: only one wide
      * WhatsApp-green control in the lower half of the selected WhatsApp screen is accepted.
      */
+    private suspend fun tryAccessibilityRequestVisualRescue(current: GroupLink): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
+        val probe = captureWidePositiveActionBounds()
+        val bounds = probe.bounds
+        runtimeDiagnostic(
+            current,
+            "ACCESSIBILITY_REQUEST_VISUAL_RESCUE_PROBE",
+            "captured=${probe.captured}; bounds=${bounds ?: "NONE"}; error=${probe.errorCode ?: 0}"
+        )
+        if (!probe.captured || bounds == null) return false
+
+        val tapped = withContext(Dispatchers.Main.immediate) { dispatchGestureTap(bounds) }
+        if (!tapped) return false
+
+        accessibilityVisualProbeLinkId = current.id
+        accessibilityVisualProbeAttempts = 0
+        lastAccessibilityVisualProbeAtElapsed = SystemClock.elapsedRealtime()
+        accessibilityVisualActionTappedAtElapsed = SystemClock.elapsedRealtime()
+        accessibilityVisualTapAttempts = 1
+        accessibilityVisualExpectedAction = AccessibilityJoinAction.REQUEST
+        app.preferences.setAccessibilityPending(
+            current.id,
+            AccessibilityJoinAction.REQUEST.name,
+            AccessibilityInviteTarget.UNKNOWN
+        )
+        app.preferences.transitionAutomation(
+            AutomationStage.VERIFYING_RESULT,
+            "Request semantic click was ignored; protected visual Request tap dispatched",
+            resetRetries = true
+        )
+        runtimeDiagnostic(
+            current,
+            "ACCESSIBILITY_REQUEST_VISUAL_RESCUE_TAP",
+            "bounds=$bounds; fixedCoordinate=false; expected=REQUEST"
+        )
+        scheduleAccessibilityVisualVerification(current.id)
+        return true
+    }
+
     private suspend fun maybeHandleAccessibilityVisualFallback(
         current: GroupLink,
         screen: ScreenInspection
