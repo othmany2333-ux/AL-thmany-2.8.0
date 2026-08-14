@@ -56,75 +56,76 @@
                 android:paddingBottom="20dp">
                 <LinearLayout
                     android:id="@+id/exactDashboardRoot"
-                    android:tag="compact355"
+                    android:tag="compact356"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layoutDirection="rtl"
                     android:orientation="vertical"
-                    android:paddingBottom="8dp">
+                    android:paddingBottom="4dp">
 
-                    <!-- Day / Night segmented control -->
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/exactThemeToggle"
+                    <!-- Compact single-mode header: no Day/Night UI. -->
+                    <LinearLayout
+                        android:id="@+id/exactAwakeRow"
                         android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:layout_marginHorizontal="82dp"
-                        android:layout_marginBottom="12dp"
-                        app:singleSelection="true"
-                        app:selectionRequired="true">
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/exactNightButton"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-                            android:minWidth="0dp" android:text="@string/exact_night" android:textSize="9sp"
-                            android:textColor="@color/sender_accent" app:cornerRadius="16dp"
-                            app:icon="@drawable/ic_exact_bolt" app:iconTint="@color/sender_accent"
-                            app:strokeColor="@color/sender_accent"/>
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/exactDayButton"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-                            android:minWidth="0dp" android:text="@string/exact_day" android:textSize="9sp"
-                            android:textColor="@color/sender_text_secondary" app:cornerRadius="16dp"
-                            app:strokeColor="@color/sender_border_soft"/>
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                        android:layout_height="32dp"
+                        android:layout_marginBottom="3dp"
+                        android:background="@drawable/bg_exact_inner"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="8dp">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="end"
+                            android:text="منع السكون أثناء التشغيل"
+                            android:textColor="@color/sender_text_primary"
+                            android:textSize="11sp"
+                            android:textStyle="bold"/>
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/exactKeepAwakeSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:minHeight="0dp"
+                            android:text=""/>
+                    </LinearLayout>
 
                     <!-- Connection -->
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp" android:background="@drawable/bg_exact_card"
-                        android:orientation="vertical" android:padding="8dp">
+                        android:layout_marginBottom="3dp" android:background="@drawable/bg_exact_card"
+                        android:orientation="vertical" android:padding="6dp">
                         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                             android:gravity="end" android:text="🔗  الاتصال" android:textColor="@color/sender_text_primary"
-                            android:textSize="14sp" android:textStyle="bold"/>
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="52dp"
+                            android:textSize="12sp" android:textStyle="bold"/>
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="46dp"
                             android:layout_marginTop="4dp" android:orientation="horizontal">
                             <LinearLayout android:id="@+id/exactShizukuConnectCard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
                                 android:background="@drawable/bg_exact_inner" android:gravity="center_vertical"
-                                android:orientation="horizontal" android:padding="8dp" android:clickable="true" android:focusable="true">
-                                <ImageView android:layout_width="38dp" android:layout_height="36dp"
+                                android:orientation="horizontal" android:padding="6dp" android:clickable="true" android:focusable="true">
+                                <ImageView android:layout_width="32dp" android:layout_height="32dp"
                                     android:src="@drawable/exact_logo_shizuku" android:scaleType="centerCrop"/>
                                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                                    android:orientation="vertical" android:paddingStart="12dp">
+                                    android:orientation="vertical" android:paddingStart="8dp">
                                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                                        android:text="Shizuku  ✓" android:textColor="@color/sender_text_primary" android:textSize="14sp" android:textStyle="bold"/>
+                                        android:text="Shizuku  ✓" android:textColor="@color/sender_text_primary" android:textSize="12sp" android:textStyle="bold"/>
                                     <TextView android:id="@+id/exactShizukuStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
                                         android:layout_marginTop="4dp" android:text="@string/exact_off" android:textColor="@color/status_pending"
-                                        android:textSize="9sp" android:textStyle="bold"/>
+                                        android:textSize="8sp" android:textStyle="bold"/>
                                 </LinearLayout>
                             </LinearLayout>
                             <Space android:layout_width="6dp" android:layout_height="1dp"/>
                             <LinearLayout android:id="@+id/exactAccessibilityConnectCard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
                                 android:background="@drawable/bg_exact_inner" android:gravity="center_vertical"
-                                android:orientation="horizontal" android:padding="8dp" android:clickable="true" android:focusable="true">
-                                <ImageView android:layout_width="38dp" android:layout_height="36dp"
+                                android:orientation="horizontal" android:padding="6dp" android:clickable="true" android:focusable="true">
+                                <ImageView android:layout_width="32dp" android:layout_height="32dp"
                                     android:src="@drawable/ic_exact_accessibility2"/>
                                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                                    android:orientation="vertical" android:paddingStart="12dp">
+                                    android:orientation="vertical" android:paddingStart="8dp">
                                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                                        android:text="Accessibility  ✓" android:textColor="@color/sender_text_primary" android:textSize="14sp" android:textStyle="bold"/>
+                                        android:text="Accessibility  ✓" android:textColor="@color/sender_text_primary" android:textSize="12sp" android:textStyle="bold"/>
                                     <TextView android:id="@+id/exactAccessibilityStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
                                         android:layout_marginTop="4dp" android:text="@string/exact_off" android:textColor="@color/status_pending"
-                                        android:textSize="9sp" android:textStyle="bold"/>
+                                        android:textSize="8sp" android:textStyle="bold"/>
                                 </LinearLayout>
                             </LinearLayout>
                         </LinearLayout>
@@ -132,116 +133,116 @@
 
                     <!-- Quick controls -->
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp" android:background="@drawable/bg_exact_card"
-                        android:orientation="vertical" android:padding="8dp">
+                        android:layout_marginBottom="3dp" android:background="@drawable/bg_exact_card"
+                        android:orientation="vertical" android:padding="6dp">
                         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                             android:gravity="end" android:text="ϟ  التحكم السريع" android:textColor="@color/sender_text_primary"
-                            android:textSize="14sp" android:textStyle="bold"/>
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="62dp"
+                            android:textSize="12sp" android:textStyle="bold"/>
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="54dp"
                             android:layout_marginTop="4dp" android:orientation="horizontal">
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactStartButton"
                                 android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.45"
                                 android:minWidth="0dp" android:background="@drawable/bg_exact_selected" app:backgroundTint="@null"
-                                android:text="@string/exact_start" android:textColor="@color/white" android:textSize="9sp" android:textStyle="bold"
-                                app:icon="@drawable/ic_exact_rocket" app:iconGravity="textTop" app:iconPadding="8dp" app:iconSize="22dp" app:iconTint="@null"/>
+                                android:text="@string/exact_start" android:textColor="@color/white" android:textSize="8sp" android:textStyle="bold"
+                                app:icon="@drawable/ic_exact_rocket" app:iconGravity="textTop" app:iconPadding="8dp" app:iconSize="18dp" app:iconTint="@null"/>
                             <Space android:layout_width="5dp" android:layout_height="1dp"/>
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactResumeButton"
                                 style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp" android:layout_height="match_parent"
                                 android:layout_weight="1" android:minWidth="0dp" android:text="@string/exact_resume" android:textColor="@color/sender_text_primary"
-                                android:textSize="9sp" app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft"
-                                app:icon="@drawable/ic_exact_resume" app:iconGravity="textTop" app:iconPadding="8dp" app:iconSize="20dp" app:iconTint="@null"/>
+                                android:textSize="8sp" app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft"
+                                app:icon="@drawable/ic_exact_resume" app:iconGravity="textTop" app:iconPadding="8dp" app:iconSize="17dp" app:iconTint="@null"/>
                             <Space android:layout_width="5dp" android:layout_height="1dp"/>
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactStopButton"
                                 style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp" android:layout_height="match_parent"
                                 android:layout_weight="1" android:minWidth="0dp" android:text="@string/exact_stop" android:textColor="@color/sender_text_primary"
-                                android:textSize="9sp" app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft"
-                                app:icon="@drawable/ic_exact_stop" app:iconGravity="textTop" app:iconPadding="8dp" app:iconSize="20dp" app:iconTint="@null"/>
+                                android:textSize="8sp" app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft"
+                                app:icon="@drawable/ic_exact_stop" app:iconGravity="textTop" app:iconPadding="8dp" app:iconSize="17dp" app:iconTint="@null"/>
                             <Space android:layout_width="5dp" android:layout_height="1dp"/>
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactClearButton"
                                 style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp" android:layout_height="match_parent"
                                 android:layout_weight="1" android:minWidth="0dp" android:text="@string/exact_clear" android:textColor="@color/sender_text_primary"
-                                android:textSize="9sp" app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft"
-                                app:icon="@drawable/ic_exact_trash" app:iconGravity="textTop" app:iconPadding="8dp" app:iconSize="20dp" app:iconTint="@null"/>
+                                android:textSize="8sp" app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft"
+                                app:icon="@drawable/ic_exact_trash" app:iconGravity="textTop" app:iconPadding="8dp" app:iconSize="17dp" app:iconTint="@null"/>
                         </LinearLayout>
                     </LinearLayout>
 
                     <!-- Links -->
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp" android:background="@drawable/bg_exact_card"
-                        android:orientation="vertical" android:padding="8dp">
+                        android:layout_marginBottom="3dp" android:background="@drawable/bg_exact_card"
+                        android:orientation="vertical" android:padding="6dp">
                         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                             android:gravity="end" android:text="🔗  إدارة الروابط" android:textColor="@color/sender_text_primary"
-                            android:textSize="14sp" android:textStyle="bold"/>
-                        <EditText android:id="@+id/exactLinksInput" android:layout_width="match_parent" android:layout_height="40dp"
+                            android:textSize="12sp" android:textStyle="bold"/>
+                        <EditText android:id="@+id/exactLinksInput" android:layout_width="match_parent" android:layout_height="32dp"
                             android:layout_marginTop="4dp" android:background="@drawable/bg_exact_inner"
                             android:gravity="center_vertical|end" android:hint="أدخل رابطاً واحداً في كل سطر..."
-                            android:inputType="textMultiLine|textNoSuggestions" android:maxLines="2" android:paddingHorizontal="10dp"
-                            android:textColor="@color/sender_text_primary" android:textColorHint="@color/sender_text_tertiary" android:textDirection="ltr" android:textSize="9sp"/>
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="40dp" android:layout_marginTop="4dp" android:orientation="horizontal">
+                            android:inputType="textMultiLine|textNoSuggestions" android:maxLines="2" android:paddingHorizontal="6dp"
+                            android:textColor="@color/sender_text_primary" android:textColorHint="@color/sender_text_tertiary" android:textDirection="ltr" android:textSize="8sp"/>
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="32dp" android:layout_marginTop="4dp" android:orientation="horizontal">
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactAddButton" android:layout_width="0dp" android:layout_height="match_parent"
                                 android:layout_weight="1.3" android:minWidth="0dp" android:background="@drawable/bg_exact_selected" app:backgroundTint="@null"
-                                android:text="@string/exact_add" android:textColor="@color/white" android:textSize="9sp" app:icon="@drawable/ic_exact_plus" app:iconTint="@null"/>
+                                android:text="@string/exact_add" android:textColor="@color/white" android:textSize="8sp" app:icon="@drawable/ic_exact_plus" app:iconTint="@null"/>
                             <Space android:layout_width="5dp" android:layout_height="1dp"/>
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactPasteButton" style="@style/Widget.Material3.Button.OutlinedButton"
                                 android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:minWidth="0dp"
-                                android:text="@string/exact_paste" android:textColor="@color/sender_text_primary" android:textSize="9sp"
+                                android:text="@string/exact_paste" android:textColor="@color/sender_text_primary" android:textSize="8sp"
                                 app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft" app:icon="@drawable/ic_exact_paste" app:iconTint="@null"/>
                             <Space android:layout_width="5dp" android:layout_height="1dp"/>
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactImportButton" style="@style/Widget.Material3.Button.OutlinedButton"
                                 android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.25" android:minWidth="0dp"
-                                android:text="@string/exact_import" android:textColor="@color/sender_text_primary" android:textSize="9sp"
+                                android:text="@string/exact_import" android:textColor="@color/sender_text_primary" android:textSize="8sp"
                                 app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft" app:icon="@drawable/ic_exact_import" app:iconTint="@null"/>
                         </LinearLayout>
                     </LinearLayout>
 
                     <!-- Speed + Range -->
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="4dp" android:orientation="horizontal">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="3dp" android:orientation="horizontal">
                         <LinearLayout android:layout_width="0dp" android:layout_height="100dp" android:layout_weight="1.48"
                             android:background="@drawable/bg_exact_card" android:orientation="vertical" android:padding="7dp">
                             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="end"
-                                android:text="◴  سرعة التشغيل" android:textColor="@color/sender_text_primary" android:textSize="9sp" android:textStyle="bold"/>
+                                android:text="◴  سرعة التشغيل" android:textColor="@color/sender_text_primary" android:textSize="8sp" android:textStyle="bold"/>
                             <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/exactSpeedToggle"
-                                android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="4dp"
+                                android:layout_width="match_parent" android:layout_height="46dp" android:layout_marginTop="4dp"
                                 app:singleSelection="true" app:selectionRequired="true">
                                 <com.google.android.material.button.MaterialButton android:id="@+id/exactCustomButton" style="@style/Widget.Material3.Button.OutlinedButton"
-                                    android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:minWidth="0dp"
-                                    android:text="مخصص" android:textSize="9sp" app:icon="@drawable/ic_exact_tune" app:iconGravity="textTop" app:iconTint="@null" app:strokeColor="@color/sender_border_soft"/>
+                                    android:layout_width="0dp" android:layout_height="46dp" android:layout_weight="1" android:minWidth="0dp"
+                                    android:text="مخصص" android:textSize="8sp" app:icon="@drawable/ic_exact_tune" app:iconGravity="textTop" app:iconTint="@null" app:strokeColor="@color/sender_border_soft"/>
                                 <com.google.android.material.button.MaterialButton android:id="@+id/exactMaxButton" style="@style/Widget.Material3.Button.OutlinedButton"
-                                    android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:minWidth="0dp"
-                                    android:text="MAX" android:textSize="9sp" app:icon="@drawable/ic_exact_rocket" app:iconGravity="textTop" app:iconTint="@null" app:strokeColor="@color/sender_border_soft"/>
+                                    android:layout_width="0dp" android:layout_height="46dp" android:layout_weight="1" android:minWidth="0dp"
+                                    android:text="MAX" android:textSize="8sp" app:icon="@drawable/ic_exact_rocket" app:iconGravity="textTop" app:iconTint="@null" app:strokeColor="@color/sender_border_soft"/>
                                 <com.google.android.material.button.MaterialButton android:id="@+id/exactTurboButton" style="@style/Widget.Material3.Button.OutlinedButton"
-                                    android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:minWidth="0dp"
-                                    android:text="Turbo" android:textSize="9sp" app:icon="@drawable/ic_exact_plane" app:iconGravity="textTop" app:iconTint="@null" app:strokeColor="@color/sender_border_soft"/>
+                                    android:layout_width="0dp" android:layout_height="46dp" android:layout_weight="1" android:minWidth="0dp"
+                                    android:text="Turbo" android:textSize="8sp" app:icon="@drawable/ic_exact_plane" app:iconGravity="textTop" app:iconTint="@null" app:strokeColor="@color/sender_border_soft"/>
                                 <com.google.android.material.button.MaterialButton android:id="@+id/exactFastButton" style="@style/Widget.Material3.Button.OutlinedButton"
-                                    android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:minWidth="0dp"
-                                    android:text="Fast" android:textSize="9sp" android:textColor="@color/sender_accent"
+                                    android:layout_width="0dp" android:layout_height="46dp" android:layout_weight="1" android:minWidth="0dp"
+                                    android:text="Fast" android:textSize="8sp" android:textColor="@color/sender_accent"
                                     app:icon="@drawable/ic_exact_bolt" app:iconGravity="textTop" app:iconTint="@color/sender_accent" app:strokeColor="@color/sender_accent"/>
                                 <com.google.android.material.button.MaterialButton android:id="@+id/exactStableButton" style="@style/Widget.Material3.Button.OutlinedButton"
-                                    android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:minWidth="0dp"
-                                    android:text="Stable" android:textSize="9sp" app:icon="@drawable/ic_exact_shield" app:iconGravity="textTop" app:iconTint="@null" app:strokeColor="@color/sender_border_soft"/>
+                                    android:layout_width="0dp" android:layout_height="46dp" android:layout_weight="1" android:minWidth="0dp"
+                                    android:text="Stable" android:textSize="8sp" app:icon="@drawable/ic_exact_shield" app:iconGravity="textTop" app:iconTint="@null" app:strokeColor="@color/sender_border_soft"/>
                             </com.google.android.material.button.MaterialButtonToggleGroup>
                         </LinearLayout>
                         <Space android:layout_width="6dp" android:layout_height="1dp"/>
                         <LinearLayout android:layout_width="0dp" android:layout_height="100dp" android:layout_weight="1"
                             android:background="@drawable/bg_exact_card" android:orientation="vertical" android:padding="7dp">
                             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="end"
-                                android:text="⊙  نطاق التشغيل" android:textColor="@color/sender_text_primary" android:textSize="9sp" android:textStyle="bold"/>
+                                android:text="⊙  نطاق التشغيل" android:textColor="@color/sender_text_primary" android:textSize="8sp" android:textStyle="bold"/>
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:orientation="horizontal">
                                 <LinearLayout android:layout_width="0dp" android:layout_height="68dp" android:layout_weight="1" android:orientation="vertical">
-                                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="البداية" android:textColor="@color/sender_text_secondary" android:textSize="9sp"/>
-                                    <LinearLayout android:layout_width="match_parent" android:layout_height="40dp" android:layout_marginTop="4dp" android:background="@drawable/bg_exact_range" android:gravity="center" android:orientation="horizontal">
-                                        <TextView android:layout_width="30dp" android:layout_height="match_parent" android:gravity="center" android:text="+" android:textColor="@color/sender_accent" android:textSize="9sp"/>
-                                        <TextView android:id="@+id/exactRangeStartText" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="@color/sender_text_primary" android:textSize="9sp" android:textStyle="bold"/>
-                                        <TextView android:layout_width="30dp" android:layout_height="match_parent" android:gravity="center" android:text="−" android:textColor="@color/sender_text_tertiary" android:textSize="9sp"/>
+                                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="البداية" android:textColor="@color/sender_text_secondary" android:textSize="8sp"/>
+                                    <LinearLayout android:layout_width="match_parent" android:layout_height="32dp" android:layout_marginTop="4dp" android:background="@drawable/bg_exact_range" android:gravity="center" android:orientation="horizontal">
+                                        <TextView android:layout_width="30dp" android:layout_height="match_parent" android:gravity="center" android:text="+" android:textColor="@color/sender_accent" android:textSize="8sp"/>
+                                        <TextView android:id="@+id/exactRangeStartText" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="@color/sender_text_primary" android:textSize="8sp" android:textStyle="bold"/>
+                                        <TextView android:layout_width="30dp" android:layout_height="match_parent" android:gravity="center" android:text="−" android:textColor="@color/sender_text_tertiary" android:textSize="8sp"/>
                                     </LinearLayout>
                                 </LinearLayout>
                                 <Space android:layout_width="5dp" android:layout_height="1dp"/>
                                 <LinearLayout android:layout_width="0dp" android:layout_height="68dp" android:layout_weight="1" android:orientation="vertical">
-                                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="النهاية" android:textColor="@color/sender_text_secondary" android:textSize="9sp"/>
-                                    <LinearLayout android:layout_width="match_parent" android:layout_height="40dp" android:layout_marginTop="4dp" android:background="@drawable/bg_exact_range" android:gravity="center" android:orientation="horizontal">
-                                        <TextView android:layout_width="30dp" android:layout_height="match_parent" android:gravity="center" android:text="+" android:textColor="@color/sender_accent" android:textSize="9sp"/>
-                                        <TextView android:id="@+id/exactRangeEndText" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1000" android:textColor="@color/sender_text_primary" android:textSize="9sp" android:textStyle="bold"/>
-                                        <TextView android:layout_width="30dp" android:layout_height="match_parent" android:gravity="center" android:text="−" android:textColor="@color/sender_text_tertiary" android:textSize="9sp"/>
+                                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="النهاية" android:textColor="@color/sender_text_secondary" android:textSize="8sp"/>
+                                    <LinearLayout android:layout_width="match_parent" android:layout_height="32dp" android:layout_marginTop="4dp" android:background="@drawable/bg_exact_range" android:gravity="center" android:orientation="horizontal">
+                                        <TextView android:layout_width="30dp" android:layout_height="match_parent" android:gravity="center" android:text="+" android:textColor="@color/sender_accent" android:textSize="8sp"/>
+                                        <TextView android:id="@+id/exactRangeEndText" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1000" android:textColor="@color/sender_text_primary" android:textSize="8sp" android:textStyle="bold"/>
+                                        <TextView android:layout_width="30dp" android:layout_height="match_parent" android:gravity="center" android:text="−" android:textColor="@color/sender_text_tertiary" android:textSize="8sp"/>
                                     </LinearLayout>
                                 </LinearLayout>
                             </LinearLayout>
@@ -250,77 +251,77 @@
 
                     <!-- Target -->
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp" android:background="@drawable/bg_exact_card" android:orientation="vertical" android:padding="8dp">
+                        android:layout_marginBottom="3dp" android:background="@drawable/bg_exact_card" android:orientation="vertical" android:padding="6dp">
                         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="end"
-                            android:text="⊙  تطبيق الهدف" android:textColor="@color/sender_text_primary" android:textSize="14sp" android:textStyle="bold"/>
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="62dp" android:layout_marginTop="4dp" android:orientation="horizontal">
+                            android:text="⊙  تطبيق الهدف" android:textColor="@color/sender_text_primary" android:textSize="12sp" android:textStyle="bold"/>
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="4dp" android:orientation="horizontal">
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactDualButton" style="@style/Widget.Material3.Button.OutlinedButton"
                                 android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:minWidth="0dp"
-                                android:text="Dual Messenger\nجاهز ✓" android:textColor="@color/sender_text_primary" android:textSize="9sp"
+                                android:text="Dual Messenger\nجاهز ✓" android:textColor="@color/sender_text_primary" android:textSize="8sp"
                                 app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft" app:icon="@drawable/exact_logo_dual" app:iconGravity="textTop" app:iconSize="30dp" app:iconTint="@null"/>
                             <Space android:layout_width="6dp" android:layout_height="1dp"/>
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactBusinessButton" style="@style/Widget.Material3.Button.OutlinedButton"
                                 android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:minWidth="0dp"
-                                android:text="WhatsApp Business\nجاهز ✓" android:textColor="@color/sender_text_primary" android:textSize="9sp"
+                                android:text="WhatsApp Business\nجاهز ✓" android:textColor="@color/sender_text_primary" android:textSize="8sp"
                                 app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft" app:icon="@drawable/exact_logo_business" app:iconGravity="textTop" app:iconSize="30dp" app:iconTint="@null"/>
                             <Space android:layout_width="6dp" android:layout_height="1dp"/>
                             <com.google.android.material.button.MaterialButton android:id="@+id/exactPersonalButton" style="@style/Widget.Material3.Button.OutlinedButton"
                                 android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:minWidth="0dp"
-                                android:text="WhatsApp\nجاهز ✓" android:textColor="@color/sender_text_primary" android:textSize="9sp"
+                                android:text="WhatsApp\nجاهز ✓" android:textColor="@color/sender_text_primary" android:textSize="8sp"
                                 app:cornerRadius="15dp" app:strokeColor="@color/sender_border_soft" app:icon="@drawable/exact_logo_whatsapp" app:iconGravity="textTop" app:iconSize="30dp" app:iconTint="@null"/>
                         </LinearLayout>
                     </LinearLayout>
 
                     <!-- Live status -->
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp" android:background="@drawable/bg_exact_card" android:orientation="vertical" android:padding="8dp">
+                        android:layout_marginBottom="3dp" android:background="@drawable/bg_exact_card" android:orientation="vertical" android:padding="6dp">
                         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="end"
-                            android:text="⌁  الحالة المباشرة" android:textColor="@color/sender_text_primary" android:textSize="14sp" android:textStyle="bold"/>
+                            android:text="⌁  الحالة المباشرة" android:textColor="@color/sender_text_primary" android:textSize="12sp" android:textStyle="bold"/>
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:gravity="center_vertical" android:orientation="horizontal">
-                            <TextView android:layout_width="90dp" android:layout_height="wrap_content" android:gravity="center" android:text="التقدم الكلي" android:textColor="@color/sender_text_secondary" android:textSize="9sp"/>
+                            <TextView android:layout_width="90dp" android:layout_height="wrap_content" android:gravity="center" android:text="التقدم الكلي" android:textColor="@color/sender_text_secondary" android:textSize="8sp"/>
                             <com.google.android.material.progressindicator.LinearProgressIndicator android:id="@+id/exactProgress"
                                 android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:max="100" android:progress="0"
                                 app:indicatorColor="@color/sender_accent" app:trackColor="@color/sender_progress_track" app:trackCornerRadius="5dp"/>
                             <TextView android:id="@+id/exactProgressText" android:layout_width="44dp" android:layout_height="wrap_content"
-                                android:gravity="center" android:text="0%" android:textColor="@color/sender_accent" android:textSize="9sp" android:textStyle="bold"/>
+                                android:gravity="center" android:text="0%" android:textColor="@color/sender_accent" android:textSize="8sp" android:textStyle="bold"/>
                         </LinearLayout>
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="62dp" android:layout_marginTop="4dp" android:orientation="horizontal">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="4dp" android:orientation="horizontal">
                             <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@drawable/bg_exact_inner" android:gravity="center" android:orientation="vertical">
                                 <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_exact_clock"/>
-                                <TextView android:id="@+id/exactRemainingCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="0" android:textColor="@color/sender_purple" android:textSize="9sp" android:textStyle="bold"/>
-                                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="المتبقي" android:textColor="@color/sender_text_secondary" android:textSize="9sp"/>
+                                <TextView android:id="@+id/exactRemainingCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="0" android:textColor="@color/sender_purple" android:textSize="8sp" android:textStyle="bold"/>
+                                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="المتبقي" android:textColor="@color/sender_text_secondary" android:textSize="8sp"/>
                             </LinearLayout>
                             <Space android:layout_width="5dp" android:layout_height="1dp"/>
                             <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@drawable/bg_exact_inner" android:gravity="center" android:orientation="vertical">
                                 <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_exact_warning"/>
-                                <TextView android:id="@+id/exactFailedCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="0" android:textColor="@color/status_failed" android:textSize="9sp" android:textStyle="bold"/>
-                                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="تعذر المعالجة" android:textColor="@color/sender_text_secondary" android:textSize="9sp"/>
+                                <TextView android:id="@+id/exactFailedCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="0" android:textColor="@color/status_failed" android:textSize="8sp" android:textStyle="bold"/>
+                                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="تعذر المعالجة" android:textColor="@color/sender_text_secondary" android:textSize="8sp"/>
                             </LinearLayout>
                             <Space android:layout_width="5dp" android:layout_height="1dp"/>
                             <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@drawable/bg_exact_inner" android:gravity="center" android:orientation="vertical">
                                 <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_exact_plane"/>
-                                <TextView android:id="@+id/exactRequestedCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="0" android:textColor="@color/status_requested" android:textSize="9sp" android:textStyle="bold"/>
-                                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="تم إرسال طلب" android:textColor="@color/sender_text_secondary" android:textSize="9sp"/>
+                                <TextView android:id="@+id/exactRequestedCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="0" android:textColor="@color/status_requested" android:textSize="8sp" android:textStyle="bold"/>
+                                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="تم إرسال طلب" android:textColor="@color/sender_text_secondary" android:textSize="8sp"/>
                             </LinearLayout>
                             <Space android:layout_width="5dp" android:layout_height="1dp"/>
                             <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@drawable/bg_exact_inner" android:gravity="center" android:orientation="vertical">
                                 <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_exact_users"/>
-                                <TextView android:id="@+id/exactJoinedCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="0" android:textColor="@color/status_joined" android:textSize="9sp" android:textStyle="bold"/>
-                                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="تم الانضمام" android:textColor="@color/sender_text_secondary" android:textSize="9sp"/>
+                                <TextView android:id="@+id/exactJoinedCount" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="0" android:textColor="@color/status_joined" android:textSize="8sp" android:textStyle="bold"/>
+                                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="تم الانضمام" android:textColor="@color/sender_text_secondary" android:textSize="8sp"/>
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
 
                     <!-- Export / Share -->
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="40dp" android:orientation="horizontal">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="32dp" android:orientation="horizontal">
                         <com.google.android.material.button.MaterialButton android:id="@+id/exactExportButton" style="@style/Widget.Material3.Button.OutlinedButton"
                             android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:minWidth="0dp"
-                            android:text="تصدير  CSV" android:textColor="@color/sender_text_primary" android:textSize="9sp" app:cornerRadius="16dp"
+                            android:text="تصدير  CSV" android:textColor="@color/sender_text_primary" android:textSize="8sp" app:cornerRadius="16dp"
                             app:strokeColor="@color/sender_border" app:icon="@drawable/ic_exact_download" app:iconTint="@null"/>
                         <Space android:layout_width="6dp" android:layout_height="1dp"/>
                         <com.google.android.material.button.MaterialButton android:id="@+id/exactShareButton" style="@style/Widget.Material3.Button.OutlinedButton"
                             android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:minWidth="0dp"
-                            android:text="مشاركة التقرير" android:textColor="@color/sender_text_primary" android:textSize="9sp" app:cornerRadius="16dp"
+                            android:text="مشاركة التقرير" android:textColor="@color/sender_text_primary" android:textSize="8sp" app:cornerRadius="16dp"
                             app:strokeColor="@color/sender_border" app:icon="@drawable/ic_exact_share2" app:iconTint="@null"/>
                     </LinearLayout>
                 </LinearLayout>

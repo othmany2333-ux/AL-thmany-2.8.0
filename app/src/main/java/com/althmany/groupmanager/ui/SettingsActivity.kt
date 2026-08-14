@@ -64,17 +64,16 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 3.5: full-screen dark/neon smart settings dashboard.
-        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        window.setDimAmount(0f)
+        // 3.5.6: compact centered settings panel instead of a full-screen sheet.
+        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.setDimAmount(0.28f)
         window.setGravity(Gravity.CENTER)
-        window.setBackgroundDrawable(
-            ColorDrawable(ContextCompat.getColor(this, R.color.sender_bg_deep))
-        )
+        window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         binding.root.post {
+            val dm = resources.displayMetrics
             window.setLayout(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+                (dm.widthPixels * 0.92f).toInt(),
+                (dm.heightPixels * 0.84f).toInt()
             )
         }
 

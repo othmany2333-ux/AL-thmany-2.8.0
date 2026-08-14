@@ -203,7 +203,7 @@ checks = {
         "AutomationScreenAwakeGuard" in service and
         "AutomationScreenAwakeGuard" in shizuku_service,
     "3.3 request X Back continuity": "fastExitPendingRequestSurface(screen: ScreenInspection): Boolean" in service and
-        "X/Back handoff opened the next invitation" in service and
+        "one X/Back attempt finished and the next invitation is launched directly" in service and
         "REQUEST_SENT_SHEET_BACK_FALLBACK" in shizuku_service,
     "3.3 secure classifier": "never relabel Work/Island/Dual Messenger as Secure Folder" in main_activity and
         ("secure_remote_knox_hidden" in main_activity or "secure_remote_knox_ladder" in main_activity),
@@ -253,7 +253,7 @@ checks = {
         "personaIdRegex" in main_activity,
     "3.5.2 exact dashboard UI": all(token in main_layout for token in [
         "exactDashboardRoot",
-        "exactThemeToggle",
+        "exactKeepAwakeSwitch",
         "exactShizukuStatus",
         "exactAccessibilityStatus",
         "exactStartButton",
@@ -263,8 +263,8 @@ checks = {
         "exactProgress",
         "legacyDashboard"
     ]) and "configureExactDashboard" in main_activity and "syncExactDashboardStatus" in main_activity,
-    "versionCode 355": "versionCode = 355" in build,
-    "versionName 3.5.5": 'versionName = "3.5.5"' in build,
+    "versionCode 356": "versionCode = 356" in build,
+    "versionName 3.5.6": 'versionName = "3.5.6"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),
@@ -406,7 +406,7 @@ checks = {
     "joined conversation return": "isConversationComposer" in matcher and "isConversationAction" in matcher and "conversationSurface" in service and "returnFromJoinedConversationAndAdvance" in service,
     "continuous handoff watchdog": "scheduleContinuousHandoffWatchdog" in service and "TURBO_NON_LOADING_HARD_LIMIT_MS = 1_000L" in continuous_handoff,
     "fast joined-conversation continuity": "ConversationFastExitPolicy.settleMs" in service and "surfaceAlreadyExited = true" in service,
-    "request-pending immediate handoff": "inspection.requestSubmitted" in service and "Join request is pending; X/Back handoff opened the next invitation" in service,
+    "request-pending immediate handoff": "inspection.requestSubmitted" in service and "one X/Back attempt finished and the next invitation is launched directly" in service,
     "structural failures continue instead of parking run": "CIRCUIT_BREAKER_CONTINUE" in service and "consecutiveRuntimeFailures = 0" in service,
     "single-scan conversation confirmation": "CONVERSATION_STABLE_SCANS = 1" in (JAVA / "com/althmany/groupmanager/domain/InvitationStabilityPolicy.kt").read_text(encoding="utf-8"),
     "input link de-duplication": "putIfAbsent" in (JAVA / "com/althmany/groupmanager/domain/WhatsAppLinkParser.kt").read_text(encoding="utf-8"),

@@ -16,7 +16,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.Lifecycle
@@ -50,6 +49,7 @@ import com.althmany.groupmanager.model.GroupLink
 import com.althmany.groupmanager.model.LinkSource
 import com.althmany.groupmanager.model.PreferredTarget
 import com.althmany.groupmanager.util.AccessibilitySettingsLauncher
+import com.althmany.groupmanager.util.AutomationScreenAwakeGuard
 import com.althmany.groupmanager.util.DocumentIO
 import com.althmany.groupmanager.util.GroupJoinerResultStore
 import com.althmany.groupmanager.util.LaunchDestination
@@ -219,9 +219,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun configureExactDashboard() {
-        val isNight =
-            resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
-                android.content.res.Configuration.UI_MODE_NIGHT_YES
         if (!app.preferences.accessibilityBatchRunning &&
             app.preferences.runtimeSpeedMode == RuntimeSpeedMode.FAST
         ) {
@@ -229,13 +226,14 @@ class MainActivity : AppCompatActivity() {
             app.preferences.fastHandsFreeMode = true
             app.preferences.interLinkDelayMs = 0
         }
-        binding.exactThemeToggle.check(if (isNight) R.id.exactNightButton else R.id.exactDayButton)
 
-        binding.exactThemeToggle.addOnButtonCheckedListener { _, id, checked ->
-            if (!checked) return@addOnButtonCheckedListener
-            AppCompatDelegate.setDefaultNightMode(
-                if (id == R.id.exactDayButton) AppCompatDelegate.MODE_NIGHT_NO
-                else AppCompatDelegate.MODE_NIGHT_YES
+        // 3.5.6: one visual mode only. The freed header space is a real no-sleep control.
+        binding.exactKeepAwakeSwitch.isChecked = app.preferences.keepScreenAwake
+        binding.exactKeepAwakeSwitch.setOnCheckedChangeListener { _, checked ->
+            app.preferences.keepScreenAwake = checked
+            AutomationScreenAwakeGuard.sync(
+                this,
+                checked && app.preferences.accessibilityBatchRunning && !app.preferences.accessibilityPaused
             )
         }
 
@@ -307,8 +305,10 @@ class MainActivity : AppCompatActivity() {
             app.preferences.runtimeSpeedMode = RuntimeSpeedMode.MAX
             app.preferences.fastHandsFreeMode = true
             app.preferences.interLinkDelayMs = 0
-            app.preferences.autoResumeCurrentRun = true
-            binding.compactAutoResumeSwitch.isChecked = true
+            app.preferences.keepScreenAwake = true
+            binding.exactKeepAwakeSwitch.isChecked = true
+            app.preferences.autoResumeCurrentRun = false
+            binding.compactAutoResumeSwitch.isChecked = false
             if (binding.speedModeToggleGroup.checkedButtonId != R.id.speedMaxButton) {
                 binding.speedModeToggleGroup.check(R.id.speedMaxButton)
             }
@@ -1474,9 +1474,9 @@ class MainActivity : AppCompatActivity() {
             binding.workRemoteButton.isEnabled = false
             binding.dualRemoteButton.isEnabled = false
             try {
-                val dual = discoverRemoteWhatsAppCandidates().filter {
-                    isDualMessengerUserLabel(it.userName)
-                }
+                val dual = discoverRemoteWhatsAppCandidates()
+                    .filter { isDualMessengerUserLabel(it.userName) || it.userId == 95 }
+                    .sortedWith(compareBy<RemoteSecureCandidate> { it.userId != 95 }.thenBy { it.userId })
                 if (dual.isEmpty()) {
                     toast(R.string.dual_remote_none_found)
                     return@launch
@@ -1553,6 +1553,10 @@ class MainActivity : AppCompatActivity() {
         // instead of forcing WhatsApp back to foreground, then resumes only when the user returns
         // to the same locked WhatsApp target.
         app.preferences.autoPauseOutsideWhatsApp = true
+        // Manual-resume contract: leaving WhatsApp pauses the queue and never reopens it by force.
+        app.preferences.autoResumeCurrentRun = false
+        app.preferences.keepScreenAwake = true
+        AutomationScreenAwakeGuard.sync(this, true)
         // 3.2: the selected RuntimeSpeedProfile is the single cadence source.
         app.preferences.interLinkDelayMs = app.preferences.runtimeSpeedProfile().interLinkDelayMs.toInt()
         app.preferences.accessibilityActionTimeoutSeconds = AutomationPolicy.FAST_ACTION_TIMEOUT_SECONDS
@@ -1847,7 +1851,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         lifecycleScope.launch {
-            delay(1_000L)
+            delay(80L)
             if (app.preferences.accessibilityBatchRunning &&
                 app.preferences.accessibilityProcessedCount < AutomationPolicy.BATCH_SIZE
             ) {

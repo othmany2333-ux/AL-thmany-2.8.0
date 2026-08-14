@@ -573,8 +573,7 @@ class ShizukuAutomationService : Service() {
         if (pending == AccessibilityJoinAction.REQUEST &&
             (snapshot.screenKind == AutomationScreenKind.REQUEST_SUBMITTED ||
                 snapshot.labels.asSequence().any(AccessibilityJoinMatcher::isCancelRequest) ||
-                AccessibilityJoinMatcher.isRequestSubmittedAcross(snapshot.labels.asSequence()) ||
-                pendingApprovalVariant)
+                AccessibilityJoinMatcher.isRequestSubmittedAcross(snapshot.labels.asSequence()))
         ) {
             runtimeDiagnostic(
                 current,
@@ -2392,6 +2391,8 @@ class ShizukuAutomationService : Service() {
     }
 
     private suspend fun tryAutoResumeAfterUserReturn(targetPackage: String): Boolean {
+        // 3.5.6 manual-resume contract: returning to WhatsApp alone must never restart a paused run.
+        if (!app.preferences.autoResumeCurrentRun || !app.preferences.pausedBecauseOutsideTarget) return false
         val now = SystemClock.elapsedRealtime()
         if (now - lastOutsideTargetProbeAtElapsed < USER_RETURN_PROBE_INTERVAL_MS) return false
         lastOutsideTargetProbeAtElapsed = now
@@ -2576,12 +2577,12 @@ class ShizukuAutomationService : Service() {
                     )
                 }
                 expected == AccessibilityJoinAction.REQUEST -> {
-                    dismissVisualActionSurface(targetPackage, current, "VISUAL_REQUEST_COMPLETED")
+                    dismissVisualActionSurface(targetPackage, current, "VISUAL_REQUEST_UNVERIFIED")
                     completeCurrent(
                         current,
-                        LinkStatus.REQUESTED,
-                        LinkResultCode.REQUEST_SENT,
-                        "Known Request action disappeared after protected input; recorded as requested"
+                        LinkStatus.FAILED,
+                        LinkResultCode.UNKNOWN_SCREEN,
+                        "Known Request action disappeared without pending/request-sent evidence; not counted as REQUESTED"
                     )
                 }
                 else -> {

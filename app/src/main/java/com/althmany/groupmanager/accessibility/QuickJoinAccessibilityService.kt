@@ -1015,11 +1015,11 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 terminalEscapeAdvance = terminalEscape.bypassInterLinkDelay
             )
             "REQUEST_SUBMITTED" -> {
-                val requestSurfaceExited = fastExitPendingRequestSurface(screen)
+                fastExitPendingRequestSurface(screen)
                 completeAndAdvance(
                     current, LinkStatus.REQUESTED, LinkResultCode.REQUEST_SENT, "Join request sent",
                     fastAdvance = true,
-                    surfaceAlreadyExited = requestSurfaceExited,
+                    surfaceAlreadyExited = true,
                     terminalEscapeAdvance = terminalEscape.bypassInterLinkDelay
                 )
             }
@@ -1422,14 +1422,14 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 // Request sent / Cancel request is a strong terminal state. Do not wait for another
                 // event burst before handing off to the next invitation.
                 if (inspection.requestSubmitted) {
-                    val requestSurfaceExited = fastExitPendingRequestSurface(inspection)
+                    fastExitPendingRequestSurface(inspection)
                     completeAndAdvance(
                         current,
                         LinkStatus.REQUESTED,
                         LinkResultCode.REQUEST_SENT,
-                        "Join request is pending; X/Back handoff opened the next invitation",
+                        "Join request is pending; one X/Back attempt finished and the next invitation is launched directly",
                         fastAdvance = true,
-                        surfaceAlreadyExited = requestSurfaceExited
+                        surfaceAlreadyExited = true
                     )
                     return@launch
                 }
@@ -3321,11 +3321,12 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 }
                 if (backSent) delay(exitSettleDelayMs())
                 if (expected == AccessibilityJoinAction.REQUEST) {
+                    // Accuracy first: disappearance alone is not proof that WhatsApp accepted a request.
                     completeAndAdvance(
                         current,
-                        LinkStatus.REQUESTED,
-                        LinkResultCode.REQUEST_SENT,
-                        "Known Request visual action disappeared; request recorded and queue continued",
+                        LinkStatus.FAILED,
+                        LinkResultCode.UNKNOWN_SCREEN,
+                        "Request control disappeared without pending/request-sent evidence; not counted as REQUESTED",
                         fastAdvance = true,
                         surfaceAlreadyExited = backSent
                     )

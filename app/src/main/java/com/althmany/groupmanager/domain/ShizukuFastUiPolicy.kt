@@ -28,7 +28,7 @@ object ShizukuFastUiPolicy {
     const val LOADING_TIMEOUT_MS = 20_000L
 
     const val BACK_SETTLE_MS = 18L
-    const val TERMINAL_ESCAPE_SETTLE_MS = 64L
+    const val TERMINAL_ESCAPE_SETTLE_MS = 24L
     const val NORMAL_EXIT_SETTLE_MS = 36L
     const val USER_INSTANT_ADVANCE_SETTLE_MS = 0L
     const val EVENT_TREE_COALESCE_MS = 0L

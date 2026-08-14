@@ -11,8 +11,8 @@ android {
         applicationId = "com.althmany.groupmanager"
         minSdk = 26
         targetSdk = 36
-        versionCode = 355
-        versionName = "3.5.5"
+        versionCode = 356
+        versionName = "3.5.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
