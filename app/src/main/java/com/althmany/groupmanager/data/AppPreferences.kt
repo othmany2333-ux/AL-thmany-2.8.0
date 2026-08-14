@@ -59,7 +59,7 @@ class AppPreferences(context: Context) {
     var runtimeSpeedMode: RuntimeSpeedMode
         get() = enumValueOrDefault(
             preferences.getString(KEY_RUNTIME_SPEED_MODE, null),
-            RuntimeSpeedMode.FAST
+            RuntimeSpeedMode.MAX
         )
         set(value) = preferences.edit().putString(KEY_RUNTIME_SPEED_MODE, value.name).apply()
 

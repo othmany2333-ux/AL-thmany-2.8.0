@@ -222,6 +222,13 @@ class MainActivity : AppCompatActivity() {
         val isNight =
             resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
                 android.content.res.Configuration.UI_MODE_NIGHT_YES
+        if (!app.preferences.accessibilityBatchRunning &&
+            app.preferences.runtimeSpeedMode == RuntimeSpeedMode.FAST
+        ) {
+            app.preferences.runtimeSpeedMode = RuntimeSpeedMode.MAX
+            app.preferences.fastHandsFreeMode = true
+            app.preferences.interLinkDelayMs = 0
+        }
         binding.exactThemeToggle.check(if (isNight) R.id.exactNightButton else R.id.exactDayButton)
 
         binding.exactThemeToggle.addOnButtonCheckedListener { _, id, checked ->
@@ -232,21 +239,43 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // Visible exact input and the hidden legacy engine input are a two-way bridge.
+        // Paste/import actions update the visible box too, so the dashboard never looks stale.
         binding.exactLinksInput.doAfterTextChanged {
             val value = it?.toString().orEmpty()
             if (binding.linksEditText.text?.toString() != value) {
                 binding.linksEditText.setText(value)
             }
         }
+        binding.linksEditText.doAfterTextChanged {
+            val value = it?.toString().orEmpty()
+            if (binding.exactLinksInput.text?.toString() != value) {
+                binding.exactLinksInput.setText(value)
+                binding.exactLinksInput.setSelection(binding.exactLinksInput.text?.length ?: 0)
+            }
+        }
 
         binding.exactAddButton.setOnClickListener {
-            binding.linksEditText.setText(binding.exactLinksInput.text?.toString().orEmpty())
-            binding.addLinksButton.performClick()
+            val value = binding.exactLinksInput.text?.toString().orEmpty()
+            binding.linksEditText.setText(value)
+            if (value.isBlank()) {
+                binding.exactLinksInput.requestFocus()
+            } else {
+                scheduleLinkAnalysis(value)
+                scheduleSmartAutoStart()
+            }
         }
         binding.exactPasteButton.setOnClickListener { binding.pasteButton.performClick() }
         binding.exactImportButton.setOnClickListener { binding.importButton.performClick() }
 
-        binding.exactStartButton.setOnClickListener { binding.startAutomationButton.performClick() }
+        binding.exactStartButton.setOnClickListener {
+            // Start always sees the text currently visible on the new dashboard.
+            val value = binding.exactLinksInput.text?.toString().orEmpty()
+            if (binding.linksEditText.text?.toString() != value) binding.linksEditText.setText(value)
+            app.preferences.autoResumeCurrentRun = true
+            binding.compactAutoResumeSwitch.isChecked = true
+            binding.startAutomationButton.performClick()
+        }
         binding.exactResumeButton.setOnClickListener { binding.pauseAutomationButton.performClick() }
         binding.exactStopButton.setOnClickListener { binding.stopAutomationButton.performClick() }
         binding.exactClearButton.setOnClickListener { binding.clearSessionButton.performClick() }
@@ -271,7 +300,14 @@ class MainActivity : AppCompatActivity() {
         binding.exactBusinessButton.setOnClickListener {
             binding.targetToggleGroup.check(R.id.targetBusinessButton)
         }
-        binding.exactDualButton.setOnClickListener { binding.dualRemoteButton.performClick() }
+        binding.exactDualButton.setOnClickListener {
+            // Dual Messenger maps to the cloned target when it is locally visible. The remote
+            // detector remains the fallback for Samsung profile/clone layouts that need Shizuku.
+            binding.targetToggleGroup.check(R.id.targetCloneButton)
+            if (!isSelectedTargetAvailable(PreferredTarget.CLONED)) {
+                binding.dualRemoteButton.performClick()
+            }
+        }
 
         binding.exactExportButton.setOnClickListener { binding.exportButton.performClick() }
         binding.exactShareButton.setOnClickListener { binding.shareButton.performClick() }

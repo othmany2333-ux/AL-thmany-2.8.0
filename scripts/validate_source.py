@@ -263,8 +263,8 @@ checks = {
         "exactProgress",
         "legacyDashboard"
     ]) and "configureExactDashboard" in main_activity and "syncExactDashboardStatus" in main_activity,
-    "versionCode 353": "versionCode = 353" in build,
-    "versionName 3.5.3": 'versionName = "3.5.3"' in build,
+    "versionCode 354": "versionCode = 354" in build,
+    "versionName 3.5.4": 'versionName = "3.5.4"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),

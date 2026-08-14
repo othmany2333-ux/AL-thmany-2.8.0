@@ -142,6 +142,9 @@ class QuickJoinAccessibilityService : AccessibilityService() {
     private var accessibilityVisualActionTappedAtElapsed = 0L
     private var accessibilityVisualTapAttempts = 0
     private var accessibilityVisualExpectedAction: AccessibilityJoinAction? = null
+    private var controlledExitLinkId = -1L
+    private var controlledExitAtElapsed = 0L
+    private var controlledExitReason = ""
     private var lastAutomationWindowClassName: String? = null
     private var lastAutomationWindowStateAtElapsed = 0L
 
@@ -150,6 +153,20 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
 
     private fun runtimeSpeed() = app.preferences.runtimeSpeedProfile()
+
+    private fun markAutomationControlledExit(current: GroupLink?, reason: String) {
+        val link = current ?: return
+        controlledExitLinkId = link.id
+        controlledExitAtElapsed = SystemClock.elapsedRealtime()
+        controlledExitReason = reason
+    }
+
+    private fun automationControlledExitReason(current: GroupLink): String? {
+        if (controlledExitLinkId != current.id || controlledExitAtElapsed <= 0L) return null
+        val age = (SystemClock.elapsedRealtime() - controlledExitAtElapsed).coerceAtLeast(0L)
+        if (age > ACCESSIBILITY_CONTROLLED_EXIT_GRACE_MS) return null
+        return controlledExitReason.ifBlank { "AUTOMATION_EXIT" }
+    }
 
     private fun currentProcessAndroidUserId(): Int =
         (android.os.Process.myUid() / 100_000).coerceAtLeast(0)
@@ -3684,7 +3701,8 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 !isAutomationWhatsAppPackage(activePackage) &&
                 activePackage !in RESOLVER_PACKAGES &&
                 !isTransientSystemPackage(activePackage)
-            if (leftTarget) {
+            val controlledExit = automationControlledExitReason(current)
+            if (leftTarget && controlledExit == null) {
                 app.preferences.pauseAccessibilityBatch(
                     diagnostic = "Paused automatically because the user left the selected WhatsApp target",
                     outsideTarget = true
@@ -3692,7 +3710,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 runtimeDiagnostic(
                     current,
                     "ACCESSIBILITY_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET",
-                    "current committed; next remains pending; forced return blocked"
+                    "current committed; next remains pending; real foreground loss was not caused by automation"
                 )
                 refreshAutomationNotification(
                     force = true,
@@ -3700,6 +3718,13 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                     totalOverride = state.total
                 )
                 return
+            }
+            if (leftTarget && controlledExit != null) {
+                runtimeDiagnostic(
+                    current,
+                    "ACCESSIBILITY_CONTROLLED_EXIT_HANDOFF",
+                    "automationExit=$controlledExit; direct next-link launch remains allowed"
+                )
             }
         }
 
@@ -3867,6 +3892,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                     withContext(Dispatchers.Main.immediate) { clickNodeParentOrGesture(node, allowSafeClose = true) }
                 }
                 if (acknowledgementClicked) {
+                    markAutomationControlledExit(cachedCurrentLink, "TERMINAL_ACK")
                     delay(terminalDismissSettleDelayMs())
                     val afterRoot = withContext(Dispatchers.Main.immediate) { rootInActiveWindow }
                     if (afterRoot == null || !isAutomationWhatsAppPackage(afterRoot.packageName?.toString().orEmpty())) return
@@ -3880,7 +3906,10 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                             performGlobalAction(GLOBAL_ACTION_BACK)
                         }
                         terminalBackFallbackUsed = backSent
-                        if (backSent) delay(terminalDismissSettleDelayMs())
+                        if (backSent) {
+                    markAutomationControlledExit(cachedCurrentLink, "TERMINAL_FINAL_BACK")
+                    delay(terminalDismissSettleDelayMs())
+                }
                     }
                     return@repeat
                 }
@@ -3892,6 +3921,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 withContext(Dispatchers.Main.immediate) { clickNodeParentOrGesture(node, allowSafeClose = true) }
             } == true
             if (closeClicked) {
+                markAutomationControlledExit(cachedCurrentLink, "RESULT_X")
                 delay(if (terminalSurface) terminalDismissSettleDelayMs() else exitSettleDelayMs())
                 val afterRoot = withContext(Dispatchers.Main.immediate) { rootInActiveWindow }
                 if (afterRoot == null || !isAutomationWhatsAppPackage(afterRoot.packageName?.toString().orEmpty())) return
@@ -3924,6 +3954,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                     clickNodeParentOrGesture(safeCancel, allowSafeClose = true)
                 }
                 if (cancelled) {
+                    markAutomationControlledExit(cachedCurrentLink, "SAFE_CANCEL")
                     delay(terminalDismissSettleDelayMs())
                     return@repeat
                 }
@@ -3936,6 +3967,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                     performGlobalAction(GLOBAL_ACTION_BACK)
                 }
                 if (backSent) {
+                    markAutomationControlledExit(cachedCurrentLink, "RESULT_BACK")
                     if (terminalSurface) terminalBackFallbackUsed = true
                     delay(if (terminalSurface) terminalDismissSettleDelayMs() else exitSettleDelayMs())
                     return@repeat
@@ -3945,6 +3977,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             if (inspection.inviteContext && step == maxSteps - 1) {
                 val cornerTapped = withContext(Dispatchers.Main.immediate) { tapPreviewCloseCorner() }
                 if (cornerTapped) {
+                    markAutomationControlledExit(cachedCurrentLink, "RESULT_CORNER_X")
                     delay(if (terminalSurface) terminalDismissSettleDelayMs() else exitSettleDelayMs())
                     return@repeat
                 }
@@ -3953,7 +3986,10 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             val backSent = withContext(Dispatchers.Main.immediate) {
                 performGlobalAction(GLOBAL_ACTION_BACK)
             }
-            if (backSent) delay(if (terminalSurface) terminalDismissSettleDelayMs() else exitSettleDelayMs())
+            if (backSent) {
+                markAutomationControlledExit(cachedCurrentLink, "RESULT_FINAL_BACK")
+                delay(if (terminalSurface) terminalDismissSettleDelayMs() else exitSettleDelayMs())
+            }
         }
 
         // Final bounded verification. If a terminal sheet is still visible after all semantic
@@ -4172,6 +4208,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         private const val FAST_MAX_EXIT_STEPS = 3
         private const val MAX_INVITE_SCROLL_ATTEMPTS = 2
         private const val USER_INSTANT_ADVANCE_SETTLE_MS = 0L
+        private const val ACCESSIBILITY_CONTROLLED_EXIT_GRACE_MS = 1_500L
         private const val SCHEDULED_WAKE_LOCK_MS = 30_000L
         private const val NETWORK_PAUSE_POLL_MS = 650L
         private const val RESULT_MIRROR_SYNC_EVERY = 1000
