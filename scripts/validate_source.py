@@ -241,8 +241,14 @@ checks = {
     ]),
     "3.4.1 UserService hard recovery": "restartUserService" in shizuku_bridge_source and
         "SHIZUKU_USER_SERVICE_RESTART" in shizuku_service,
-    "3.4.1 manual user-exit resume": "ACCESSIBILITY_TARGET_RETURN_WAITING_MANUAL_RESUME" in service and
-        "leaving WhatsApp is an explicit user pause" in shizuku_service,
+    "3.5 user-exit pause and exact-target resume": all(token in service for token in [
+        "ACCESSIBILITY_TARGET_RETURN_WAITING_MANUAL_RESUME",
+        "ACCESSIBILITY_TARGET_RETURN_AUTO_RESUME",
+        "ACCESSIBILITY_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET"
+    ]) and all(token in shizuku_service for token in [
+        "SHIZUKU_TARGET_RETURN_AUTO_RESUME",
+        "SHIZUKU_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET"
+    ]),
     "3.4.1 Secure persona discovery": "dumpsys persona" in main_activity and
         "personaIdRegex" in main_activity,
     "versionCode 350": "versionCode = 350" in build,
