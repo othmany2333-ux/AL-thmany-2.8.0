@@ -61,6 +61,7 @@ import com.althmany.groupmanager.ui.MainActivity
 import com.althmany.groupmanager.shizuku.ShizukuAutomationService
 import com.althmany.groupmanager.shizuku.ShizukuBridge
 import com.althmany.groupmanager.util.GroupJoinerResultStore
+import com.althmany.groupmanager.util.NetworkStateMonitor
 import com.althmany.groupmanager.util.AutomationScreenAwakeGuard
 import com.althmany.groupmanager.util.LaunchDestination
 import com.althmany.groupmanager.util.QuickJoinNotification
@@ -262,6 +263,49 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         requestScheduledStart()
         pollJob = serviceScope.launch {
             while (isActive) {
+                val prefs = app.preferences
+
+                if (prefs.accessibilityBatchRunning &&
+                    !NetworkStateMonitor.isValidatedOnline(this@QuickJoinAccessibilityService)
+                ) {
+                    if (!prefs.pausedBecauseNetworkUnavailable) {
+                        prefs.pauseAccessibilityBatch(
+                            diagnostic = "Paused automatically because the internet connection is unavailable",
+                            outsideTarget = prefs.pausedBecauseOutsideTarget
+                        )
+                        prefs.pausedBecauseNetworkUnavailable = true
+                        runtimeDiagnostic(
+                            cachedCurrentLink,
+                            "ACCESSIBILITY_NETWORK_AUTO_PAUSE",
+                            "saved link preserved; no next-link launch while offline"
+                        )
+                    }
+                    AutomationScreenAwakeGuard.release()
+                    delay(NETWORK_PAUSE_POLL_MS)
+                    continue
+                }
+
+                if (prefs.accessibilityBatchRunning && prefs.pausedBecauseNetworkUnavailable) {
+                    val activePackage = withContext(Dispatchers.Main.immediate) {
+                        rootInActiveWindow?.packageName?.toString().orEmpty()
+                    }
+                    if (isAutomationWhatsAppPackage(activePackage) &&
+                        (!prefs.pausedBecauseOutsideTarget || prefs.autoResumeCurrentRun)
+                    ) {
+                        prefs.resumeAccessibilityBatch(
+                            "Internet restored; resuming saved invitation"
+                        )
+                        runtimeDiagnostic(
+                            cachedCurrentLink,
+                            "ACCESSIBILITY_NETWORK_AUTO_RESUME",
+                            "validated internet + selected WhatsApp foreground"
+                        )
+                    } else {
+                        delay(NETWORK_PAUSE_POLL_MS)
+                        continue
+                    }
+                }
+
                 AutomationScreenAwakeGuard.sync(
                     this@QuickJoinAccessibilityService,
                     app.preferences.keepScreenAwake &&
@@ -445,11 +489,27 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         if (!prefs.accessibilityBatchRunning || !prefs.accessibilityPaused ||
             !prefs.pausedBecauseOutsideTarget
         ) return
-        runtimeDiagnostic(
-            cachedCurrentLink,
-            "ACCESSIBILITY_TARGET_RETURN_WAITING_MANUAL_RESUME",
-            "selected WhatsApp returned; paused run preserved; manual Resume required"
-        )
+
+        if (prefs.autoResumeCurrentRun &&
+            !prefs.pausedBecauseNetworkUnavailable &&
+            NetworkStateMonitor.isValidatedOnline(this)
+        ) {
+            prefs.resumeAccessibilityBatch(
+                "Returned to the selected WhatsApp; resuming saved invitation"
+            )
+            runtimeDiagnostic(
+                cachedCurrentLink,
+                "ACCESSIBILITY_TARGET_RETURN_AUTO_RESUME",
+                "real WhatsApp window event; no forced reopen"
+            )
+            requestScan()
+        } else {
+            runtimeDiagnostic(
+                cachedCurrentLink,
+                "ACCESSIBILITY_TARGET_RETURN_WAITING_MANUAL_RESUME",
+                "target returned; manual Resume remains available"
+            )
+        }
         refreshAutomationNotification(force = true)
     }
 
@@ -3560,6 +3620,53 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
         if (!surfaceAlreadyExited) exitInvitationSurface()
 
+        // The result is already committed. Before touching the next row, re-check where the user is.
+        if (app.preferences.autoPauseOutsideWhatsApp) {
+            val activePackage = withContext(Dispatchers.Main.immediate) {
+                rootInActiveWindow?.packageName?.toString().orEmpty()
+            }
+            val leftTarget = activePackage.isNotBlank() &&
+                !isAutomationWhatsAppPackage(activePackage) &&
+                activePackage !in RESOLVER_PACKAGES &&
+                !isTransientSystemPackage(activePackage)
+            if (leftTarget) {
+                app.preferences.pauseAccessibilityBatch(
+                    diagnostic = "Paused automatically because the user left the selected WhatsApp target",
+                    outsideTarget = true
+                )
+                runtimeDiagnostic(
+                    current,
+                    "ACCESSIBILITY_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET",
+                    "current committed; next remains pending; forced return blocked"
+                )
+                refreshAutomationNotification(
+                    force = true,
+                    nextLink = state.next,
+                    totalOverride = state.total
+                )
+                return
+            }
+        }
+
+        if (!NetworkStateMonitor.isValidatedOnline(this, force = true)) {
+            app.preferences.pauseAccessibilityBatch(
+                diagnostic = "Paused automatically because the internet connection was lost",
+                outsideTarget = false
+            )
+            app.preferences.pausedBecauseNetworkUnavailable = true
+            runtimeDiagnostic(
+                current,
+                "ACCESSIBILITY_NEXT_HANDOFF_PAUSED_OFFLINE",
+                "current committed; next remains pending"
+            )
+            refreshAutomationNotification(
+                force = true,
+                nextLink = state.next,
+                totalOverride = state.total
+            )
+            return
+        }
+
         if (state.limitReached) {
             if (app.preferences.autoResumeCurrentRun && state.next != null) {
                 app.preferences.accessibilityProcessedCount = 0
@@ -4011,6 +4118,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         private const val MAX_INVITE_SCROLL_ATTEMPTS = 2
         private const val USER_INSTANT_ADVANCE_SETTLE_MS = 0L
         private const val SCHEDULED_WAKE_LOCK_MS = 30_000L
+        private const val NETWORK_PAUSE_POLL_MS = 650L
         private const val RESULT_MIRROR_SYNC_EVERY = 1000
         private const val DIAGNOSTIC_REPEAT_SUPPRESSION_MS = 1_500L
         private const val IDEMPOTENCY_SUPPRESSION_MS = 1_200L

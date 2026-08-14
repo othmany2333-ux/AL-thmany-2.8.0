@@ -45,6 +45,7 @@ import com.althmany.groupmanager.model.LinkStatus
 import com.althmany.groupmanager.receiver.AutomationActionReceiver
 import com.althmany.groupmanager.ui.MainActivity
 import com.althmany.groupmanager.util.GroupJoinerResultStore
+import com.althmany.groupmanager.util.NetworkStateMonitor
 import com.althmany.groupmanager.util.AutomationScreenAwakeGuard
 import com.althmany.groupmanager.util.QuickJoinNotification
 import com.althmany.groupmanager.util.RuntimeDiagnosticStore
@@ -200,16 +201,67 @@ class ShizukuAutomationService : Service() {
                 this,
                 prefs.keepScreenAwake && !prefs.accessibilityPaused
             )
+
+            if (!NetworkStateMonitor.isValidatedOnline(this)) {
+                if (!prefs.pausedBecauseNetworkUnavailable) {
+                    prefs.pauseAccessibilityBatch(
+                        diagnostic = "Paused automatically because the internet connection is unavailable",
+                        outsideTarget = prefs.pausedBecauseOutsideTarget
+                    )
+                    prefs.pausedBecauseNetworkUnavailable = true
+                    RuntimeDiagnosticStore.append(
+                        this,
+                        "SHIZUKU_NETWORK_AUTO_PAUSE",
+                        "saved link preserved; no ACTION_VIEW while offline"
+                    )
+                }
+                AutomationScreenAwakeGuard.release()
+                updateNotification("Paused: internet connection unavailable")
+                delay(NETWORK_PAUSE_POLL_MS)
+                continue
+            }
+
+            if (prefs.pausedBecauseNetworkUnavailable) {
+                val targetReturned = isTargetForeground(targetPackage, forceProbe = true)
+                if (targetReturned && (!prefs.pausedBecauseOutsideTarget || prefs.autoResumeCurrentRun)) {
+                    prefs.resumeAccessibilityBatch("Internet restored; resuming saved invitation")
+                    RuntimeDiagnosticStore.append(
+                        this,
+                        "SHIZUKU_NETWORK_AUTO_RESUME",
+                        "validated internet + exact target foreground"
+                    )
+                    continue
+                }
+                delay(NETWORK_PAUSE_POLL_MS)
+                continue
+            }
+
             if (!runtimeHeartbeat(targetPackage)) {
                 delay(ShizukuContinuityPolicy.RUNTIME_RECOVERY_POLL_MS)
                 continue
             }
 
             if (prefs.accessibilityPaused) {
-                // 3.4.1: leaving WhatsApp is an explicit user pause.
+                if (prefs.pausedBecauseOutsideTarget &&
+                    prefs.autoResumeCurrentRun &&
+                    !prefs.pausedBecauseNetworkUnavailable &&
+                    NetworkStateMonitor.isValidatedOnline(this) &&
+                    isTargetForeground(targetPackage, forceProbe = true)
+                ) {
+                    prefs.resumeAccessibilityBatch(
+                        "Returned to the selected WhatsApp; resuming saved invitation"
+                    )
+                    RuntimeDiagnosticStore.append(
+                        this,
+                        "SHIZUKU_TARGET_RETURN_AUTO_RESUME",
+                        "real exact-user foreground return; no forced reopen"
+                    )
+                    continue
+                }
+
                 updateNotification(
                     if (prefs.pausedBecauseOutsideTarget) {
-                        "Paused after leaving WhatsApp • open Al-othmany Sender and tap Resume"
+                        "Paused after leaving WhatsApp • return to WhatsApp or tap Resume"
                     } else {
                         getString(R.string.shizuku_service_paused)
                     }
@@ -614,7 +666,7 @@ class ShizukuAutomationService : Service() {
             // Samsung can temporarily hide the UI tree immediately after a successful Join.
             // Prove the exact package/user Conversation activity before calling it a timeout.
             if (pending == AccessibilityJoinAction.JOIN &&
-                probeJoinedConversationActivity(targetPackage, current)
+                probeJoinedConversationActivityWithGrace(targetPackage, current)
             ) {
                 exitConversationBeforeDirectHandoff(targetPackage, current)
                 completeCurrent(
@@ -2495,7 +2547,7 @@ class ShizukuAutomationService : Service() {
             }
 
             val expected = visualExpectedAction ?: readPendingAction(current)
-            val joinedConversation = probeJoinedConversationActivity(targetPackage, current)
+            val joinedConversation = probeJoinedConversationActivityWithGrace(targetPackage, current)
             dismissVisualActionSurface(targetPackage, current, "VISUAL_ACTION_COMPLETED")
 
             when {
@@ -2704,6 +2756,17 @@ class ShizukuAutomationService : Service() {
         return success
     }
 
+    private suspend fun probeJoinedConversationActivityWithGrace(
+        targetPackage: String,
+        current: GroupLink
+    ): Boolean {
+        repeat(4) { attempt ->
+            if (probeJoinedConversationActivity(targetPackage, current)) return true
+            if (attempt < 3) delay(160L)
+        }
+        return false
+    }
+
     private suspend fun waitInputCooldown() {
         val elapsed = SystemClock.elapsedRealtime() - lastInputAtElapsed
         val cooldown = if (fastUiMode == FastUiMode.ACTIVE) {
@@ -2802,6 +2865,42 @@ class ShizukuAutomationService : Service() {
         }
 
         updateNotification(getString(R.string.shizuku_service_completed_link, state.processed))
+
+        // Commit current result, but never reserve/open the NEXT link if the user has left WhatsApp.
+        if (prefs.autoPauseOutsideWhatsApp &&
+            currentLaunchSawTargetForeground &&
+            !isTargetForeground(targetPackage, forceProbe = true)
+        ) {
+            prefs.pauseAccessibilityBatch(
+                diagnostic = "Paused automatically because the user left the selected WhatsApp target",
+                outsideTarget = true
+            )
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET",
+                "current committed; next remains pending; forced return blocked"
+            )
+            resetPerLinkEvidence()
+            updateNotification("Paused: user left WhatsApp • next link preserved")
+            return
+        }
+
+        if (!NetworkStateMonitor.isValidatedOnline(this, force = true)) {
+            prefs.pauseAccessibilityBatch(
+                diagnostic = "Paused automatically because the internet connection was lost",
+                outsideTarget = false
+            )
+            prefs.pausedBecauseNetworkUnavailable = true
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_NEXT_HANDOFF_PAUSED_OFFLINE",
+                "current committed; next remains pending"
+            )
+            resetPerLinkEvidence()
+            updateNotification("Paused: internet connection unavailable")
+            return
+        }
+
         resetPerLinkEvidence()
 
         if (state.processed > 0 &&
@@ -3192,6 +3291,7 @@ class ShizukuAutomationService : Service() {
         private const val POST_ACTION_RESULT_GRACE_MS = 140L
         private const val VERIFY_RESULT_POLL_MS = 90L
         private const val USER_SERVICE_RESTART_MAX = 1
+        private const val NETWORK_PAUSE_POLL_MS = 650L
         private const val COMMAND_DUMP_KILL_COOLDOWN_MS = 4_000L
         private const val PERIODIC_UI_REFRESH_EVERY = 100
         private const val USER_EXIT_LAUNCH_GRACE_MS = 650L

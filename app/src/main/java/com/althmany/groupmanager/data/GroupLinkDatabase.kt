@@ -420,6 +420,35 @@ class GroupLinkDatabase(context: Context) :
         }
     }
 
+    /**
+     * Re-queue only unverified failed rows.
+     * Verified JOINED and REQUESTED rows are never changed.
+     */
+    @Synchronized
+    fun requeueFailed(sessionId: String): Int {
+        val database = writableDatabase
+        database.beginTransaction()
+        try {
+            val changed = database.update(
+                TABLE_LINKS,
+                ContentValues().apply {
+                    put("status", LinkStatus.PENDING.name)
+                    putNull("opened_at")
+                    putNull("completed_at")
+                    putNull("result_code")
+                    putNull("result_detail")
+                },
+                "session_id = ? AND status = ?",
+                arrayOf(sessionId, LinkStatus.FAILED.name)
+            )
+            updateSessionLifecycle(database, sessionId)
+            database.setTransactionSuccessful()
+            return changed
+        } finally {
+            database.endTransaction()
+        }
+    }
+
     @Synchronized
     fun markSessionAbandoned(sessionId: String) {
         writableDatabase.update(

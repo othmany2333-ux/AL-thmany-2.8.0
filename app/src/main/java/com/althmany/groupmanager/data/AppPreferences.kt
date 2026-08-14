@@ -297,6 +297,13 @@ class AppPreferences(context: Context) {
         get() = preferences.getBoolean(KEY_PAUSED_BECAUSE_OUTSIDE_TARGET, false)
         set(value) = preferences.edit().putBoolean(KEY_PAUSED_BECAUSE_OUTSIDE_TARGET, value).apply()
 
+    /** Internal marker for a validated internet outage. */
+    var pausedBecauseNetworkUnavailable: Boolean
+        get() = preferences.getBoolean(KEY_PAUSED_BECAUSE_NETWORK_UNAVAILABLE, false)
+        set(value) = preferences.edit()
+            .putBoolean(KEY_PAUSED_BECAUSE_NETWORK_UNAVAILABLE, value)
+            .apply()
+
     /** Return to the AL-thmany dashboard when the explicit run completes. */
     var returnToAppOnRunComplete: Boolean
         get() = preferences.getBoolean(KEY_RETURN_TO_APP_ON_COMPLETE, true)
@@ -576,6 +583,7 @@ class AppPreferences(context: Context) {
             .putBoolean(KEY_ACCESSIBILITY_BATCH_RUNNING, false)
             .putBoolean(KEY_ACCESSIBILITY_PAUSED, false)
             .putBoolean(KEY_PAUSED_BECAUSE_OUTSIDE_TARGET, false)
+            .putBoolean(KEY_PAUSED_BECAUSE_NETWORK_UNAVAILABLE, false)
             .putInt(KEY_ACCESSIBILITY_PROCESSED_COUNT, 0)
             .putString(KEY_AUTOMATION_STAGE, AutomationStage.SCHEDULED.name)
             .putString(KEY_AUTOMATION_STOP_REASON, AutomationStopReason.NONE.name)
@@ -778,6 +786,7 @@ class AppPreferences(context: Context) {
             .putBoolean(KEY_ACCESSIBILITY_BATCH_RUNNING, true)
             .putBoolean(KEY_ACCESSIBILITY_PAUSED, false)
             .putBoolean(KEY_PAUSED_BECAUSE_OUTSIDE_TARGET, false)
+            .putBoolean(KEY_PAUSED_BECAUSE_NETWORK_UNAVAILABLE, false)
             .putInt(KEY_ACCESSIBILITY_PROCESSED_COUNT, 0)
             .putString(KEY_AUTOMATION_STAGE, AutomationStage.OPENING_LINK.name)
             .putString(KEY_AUTOMATION_STOP_REASON, AutomationStopReason.NONE.name)
@@ -840,6 +849,7 @@ class AppPreferences(context: Context) {
         if (!accessibilityBatchRunning) return
         accessibilityPaused = false
         pausedBecauseOutsideTarget = false
+        pausedBecauseNetworkUnavailable = false
         transitionAutomation(
             AutomationStage.LOOKING_FOR_PREVIEW,
             diagnostic,
@@ -999,6 +1009,7 @@ class AppPreferences(context: Context) {
         private const val KEY_AUTO_RESUME_CURRENT_RUN = "auto_resume_current_run"
         private const val KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP = "auto_pause_outside_whatsapp"
         private const val KEY_PAUSED_BECAUSE_OUTSIDE_TARGET = "paused_because_outside_target"
+        private const val KEY_PAUSED_BECAUSE_NETWORK_UNAVAILABLE = "paused_because_network_unavailable"
         private const val KEY_RETURN_TO_APP_ON_COMPLETE = "return_to_app_on_complete"
         private const val KEY_SELECTED_WHATSAPP_PACKAGE = "selected_whatsapp_package"
         private const val KEY_SELECTED_WHATSAPP_LABEL = "selected_whatsapp_label"

@@ -75,6 +75,11 @@ class GroupLinkRepository(
         return database.undoLastResult(sessionId)
     }
 
+    fun requeueFailed(): Int {
+        val sessionId = preferences.activeSessionId ?: return 0
+        return database.requeueFailed(sessionId)
+    }
+
     fun deleteLink(linkId: Long): Boolean = database.deleteLink(linkId)
 
     fun clearCurrentSession() {

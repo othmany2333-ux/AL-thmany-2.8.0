@@ -12,6 +12,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.althmany.groupmanager.BuildConfig
@@ -63,17 +64,18 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        window.setDimAmount(0.26f)
-        window.setGravity(Gravity.END or Gravity.CENTER_VERTICAL)
+        // 3.5: full-screen dark/neon smart settings dashboard.
+        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.setDimAmount(0f)
+        window.setGravity(Gravity.CENTER)
+        window.setBackgroundDrawable(
+            ColorDrawable(ContextCompat.getColor(this, R.color.sender_bg_deep))
+        )
         binding.root.post {
-            val metrics = resources.displayMetrics
-            // 3.4: visibly smaller floating settings sheet; content remains scrollable.
-            val panelWidth = (metrics.widthPixels * 0.66f).toInt()
-            val maxPanelWidth = (330f * metrics.density).toInt()
-            val panelHeight = (metrics.heightPixels * 0.80f).toInt()
-            window.setLayout(minOf(panelWidth, maxPanelWidth), panelHeight)
+            window.setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
         }
 
         binding.toolbar.setNavigationOnClickListener { finish() }

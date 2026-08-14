@@ -66,18 +66,18 @@
     <color name="swift_divider">#E3ECE9</color>
 
     <!-- Al-othmany Sender 3.1 -->
-    <color name="sender_bg_deep">#031519</color>
-    <color name="sender_bg">#061F25</color>
-    <color name="sender_header">#082B33</color>
-    <color name="sender_card">#0B2A31</color>
-    <color name="sender_card_alt">#0E323A</color>
-    <color name="sender_border">#174650</color>
-    <color name="sender_accent">#10B7C1</color>
-    <color name="sender_accent_dark">#078995</color>
-    <color name="sender_accent_soft">#163E46</color>
-    <color name="sender_text_primary">#F3FAFB</color>
-    <color name="sender_text_secondary">#AFC6CB</color>
-    <color name="sender_text_tertiary">#819CA3</color>
-    <color name="sender_progress_track">#16383F</color>
-    <color name="sender_settings_surface">#F7FAFA</color>
+    <color name="sender_bg_deep">#020812</color>
+    <color name="sender_bg">#03121B</color>
+    <color name="sender_header">#041A24</color>
+    <color name="sender_card">#061925</color>
+    <color name="sender_card_alt">#08212D</color>
+    <color name="sender_border">#0B5260</color>
+    <color name="sender_accent">#00DCE6</color>
+    <color name="sender_accent_dark">#079EAA</color>
+    <color name="sender_accent_soft">#0A3440</color>
+    <color name="sender_text_primary">#F7FBFF</color>
+    <color name="sender_text_secondary">#AFBECA</color>
+    <color name="sender_text_tertiary">#718894</color>
+    <color name="sender_progress_track">#12303A</color>
+    <color name="sender_settings_surface">#061925</color>
 </resources>

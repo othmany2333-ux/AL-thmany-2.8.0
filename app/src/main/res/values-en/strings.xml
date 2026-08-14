@@ -549,5 +549,15 @@ Reason: %10$s</string>
     <string name="dual_remote_selected_format">Dual Messenger • %1$s • user %2$d</string>
     <string name="dual_remote_verified_format">Dual Remote ready • %1$s • user %2$d</string>
     <string name="dual_remote_selected_toast">WhatsApp inside Samsung Dual Messenger was selected. The run will be locked to that exact Android user.</string>
-    <string name="secure_remote_knox_ladder">The real Secure Folder was not visible through host ADB/Shizuku. pm/cmd user/dumpsys user were checked and Work, Island, or Dual were not selected by mistake. The non-root fallback is the same Al-othmany Sender APK inside Secure Folder using local Accessibility if Samsung allows it.</string>
+    <string name="secure_remote_knox_ladder">The real Secure Folder user is not visible to host Shizuku/ADB. One-host control works only when Knox exposes that user and package; Work/Dual are never relabeled as Secure Folder.</string>
+    <string name="sender_unverified_processing">Unverified</string>
+    <string name="retry_unverified">Retry unverified</string>
+    <string name="retry_unverified_done">%1$d unverified links were returned to the processing queue</string>
+    <string name="work_remote_detect_button">Work Profile via Shizuku</string>
+    <string name="work_remote_rescan_button">Work Profile selected • Change</string>
+    <string name="work_remote_none_found">No WhatsApp installation was found in a Work Profile visible to Shizuku</string>
+    <string name="work_remote_picker_title">Choose Work Profile WhatsApp</string>
+    <string name="work_remote_selected_toast">Work Profile WhatsApp selected; Shizuku will target the exact Android user</string>
+    <string name="work_remote_selected_format">Work Profile • %1$s • user %2$d</string>
+    <string name="work_remote_verified_format">Work Remote ready • %1$s • user %2$d</string>
 </resources>

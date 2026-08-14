@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_sender_settings_panel"
+    android:background="@drawable/bg_sender_dashboard"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.MaterialToolbar
@@ -12,9 +12,9 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@android:color/transparent"
         app:navigationIcon="@drawable/ic_back"
-        app:navigationIconTint="@color/brand_primary_dark"
+        app:navigationIconTint="@color/sender_text_primary"
         app:title="@string/settings_title"
-        app:titleTextColor="@color/text_primary" />
+        app:titleTextColor="@color/sender_text_primary" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -31,9 +31,9 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="14dp"
-                app:strokeColor="@color/card_border"
+                app:cardBackgroundColor="@color/sender_card"
+                app:cardCornerRadius="17dp"
+                app:strokeColor="@color/sender_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -46,7 +46,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_behavior_title"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/sender_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -69,7 +69,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="1dp"
                         android:text="@string/keep_screen_awake_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="11sp" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -84,7 +84,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="@string/quick_join_notification_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="12sp" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -99,7 +99,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="@string/runtime_diagnostic_journal_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="12sp" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -114,7 +114,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="@string/runtime_shadow_mode_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="12sp" />
 
                     <LinearLayout
@@ -147,9 +147,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="14dp"
-                app:strokeColor="@color/card_border"
+                app:cardBackgroundColor="@color/sender_card"
+                app:cardCornerRadius="17dp"
+                app:strokeColor="@color/sender_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -162,7 +162,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/native_profile_engine_title"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/sender_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -171,7 +171,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
                         android:text="@string/native_profile_engine_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="13sp" />
 
                     <TextView
@@ -181,7 +181,7 @@
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
                         android:text="@string/native_profile_engine_waiting"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textIsSelectable="true"
                         android:textSize="12sp" />
 
@@ -207,9 +207,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="14dp"
-                app:strokeColor="@color/card_border"
+                app:cardBackgroundColor="@color/sender_card"
+                app:cardCornerRadius="17dp"
+                app:strokeColor="@color/sender_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -222,7 +222,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/automation_backend_title"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/sender_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -231,7 +231,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
                         android:text="@string/automation_backend_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="13sp" />
 
                     <RadioGroup
@@ -264,7 +264,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:textColor="@color/brand_primary"
+                        android:textColor="@color/sender_accent"
                         android:textStyle="bold" />
 
                     <LinearLayout
@@ -296,7 +296,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
                         android:text="@string/shizuku_backend_warning"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -305,9 +305,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="14dp"
-                app:strokeColor="@color/card_border"
+                app:cardBackgroundColor="@color/sender_card"
+                app:cardCornerRadius="17dp"
+                app:strokeColor="@color/sender_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -320,7 +320,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/accessibility_settings_title"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/sender_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -330,7 +330,7 @@
                         android:layout_marginTop="5dp"
                         android:lineSpacingExtra="3dp"
                         android:text="@string/accessibility_settings_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="13sp" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -345,7 +345,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:text="@string/join_delay_title"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/sender_text_primary"
                         android:textStyle="bold" />
 
                     <TextView
@@ -353,7 +353,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:text="@string/join_delay_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="12sp" />
 
                     <LinearLayout
@@ -396,7 +396,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
-                        android:textColor="@color/brand_primary"
+                        android:textColor="@color/sender_accent"
                         android:textStyle="bold" />
 
                     <TextView
@@ -406,7 +406,7 @@
                         android:layout_marginTop="6dp"
                         android:lineSpacingExtra="2dp"
                         android:text="@string/profile_control_diagnostic_placeholder"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textIsSelectable="true"
                         android:textSize="12sp" />
 
@@ -417,7 +417,7 @@
                         android:layout_marginTop="6dp"
                         android:lineSpacingExtra="2dp"
                         android:text="@string/profile_accessibility_policy_placeholder"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textIsSelectable="true"
                         android:textSize="12sp" />
 
@@ -451,9 +451,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="14dp"
-                app:strokeColor="@color/card_border"
+                app:cardBackgroundColor="@color/sender_card"
+                app:cardCornerRadius="17dp"
+                app:strokeColor="@color/sender_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -466,7 +466,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_target_title"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/sender_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -475,7 +475,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
                         android:text="@string/settings_target_description"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/sender_text_secondary"
                         android:textSize="13sp" />
 
                     <RadioGroup
@@ -519,7 +519,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginVertical="10dp"
-                        android:background="@color/card_border" />
+                        android:background="@color/sender_border" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -531,13 +531,13 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/personal_whatsapp_status"
-                            android:textColor="@color/text_primary" />
+                            android:textColor="@color/sender_text_primary" />
 
                         <TextView
                             android:id="@+id/personalStatusText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="@color/brand_primary"
+                            android:textColor="@color/sender_accent"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -552,13 +552,13 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/business_whatsapp_status"
-                            android:textColor="@color/text_primary" />
+                            android:textColor="@color/sender_text_primary" />
 
                         <TextView
                             android:id="@+id/businessStatusText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="@color/brand_primary"
+                            android:textColor="@color/sender_accent"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
@@ -568,9 +568,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="14dp"
-                app:strokeColor="@color/card_border"
+                app:cardBackgroundColor="@color/sender_card"
+                app:cardCornerRadius="17dp"
+                app:strokeColor="@color/sender_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -583,7 +583,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_theme_title"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/sender_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -620,7 +620,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:gravity="center"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/sender_text_secondary"
                 android:textSize="12sp" />
 
             <LinearLayout
@@ -636,7 +636,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_privacy_title"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/sender_text_primary"
                     android:textStyle="bold" />
 
                 <TextView
@@ -645,7 +645,7 @@
                     android:layout_marginTop="5dp"
                     android:lineSpacingExtra="3dp"
                     android:text="@string/settings_privacy_description"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/sender_text_secondary"
                     android:textSize="13sp" />
             </LinearLayout>
         </LinearLayout>

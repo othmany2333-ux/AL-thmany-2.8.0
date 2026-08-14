@@ -245,8 +245,8 @@ checks = {
         "leaving WhatsApp is an explicit user pause" in shizuku_service,
     "3.4.1 Secure persona discovery": "dumpsys persona" in main_activity and
         "personaIdRegex" in main_activity,
-    "versionCode 341": "versionCode = 341" in build,
-    "versionName 3.4.1": 'versionName = "3.4.1"' in build,
+    "versionCode 350": "versionCode = 350" in build,
+    "versionName 3.5.0": 'versionName = "3.5.0"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"
     ]),
@@ -430,6 +430,16 @@ checks = {
     "stable post-action force advance": "MIN_STABLE_SCANS_FOR_FORCE_ADVANCE = 2" in continuous_handoff and "stableWatchScans" in service,
     "auto-pause outside WhatsApp default": "getBoolean(KEY_AUTO_PAUSE_OUTSIDE_WHATSAPP, true)" in preferences_source,
     "zero-delay instant handoff": "USER_INSTANT_ADVANCE_SETTLE_MS = 0L" in service,
+    "3.5 network pause guard": "NetworkStateMonitor" in shizuku_service and
+        "SHIZUKU_NETWORK_AUTO_PAUSE" in shizuku_service and
+        "ACCESSIBILITY_NETWORK_AUTO_PAUSE" in service,
+    "3.5 no forced next handoff": "SHIZUKU_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET" in shizuku_service and
+        "ACCESSIBILITY_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET" in service,
+    "3.5 verified retry queue": "requeueFailed" in repository and
+        "retryUnverifiedButton" in main_layout and
+        "sender_unverified_processing" in main_activity,
+    "3.5 Work remote target": "detectRemoteWorkTarget" in main_activity and
+        "workRemoteButton" in main_layout,
     "fast post-join evidence age": "FAST_POST_JOIN_MIN_EVIDENCE_AGE_MS = 35L" in (JAVA / "com/althmany/groupmanager/domain/InvitationStabilityPolicy.kt").read_text(encoding="utf-8"),
     "bounded fast semantic invite scroll": "ACTION_SCROLL_FORWARD" in service and "MAX_INVITE_SCROLL_ATTEMPTS = 2" in service and "FAST_SCROLL" in service,
     "zero-delay enables fast runtime": "delayMs == AutomationPolicy.FAST_INTER_LINK_DELAY_MS" in main_activity,

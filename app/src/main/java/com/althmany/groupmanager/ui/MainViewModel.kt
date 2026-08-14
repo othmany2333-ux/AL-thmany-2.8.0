@@ -215,6 +215,20 @@ class MainViewModel(
         }
     }
 
+    fun retryUnverified() {
+        viewModelScope.launch {
+            operationMutex.withLock {
+                val count = withContext(Dispatchers.IO) { repository.requeueFailed() }
+                preferences.accessibilityProcessedCount = 0
+                val refreshed = withContext(Dispatchers.IO) {
+                    repository.loadActiveDashboardSnapshot()
+                }
+                _state.value = _state.value.copy(snapshot = refreshed)
+                _events.send(MainEvent.Message(R.string.retry_unverified_done, listOf(count)))
+            }
+        }
+    }
+
     fun onLaunchResult(
         linkId: Long,
         success: Boolean,

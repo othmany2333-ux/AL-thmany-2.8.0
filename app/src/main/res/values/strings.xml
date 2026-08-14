@@ -549,5 +549,15 @@ Al-othmany Sender Profile Owner: %5$s
     <string name="dual_remote_selected_format">Dual Messenger • %1$s • user %2$d</string>
     <string name="dual_remote_verified_format">Dual Remote جاهز • %1$s • user %2$d</string>
     <string name="dual_remote_selected_toast">تم تحديد WhatsApp داخل Samsung Dual Messenger. سيتم قفل الجولة على نفس Android user.</string>
-    <string name="secure_remote_knox_ladder">لم يظهر Secure Folder الحقيقي عبر ADB/Shizuku الخارجي. تم فحص pm/cmd user/dumpsys user ولم يتم اختيار Work أو Island أو Dual بالخطأ. البديل غير الجذري هو تشغيل نفس Al-othmany Sender داخل Secure Folder مع Accessibility المحلية إذا سمحت Samsung بها.</string>
+    <string name="secure_remote_knox_ladder">لم يظهر Secure Folder الحقيقي لـ Shizuku/ADB. يعمل من التثبيت الشخصي فقط إذا كشف Knox مستخدم المجلد والحزمة؛ لن يتم اختيار Work أو Dual بدلًا منه.</string>
+    <string name="sender_unverified_processing">غير مؤكد</string>
+    <string name="retry_unverified">إعادة غير المؤكد</string>
+    <string name="retry_unverified_done">تمت إعادة %1$d روابط غير مؤكدة إلى قائمة المعالجة</string>
+    <string name="work_remote_detect_button">ملف العمل عبر Shizuku</string>
+    <string name="work_remote_rescan_button">ملف العمل محدد • تغيير</string>
+    <string name="work_remote_none_found">لم يتم العثور على واتساب داخل ملف عمل ظاهر لـ Shizuku</string>
+    <string name="work_remote_picker_title">اختر واتساب داخل ملف العمل</string>
+    <string name="work_remote_selected_toast">تم تحديد واتساب ملف العمل وسيعمل عبر Shizuku لنفس Android user</string>
+    <string name="work_remote_selected_format">ملف العمل • %1$s • user %2$d</string>
+    <string name="work_remote_verified_format">Work Remote جاهز • %1$s • user %2$d</string>
 </resources>
