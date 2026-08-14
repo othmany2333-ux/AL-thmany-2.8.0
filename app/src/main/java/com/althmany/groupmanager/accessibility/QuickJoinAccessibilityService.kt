@@ -3525,7 +3525,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
 
         // If X was absent or did not close the sheet, Back is the bounded fallback.
         // This never presses the visible "Cancel request" button.
-        repeat(2) {
+        repeat(1) {
             val backSent = withContext(Dispatchers.Main.immediate) {
                 performGlobalAction(GLOBAL_ACTION_BACK)
             }

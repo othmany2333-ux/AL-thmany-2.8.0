@@ -164,7 +164,7 @@ object SmartExitControllerPolicy {
         SmartExitStep.DIRECT_NEXT_DEEP_LINK
     )
 
-    const val MAX_BACK_ATTEMPTS = 2
+    const val MAX_BACK_ATTEMPTS = 1
     const val MAX_REOPEN_ATTEMPTS_PER_LINK = 1
     const val MAX_ACTION_ATTEMPTS = 3
 }

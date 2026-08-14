@@ -2009,7 +2009,7 @@ class ShizukuAutomationService : Service() {
         targetPackage: String,
         current: GroupLink
     ): Boolean {
-        repeat(2) { attempt ->
+        repeat(1) { attempt ->
             if (!pressResultBack(targetPackage, current, "CONVERSATION_EXIT_${attempt + 1}")) return false
 
             val settle = if (fastUiMode == FastUiMode.ACTIVE) {
@@ -2028,7 +2028,7 @@ class ShizukuAutomationService : Service() {
         runtimeDiagnostic(
             current,
             "SHIZUKU_CONVERSATION_EXIT_BOUNDED",
-            "conversation remained after two Back attempts; direct next-link launch remains armed"
+            "conversation remained after one Back pulse; direct next-link launch remains armed"
         )
         return false
     }
@@ -2789,9 +2789,9 @@ class ShizukuAutomationService : Service() {
         targetPackage: String,
         current: GroupLink
     ): Boolean {
-        repeat(4) { attempt ->
+        repeat(3) { attempt ->
             if (probeJoinedConversationActivity(targetPackage, current)) return true
-            if (attempt < 3) delay(160L)
+            if (attempt < 2) delay(80L)
         }
         return false
     }

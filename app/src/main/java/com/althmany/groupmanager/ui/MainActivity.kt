@@ -239,6 +239,38 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // Connection cards are real controls, not status-only decoration.
+        binding.exactShizukuConnectCard.setOnClickListener {
+            val status = runCatching { ShizukuBridge.status() }.getOrNull()
+            when {
+                status?.ready == true -> {
+                    app.preferences.automationBackend = AutomationBackend.SHIZUKU
+                    toast(R.string.exact_connected)
+                }
+                status?.binderAlive == true -> {
+                    val requested = runCatching { ShizukuBridge.requestPermission() }.getOrDefault(false)
+                    if (!requested) startActivity(Intent(this, SettingsActivity::class.java))
+                }
+                else -> startActivity(Intent(this, SettingsActivity::class.java))
+            }
+            lifecycleScope.launch {
+                delay(280L)
+                syncExactDashboardStatus()
+            }
+        }
+        binding.exactAccessibilityConnectCard.setOnClickListener {
+            val readiness = AccessibilityStatus.readiness(this)
+            if (readiness.localServiceConnected) {
+                app.preferences.automationBackend = AutomationBackend.ACCESSIBILITY
+                app.preferences.accessibilityQuickJoin = true
+                syncExactDashboardStatus()
+            } else {
+                app.preferences.accessibilityQuickJoin = true
+                openAccessibilitySettings()
+                waitForLocalAccessibilityBind(allowQueuedContinuation = false, startAfterBind = false)
+            }
+        }
+
         // Visible exact input and the hidden legacy engine input are a two-way bridge.
         // Paste/import actions update the visible box too, so the dashboard never looks stale.
         binding.exactLinksInput.doAfterTextChanged {
@@ -269,11 +301,17 @@ class MainActivity : AppCompatActivity() {
         binding.exactImportButton.setOnClickListener { binding.importButton.performClick() }
 
         binding.exactStartButton.setOnClickListener {
-            // Start always sees the text currently visible on the new dashboard.
+            // Start always sees the visible links and arms the fastest verified profile.
             val value = binding.exactLinksInput.text?.toString().orEmpty()
             if (binding.linksEditText.text?.toString() != value) binding.linksEditText.setText(value)
+            app.preferences.runtimeSpeedMode = RuntimeSpeedMode.MAX
+            app.preferences.fastHandsFreeMode = true
+            app.preferences.interLinkDelayMs = 0
             app.preferences.autoResumeCurrentRun = true
             binding.compactAutoResumeSwitch.isChecked = true
+            if (binding.speedModeToggleGroup.checkedButtonId != R.id.speedMaxButton) {
+                binding.speedModeToggleGroup.check(R.id.speedMaxButton)
+            }
             binding.startAutomationButton.performClick()
         }
         binding.exactResumeButton.setOnClickListener { binding.pauseAutomationButton.performClick() }
