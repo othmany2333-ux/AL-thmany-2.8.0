@@ -1,0 +1,84 @@
+name: Build Al-othmany Sender 3.5.0 R1
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+      - universal-3.5.0-r1
+    paths:
+      - "app/**"
+      - "scripts/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/build-3.5.0-r1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: al-othmany-350-r1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build 3.5.0 Universal R1
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Verify environment
+        run: |
+          java -version
+          gradle --version
+
+      - name: Restore debug signing key
+        env:
+          ALTHMANY_DEBUG_KEYSTORE_B64: ${{ secrets.ALTHMANY_DEBUG_KEYSTORE_B64 }}
+        run: |
+          test -n "$ALTHMANY_DEBUG_KEYSTORE_B64"
+          mkdir -p debug-signing
+          printf '%s' "$ALTHMANY_DEBUG_KEYSTORE_B64" | base64 --decode > debug-signing/althmany-debug.jks
+          test -s debug-signing/althmany-debug.jks
+
+      - name: Validate source
+        run: python3 scripts/validate_source.py
+
+      - name: Build APK
+        run: |
+          gradle \
+            --no-daemon \
+            --no-configuration-cache \
+            --console=plain \
+            assembleDebug
+
+      - name: Prepare APK
+        run: |
+          test -f app/build/outputs/apk/debug/app-debug.apk
+          mkdir -p apk-output
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             apk-output/Al-othmany-Sender-3.5.0-UNIVERSAL-R1.apk
+          ls -lh apk-output/
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Al-othmany-Sender-3.5.0-UNIVERSAL-R1
+          path: apk-output/Al-othmany-Sender-3.5.0-UNIVERSAL-R1.apk
+          if-no-files-found: error
+          retention-days: 30
