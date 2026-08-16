@@ -262,7 +262,7 @@ checks = {
     "3.0.3 repeat-run persistent UI reset": all(token in shizuku_service for token in [
         "SHIZUKU_FAST_UI_RUN_RESET", "SHIZUKU_FAST_UI_SELF_HEAL", "fastResetUiAutomation"
     ]) and "resetForNewRun" in shizuku_persistent and "fastResetUiAutomation" in shizuku_bridge_source and "fastResetUiAutomation" in shizuku_aidl_source,
-    "3.0.4 leave WhatsApp pauses without force reopen": "currentLaunchSawTargetForeground" in shizuku_service and "shouldAutoPauseForUserExit" in shizuku_service and "USER_EXIT_CONFIRM_MS = 140L" in shizuku_service,
+    "3.0.4 leave WhatsApp pauses without force reopen": "currentLaunchSawTargetForeground" in shizuku_service and "shouldAutoPauseForUserExit" in shizuku_service and "USER_EXIT_CONFIRM_MS = 90L" in shizuku_service,
     "3.0.4 reliable scroll gestures": "isSafeSwipeBounds" in shizuku_policy and "GESTURE_DURATION_MS = 72L" in shizuku_fast_policy and "dispatchReliableScrollGesture" in service,
     "3.0.4 Excel picker support": "spreadsheetml.sheet" in main_activity and "application/vnd.ms-excel" in main_activity,
     "Accessibility permission gate 2.6.4": all(token in main_activity for token in ["permissionConfigured", "waitForLocalAccessibilityBind", "shouldPromptAccessibilitySetup", "accessibility_enabled_but_not_bound"]),
@@ -295,8 +295,8 @@ checks = {
     "Shizuku Work Profile compatibility repair 2.7.3": all(token in shizuku_service for token in ["SHIZUKU_PROFILE_COMPAT_PROBE", "SHIZUKU_PROFILE_COMPAT_ACTIVE", "profileCompatibilityProbe", "fastUiMode = FastUiMode.DISABLED"]) and all(token in shizuku_continuity for token in ["PROFILE_COMPAT_COMMAND_PROBE_AFTER_MS = 180L", "MAX_PROFILE_COMPAT_COMMAND_PROBES = 2", "shouldProbeProfileCompatibleTree"]),
     "Shizuku visual Work action repair 2.7.4": all(token in shizuku_service for token in ["handleVisualProfileFallback", "SHIZUKU_VISUAL_ACTION_TAP", "fixedCoordinate=false", "dismissVisualActionSurface"]) and all(token in visual_action_policy for token in ["findWidePositiveAction", "MIN_BUTTON_WIDTH_PERCENT = 52", "isWhatsAppGreen"]),
     "Shizuku semantic launch repair 2.7.2": all(token in shizuku_service for token in ["ShizukuLaunchPolicy.launchAccepted", "resolveDeepLinkActivity", "startDeepLink", "retriedResolved"]) and all(token in shizuku_launch_policy for token in ["exitCode != 0", "unable to resolve intent", "permission denial"]),
-    "Shizuku 2.7 adaptive fast compatibility": all(token in shizuku_service for token in ["fastUiMode = FastUiMode.UNKNOWN", "/system/bin/uiautomator dump --compressed", "COMMAND_DUMP_COMPAT_RETRY_MS = 50L", "SHIZUKU_UI_TREE_BACK_HANDOFF", "pause=false; next=true"]),
-    "Shizuku exact-user activity join proof": all(token in shizuku_service for token in ["probeJoinedConversationActivity", "SHIZUKU_ACTIVITY_JOIN_PROOF", "ShizukuActivityProofPolicy", "ACTIVITY_PROBE_TIMEOUT_MS", "ACTIVITY_PROBE_ATTEMPTS = 4", "ACTIVITY_PROBE_RETRY_MS = 45L"]) and (JAVA / "com/althmany/groupmanager/domain/ShizukuActivityProofPolicy.kt").exists(),
+    "Shizuku 2.7 adaptive fast compatibility": all(token in shizuku_service for token in ["fastUiMode = FastUiMode.UNKNOWN", "/system/bin/uiautomator dump --compressed", "COMMAND_DUMP_COMPAT_RETRY_MS = 25L", "SHIZUKU_UI_TREE_BACK_HANDOFF", "pause=false; next=true"]),
+    "Shizuku exact-user activity join proof": all(token in shizuku_service for token in ["probeJoinedConversationActivity", "SHIZUKU_ACTIVITY_JOIN_PROOF", "ShizukuActivityProofPolicy", "ACTIVITY_PROBE_TIMEOUT_MS", "ACTIVITY_PROBE_ATTEMPTS = 4", "ACTIVITY_PROBE_RETRY_MS = 25L"]) and (JAVA / "com/althmany/groupmanager/domain/ShizukuActivityProofPolicy.kt").exists(),
     "Shizuku 2.6.2 direct conversation event guard": all(token in shizuku_service for token in ["currentLaunchEventBaseline", "currentLaunchSawTargetEvent", "SHIZUKU_DIRECT_CONVERSATION_HANDOFF", "LinkResultCode.ALREADY_MEMBER"]),
     "Shizuku 2.6.2 no-stall continuity": all(token in shizuku_service for token in ["SHIZUKU_FOREGROUND_CONTINUITY_ADVANCE", "SHIZUKU_AMBIGUOUS_CONTINUITY_ADVANCE", "SHIZUKU_UNKNOWN_CONTINUITY_ADVANCE", "SHIZUKU_NO_ROOT_CONTINUITY_ADVANCE", "SHIZUKU_UI_TREE_BACK_HANDOFF", "SHIZUKU_INPUT_CONTINUITY_RECOVERY", "SHIZUKU_RUNTIME_RECONNECT_WAIT"]),
     "Shizuku 2.6.2 request terminal direct handoff": all(token in shizuku_service for token in ["SHIZUKU_REQUEST_SUBMITTED_HANDOFF", "SHIZUKU_REQUEST_TERMINAL_PROBE", "REQUEST_TERMINAL_PROBE_MIN_AGE_MS", "REQUEST_TERMINAL_PROBE_COOLDOWN_MS"]),
@@ -353,7 +353,7 @@ checks = {
     ),
     "community matcher": "join community" in matcher and "انضمام إلى المجتمع" in matcher,
     "request matcher": "request to join" in matcher and "طلب الانضمام" in matcher,
-    "verified terminal escape retries": "FAST_MAX_EXIT_STEPS = 3" in service and "FAST_TERMINAL_SETTLE_MS = 32L" in runtime_cadence,
+    "verified terminal escape retries": "FAST_MAX_EXIT_STEPS = 3" in service and "FAST_TERMINAL_SETTLE_MS = 18L" in runtime_cadence,
     "terminal acknowledgement priority": "terminalSurface && inspection.terminalAcknowledgementNode != null" in service,
     "blocked action guard": "isBlockedAction" in matcher,
     "gesture fallback": "dispatchGesture" in service,
@@ -450,7 +450,7 @@ checks = {
     "bounded fast semantic invite scroll": "ACTION_SCROLL_FORWARD" in service and "MAX_INVITE_SCROLL_ATTEMPTS = 2" in service and "FAST_SCROLL" in service,
     "zero-delay enables fast runtime": "delayMs == AutomationPolicy.FAST_INTER_LINK_DELAY_MS" in main_activity,
     "fast foreground departure guard": "OUTSIDE_TARGET_CONFIRM_MS = 140L" in foreground_policy and "RECENT_TARGET_GRACE_MS = 120L" in foreground_policy and "scheduleAutoPauseOutsideTarget" in service,
-    "persistent runtime notification refresh": "refreshAutomationNotification(force = true" in service and "NOTIFICATION_REFRESH_MIN_MS = 300L" in service,
+    "persistent runtime notification refresh": "refreshAutomationNotification(force = true" in service and "NOTIFICATION_REFRESH_MIN_MS = 750L" in service,
     "compact installed-WhatsApp picker": 'android:id="@+id/targetToggleGroup"' in main_layout and 'android:visibility="gone"' in main_layout and "chooseInstalledWhatsAppButton" in main_layout,
 }
 for label, ok in checks.items():
