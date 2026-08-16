@@ -1,4 +1,4 @@
-name: Build Al-othmany R4 APK
+name: Build Al-othmany R6 LIGHTNING APK
 
 on:
   workflow_dispatch:
@@ -38,12 +38,12 @@ jobs:
 
       - name: Rename APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk Al-othmany-Sender-3.5.0-R4.apk
+          cp app/build/outputs/apk/debug/app-debug.apk Al-othmany-Sender-3.5.0-R6-LIGHTNING.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Al-othmany-Sender-3.5.0-R4
-          path: Al-othmany-Sender-3.5.0-R4.apk
+          name: Al-othmany-Sender-3.5.0-R6-LIGHTNING
+          path: Al-othmany-Sender-3.5.0-R6-LIGHTNING.apk
           if-no-files-found: error
           retention-days: 14

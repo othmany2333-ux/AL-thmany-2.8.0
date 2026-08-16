@@ -37,13 +37,23 @@ class ShizukuShellUserService : IShizukuShellService.Stub() {
             .substringBefore(';')
             .uppercase()
 
-        // A working persistent screenshot remains the preferred path. Only bridge/screenshot
-        // unavailability falls back to shell screencap; NOT_FOUND is a valid visual answer and
-        // must not be converted into a less-specific second guess.
-        if (persistentState !in setOf("UNAVAILABLE", "NO_SCREENSHOT", "ERROR")) {
-            return persistent
+        // R5 Work/Dual fix: persistent UiAutomation can remain attached to owner/SystemUI while
+        // the exact secondary-user WhatsApp is foreground. In that state NOT_FOUND is not
+        // authoritative. Keep OK, otherwise perform one real shell-owned screencap.
+        if (persistentState == "OK") return persistent
+
+        val shellVisual = shellScreenshotPositiveAction(persistent.take(180))
+        val shellState = shellVisual
+            .substringAfter("__AL_VISUAL_ACTION__=", "ERROR")
+            .substringBefore(';')
+            .uppercase()
+
+        return when {
+            shellState == "OK" -> shellVisual
+            persistentState == "NOT_FOUND" &&
+                shellState in setOf("UNAVAILABLE", "ERROR") -> persistent
+            else -> shellVisual
         }
-        return shellScreenshotPositiveAction(persistent.take(180))
     }
 
     /**

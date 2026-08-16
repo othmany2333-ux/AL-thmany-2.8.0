@@ -1209,6 +1209,16 @@ class ShizukuAutomationService : Service() {
                     "persistent/visual/Back recovery preferred over repeatedly spawning killed uiautomator"
             )
             val remaining = (commandDumpSuppressedUntilElapsed - commandDumpNow).coerceAtLeast(1L)
+            // R5: cooldown suppresses only killed uiautomator. It must not suppress screenshot
+            // perception or exact-user shell input.
+            if (handleVisualProfileFallback(
+                    current,
+                    targetPackage,
+                    readPendingAction(current)
+                )
+            ) {
+                return null
+            }
             delay(minOf(COMMAND_DUMP_COOLDOWN_POLL_MS, remaining))
             // No UI dump ran during cooldown, so do not inflate consecutiveDumpFailures.
             return null
@@ -1241,6 +1251,15 @@ class ShizukuAutomationService : Service() {
         if (!result.success || !xml.contains("<hierarchy")) {
             val realCommandKill =
                 result.exitCode == 137 || xml.contains("Killed", ignoreCase = true)
+            if (realCommandKill &&
+                handleVisualProfileFallback(
+                    current,
+                    targetPackage,
+                    readPendingAction(current)
+                )
+            ) {
+                return null
+            }
             return handleDumpFailure(
                 current,
                 targetPackage,
@@ -1962,7 +1981,7 @@ class ShizukuAutomationService : Service() {
             // Exact flow: Request sent -> X -> verify. If X is unavailable, Back.
             // Never press "Cancel request"; that would withdraw the submitted request.
             if (pressResultBack(targetPackage, current, "REQUEST_SENT_SHEET_BACK_FALLBACK")) {
-                val settle = runtimeSpeed().postTapWaitMs.coerceIn(6L, 120L)
+                val settle = runtimeSpeed().postTapWaitMs.coerceIn(4L, 80L)
                 if (settle > 0L) delay(settle)
                 val afterRequestBack = quickResultSnapshot(targetPackage)
                 if (afterRequestBack == null) return true
@@ -1989,7 +2008,7 @@ class ShizukuAutomationService : Service() {
             )
             if (dismissed) {
                 markAutomationControlledExit(current, "RESULT_SAFE_CANCEL")
-                delay(runtimeSpeed().postTapWaitMs.coerceIn(6L, 120L))
+                delay(runtimeSpeed().postTapWaitMs.coerceIn(4L, 80L))
                 val afterCancel = quickResultSnapshot(targetPackage)
                 if (afterCancel == null) return true
                 snapshot = afterCancel
@@ -2639,7 +2658,8 @@ class ShizukuAutomationService : Service() {
         runtimeDiagnostic(
             current,
             "SHIZUKU_VISUAL_ACTION_PROBE",
-            "attempt=$visualProbeAttempts; state=${visual.state}; bounds=${bounds ?: "NONE"}; exactForeground=true"
+            "attempt=$visualProbeAttempts; state=${visual.state}; bounds=${bounds ?: "NONE"}; " +
+                "detail=${visual.detail.take(180)}; exactForeground=true"
         )
         if (!visual.found || bounds == null ||
             !ShizukuRuntimePolicy.isSafeTapBounds(bounds, displayWidth, displayHeight)
@@ -3399,52 +3419,52 @@ class ShizukuAutomationService : Service() {
         private const val ACTION_STOP = "com.althmany.groupmanager.action.STOP_SHIZUKU_AUTOMATION"
         private const val CHANNEL_ID = "shizuku_automation_v2"
         private const val NOTIFICATION_ID = 5301
-        private const val OPEN_SETTLE_MS = 8L
-        private const val ACTION_SETTLE_MS = 45L
-        private const val SCAN_INTERVAL_MS = 14L
-        private const val POST_JOIN_MIN_MS = 55L
+        private const val OPEN_SETTLE_MS = 0L
+        private const val ACTION_SETTLE_MS = 18L
+        private const val SCAN_INTERVAL_MS = 8L
+        private const val POST_JOIN_MIN_MS = 30L
         private const val PAUSED_POLL_MS = 180L
-        private const val FOREGROUND_RECHECK_MS = 36L
-        private const val DUMP_RETRY_MS = 28L
-        private const val COMMAND_DUMP_COMPAT_RETRY_MS = 50L
+        private const val FOREGROUND_RECHECK_MS = 20L
+        private const val DUMP_RETRY_MS = 15L
+        private const val COMMAND_DUMP_COMPAT_RETRY_MS = 25L
         private const val UI_DUMP_TIMEOUT_MS = 4_500
         private const val UI_DUMP_FAILURE_STOP_MS = 9_000L
         private const val FOREGROUND_WAIT_STOP_MS = 12_000L
-        private const val COMMUNITY_SCROLL_SETTLE_MS = 140L
+        private const val COMMUNITY_SCROLL_SETTLE_MS = 70L
         private const val COMMUNITY_NO_PROGRESS_LIMIT = 3
         private const val NEXT_LINK_SETTLE_MS = 0L
         private const val ACTIVITY_PROBE_TIMEOUT_MS = 1_500
         private const val ACTIVITY_PROBE_ATTEMPTS = 4
-        private const val ACTIVITY_PROBE_RETRY_MS = 45L
+        private const val ACTIVITY_PROBE_RETRY_MS = 25L
         private const val RESULT_MIRROR_SYNC_EVERY = 1000
         private const val FAST_UI_MAX_NODES = 900
-        private const val REQUEST_TERMINAL_PROBE_MIN_AGE_MS = 320L
-        private const val REQUEST_TERMINAL_PROBE_COOLDOWN_MS = 280L
-        private const val FAST_OPEN_BURST_MS = 1_100L
-        private const val FAST_ACTION_BURST_MS = 750L
-        private const val COMMUNITY_BACK_BURST_MS = 350L
-        private const val VISUAL_PROFILE_PROBE_AFTER_MS = 140L
-        private const val VISUAL_PROFILE_PROBE_INTERVAL_MS = 90L
+        private const val REQUEST_TERMINAL_PROBE_MIN_AGE_MS = 180L
+        private const val REQUEST_TERMINAL_PROBE_COOLDOWN_MS = 140L
+        private const val FAST_OPEN_BURST_MS = 700L
+        private const val FAST_ACTION_BURST_MS = 420L
+        private const val COMMUNITY_BACK_BURST_MS = 180L
+        private const val VISUAL_PROFILE_PROBE_AFTER_MS = 80L
+        private const val VISUAL_PROFILE_PROBE_INTERVAL_MS = 50L
         private const val VISUAL_MAX_PROBE_ATTEMPTS = 5
-        private const val VISUAL_POST_ACTION_VERIFY_MS = 650L
+        private const val VISUAL_POST_ACTION_VERIFY_MS = 320L
         private const val VISUAL_MAX_TAP_ATTEMPTS = 2
-        private const val VISUAL_DISMISS_SETTLE_MS = 30L
+        private const val VISUAL_DISMISS_SETTLE_MS = 12L
         private const val FAST_UI_DISABLE_AFTER_FAILURES = 4
         private const val FAST_UI_SESSION_RECOVERY_MAX = 1
-        private const val COMMAND_DUMP_COOLDOWN_POLL_MS = 120L
-        private const val DUMP_FAILURE_MIN_INTERVAL_MS = 120L
+        private const val COMMAND_DUMP_COOLDOWN_POLL_MS = 60L
+        private const val DUMP_FAILURE_MIN_INTERVAL_MS = 60L
         private const val UI_TREE_FAILURE_MAX = 8
-        private const val POST_ACTION_RESULT_GRACE_MS = 650L
-        private const val VERIFY_RESULT_POLL_MS = 90L
+        private const val POST_ACTION_RESULT_GRACE_MS = 350L
+        private const val VERIFY_RESULT_POLL_MS = 45L
         private const val USER_SERVICE_RESTART_MAX = 1
         private const val NETWORK_PAUSE_POLL_MS = 650L
-        private const val COMMAND_DUMP_KILL_COOLDOWN_MS = 4_000L
+        private const val COMMAND_DUMP_KILL_COOLDOWN_MS = 1_500L
         private const val PERIODIC_UI_REFRESH_EVERY = 100
-        private const val USER_EXIT_LAUNCH_GRACE_MS = 650L
-        private const val USER_EXIT_CONFIRM_MS = 140L
+        private const val USER_EXIT_LAUNCH_GRACE_MS = 400L
+        private const val USER_EXIT_CONFIRM_MS = 90L
         private const val CONTROLLED_EXIT_HANDOFF_GRACE_MS = 2_500L
-        private const val USER_EXIT_PROBE_INTERVAL_MS = 70L
-        private const val USER_RETURN_PROBE_INTERVAL_MS = 180L
+        private const val USER_EXIT_PROBE_INTERVAL_MS = 40L
+        private const val USER_RETURN_PROBE_INTERVAL_MS = 100L
         private const val NOTIFICATION_THROTTLE_MS = 500L
         private val PACKAGE_NAME = Regex("[A-Za-z0-9_.]+")
         private val COMPONENT_NAME = Regex("[A-Za-z0-9_.]+/[A-Za-z0-9_.\$]+")

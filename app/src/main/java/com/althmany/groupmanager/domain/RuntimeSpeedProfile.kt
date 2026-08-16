@@ -49,7 +49,7 @@ data class RuntimeSpeedProfile(
 )
 
 object RuntimeSpeedProfilePolicy {
-    const val MIN_CUSTOM_SCAN_MS = 6
+    const val MIN_CUSTOM_SCAN_MS = 4
     const val MAX_CUSTOM_SCAN_MS = 250
     const val MIN_CUSTOM_POST_TAP_MS = 0
     const val MAX_CUSTOM_POST_TAP_MS = 1_000
@@ -75,40 +75,40 @@ object RuntimeSpeedProfilePolicy {
             actionRetryAfterMs = 260L
         )
         RuntimeSpeedMode.FAST -> RuntimeSpeedProfile(
-            eventScanMs = 14L,
-            stableScanMs = 36L,
-            fallbackPollMs = 95L,
-            postTapWaitMs = 70L,
+            eventScanMs = 8L,
+            stableScanMs = 18L,
+            fallbackPollMs = 50L,
+            postTapWaitMs = 28L,
             interLinkDelayMs = 0L,
-            clickThrottleMs = 60L,
-            gestureDurationMs = 18L,
-            watchdogIntervalMs = 40L,
-            unknownRecoveryAfterMs = 1_000L,
-            actionRetryAfterMs = 120L
+            clickThrottleMs = 36L,
+            gestureDurationMs = 12L,
+            watchdogIntervalMs = 24L,
+            unknownRecoveryAfterMs = 650L,
+            actionRetryAfterMs = 70L
         )
         RuntimeSpeedMode.TURBO -> RuntimeSpeedProfile(
-            eventScanMs = 9L,
-            stableScanMs = 22L,
-            fallbackPollMs = 65L,
-            postTapWaitMs = 38L,
+            eventScanMs = 5L,
+            stableScanMs = 10L,
+            fallbackPollMs = 28L,
+            postTapWaitMs = 16L,
             interLinkDelayMs = 0L,
-            clickThrottleMs = 44L,
-            gestureDurationMs = 14L,
-            watchdogIntervalMs = 28L,
-            unknownRecoveryAfterMs = 700L,
-            actionRetryAfterMs = 90L
+            clickThrottleMs = 24L,
+            gestureDurationMs = 10L,
+            watchdogIntervalMs = 16L,
+            unknownRecoveryAfterMs = 400L,
+            actionRetryAfterMs = 45L
         )
         RuntimeSpeedMode.MAX -> RuntimeSpeedProfile(
-            eventScanMs = 6L,
-            stableScanMs = 14L,
-            fallbackPollMs = 40L,
-            postTapWaitMs = 22L,
+            eventScanMs = 4L,
+            stableScanMs = 8L,
+            fallbackPollMs = 20L,
+            postTapWaitMs = 12L,
             interLinkDelayMs = 0L,
-            clickThrottleMs = 30L,
+            clickThrottleMs = 20L,
             gestureDurationMs = 10L,
-            watchdogIntervalMs = 20L,
-            unknownRecoveryAfterMs = 500L,
-            actionRetryAfterMs = 70L
+            watchdogIntervalMs = 12L,
+            unknownRecoveryAfterMs = 320L,
+            actionRetryAfterMs = 35L
         )
         RuntimeSpeedMode.CUSTOM -> {
             val scan = customScanMs.coerceIn(MIN_CUSTOM_SCAN_MS, MAX_CUSTOM_SCAN_MS)
@@ -120,11 +120,11 @@ object RuntimeSpeedProfilePolicy {
                 fallbackPollMs = (scan * 5L).coerceIn(30L, 1_000L),
                 postTapWaitMs = post.toLong(),
                 interLinkDelayMs = next.toLong(),
-                clickThrottleMs = maxOf(28L, scan * 3L),
+                clickThrottleMs = maxOf(20L, scan * 3L),
                 gestureDurationMs = maxOf(10L, minOf(45L, scan.toLong())),
-                watchdogIntervalMs = maxOf(20L, scan * 2L),
-                unknownRecoveryAfterMs = maxOf(500L, post * 8L),
-                actionRetryAfterMs = maxOf(70L, post * 2L)
+                watchdogIntervalMs = maxOf(12L, scan * 2L),
+                unknownRecoveryAfterMs = maxOf(320L, post * 8L),
+                actionRetryAfterMs = maxOf(35L, post * 2L)
             )
         }
     }

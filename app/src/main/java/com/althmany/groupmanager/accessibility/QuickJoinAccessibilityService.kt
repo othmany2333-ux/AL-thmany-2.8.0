@@ -2998,7 +2998,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             moveTo(x.toFloat(), startY.toFloat())
             lineTo(x.toFloat(), endY.toFloat())
         }
-        val duration = runtimeSpeed().gestureDurationMs.coerceIn(48L, 96L)
+        val duration = runtimeSpeed().gestureDurationMs.coerceIn(12L, 40L)
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, duration))
             .build()
@@ -3023,7 +3023,10 @@ class QuickJoinAccessibilityService : AccessibilityService() {
             val blocked = nodeHasBlockedAction(current, allowSafeClose)
 
             if (!blocked && safeAncestor) {
-                gestureTarget = current
+                // R5: keep the nearest safe semantic bounds. WhatsApp frequently exposes the
+                // Join/Request label as a non-clickable child inside a MaterialButton. Replacing
+                // it with a large ancestor moves the gesture center away from the real control.
+                if (gestureTarget == null) gestureTarget = current
                 if (current.isClickable) clickableCandidates += current
             }
             candidate = current.parent
@@ -3080,6 +3083,9 @@ class QuickJoinAccessibilityService : AccessibilityService() {
                 screen.requestApprovalNoticeSeen -> AccessibilityJoinAction.REQUEST
                 else -> readPendingAction(current)
             }
+        }
+        if (screen.requestApprovalNoticeSeen) {
+            accessibilityVisualExpectedAction = AccessibilityJoinAction.REQUEST
         }
         if (accessibilityVisualActionTappedAtElapsed > 0L) return true
 
@@ -3943,7 +3949,7 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         (dp * resources.displayMetrics.density).toInt().coerceAtLeast(1)
 
     private fun exitSettleDelayMs(): Long =
-        runtimeSpeed().postTapWaitMs.coerceIn(6L, 120L)
+        runtimeSpeed().postTapWaitMs.coerceIn(4L, 80L)
 
     private suspend fun waitShortDelay(milliseconds: Long): Boolean {
         val safe = milliseconds.coerceAtLeast(0L)
@@ -4121,17 +4127,17 @@ class QuickJoinAccessibilityService : AccessibilityService() {
         private const val NETWORK_PAUSE_POLL_MS = 650L
         private const val RESULT_MIRROR_SYNC_EVERY = 1000
         private const val DIAGNOSTIC_REPEAT_SUPPRESSION_MS = 1_500L
-        private const val IDEMPOTENCY_SUPPRESSION_MS = 1_200L
-        private const val NOTIFICATION_REFRESH_MIN_MS = 300L
+        private const val IDEMPOTENCY_SUPPRESSION_MS = 450L
+        private const val NOTIFICATION_REFRESH_MIN_MS = 750L
         private const val DIRECT_CONVERSATION_STABLE_SCANS = 1
-        private const val DIRECT_CONVERSATION_FAST_MIN_AGE_MS = 60L
+        private const val DIRECT_CONVERSATION_FAST_MIN_AGE_MS = 30L
         private const val DIRECT_CONVERSATION_NORMAL_MIN_AGE_MS = 650L
         private const val DIRECT_CONVERSATION_WINDOW_EVENT_MAX_AGE_MS = 1_200L
-        private const val ACCESSIBILITY_VISUAL_FAST_PROBE_AFTER_MS = 180L
+        private const val ACCESSIBILITY_VISUAL_FAST_PROBE_AFTER_MS = 80L
         private const val ACCESSIBILITY_VISUAL_NORMAL_PROBE_AFTER_MS = 650L
-        private const val ACCESSIBILITY_VISUAL_PROBE_INTERVAL_MS = 420L
-        private const val ACCESSIBILITY_VISUAL_MAX_PROBE_ATTEMPTS = 3
-        private const val ACCESSIBILITY_VISUAL_FAST_VERIFY_MS = 420L
+        private const val ACCESSIBILITY_VISUAL_PROBE_INTERVAL_MS = 120L
+        private const val ACCESSIBILITY_VISUAL_MAX_PROBE_ATTEMPTS = 4
+        private const val ACCESSIBILITY_VISUAL_FAST_VERIFY_MS = 220L
         private const val ACCESSIBILITY_VISUAL_NORMAL_VERIFY_MS = 650L
         private const val ACCESSIBILITY_VISUAL_MAX_TAP_ATTEMPTS = 2
         private const val ACCESSIBILITY_VISUAL_MAX_SCREENSHOT_FAILURES = 3

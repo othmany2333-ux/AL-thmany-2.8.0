@@ -279,7 +279,9 @@ object AccessibilityJoinMatcher {
 
             value in requestLabels || idLooksLike(
                 value,
-                "request_join", "request_to_join", "join_request", "send_join_request", "request_community", "community_request"
+                "request_join", "request_to_join", "join_request", "send_join_request", "request_community", "community_request",
+                "request_join_button", "request_to_join_button", "join_request_button", "send_join_request_button",
+                "request_membership", "request_access", "request_access_button", "community_request_button"
             ) -> AccessibilityJoinAction.REQUEST
 
             value in joinLabels && (inviteContext || value !in GENERIC_JOIN_LABELS) ->
