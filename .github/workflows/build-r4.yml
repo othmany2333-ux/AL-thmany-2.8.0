@@ -20,17 +20,21 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle
+      - name: Setup Gradle 9.4.0
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Make Gradle executable
-        run: chmod +x gradlew
+        with:
+          gradle-version: '9.4.0'
 
       - name: Validate source
         run: python3 scripts/validate_source.py
 
       - name: Build Debug APK
-        run: ./gradlew --no-daemon --no-configuration-cache :app:assembleDebug --console=plain
+        run: gradle --no-daemon --no-configuration-cache :app:assembleDebug --console=plain
+
+      - name: Verify APK
+        run: |
+          test -f app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
 
       - name: Rename APK
         run: |
@@ -42,3 +46,4 @@ jobs:
           name: Al-othmany-Sender-3.5.0-R4
           path: Al-othmany-Sender-3.5.0-R4.apk
           if-no-files-found: error
+          retention-days: 14

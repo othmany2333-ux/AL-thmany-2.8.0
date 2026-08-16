@@ -208,7 +208,7 @@ checks = {
     "3.3 secure classifier": "never relabel Work/Island/Dual Messenger as Secure Folder" in main_activity and
         ("secure_remote_knox_hidden" in main_activity or "secure_remote_knox_ladder" in main_activity),
     "3.3 evidence counter repair": "visualExpectedAction" in shizuku_service and
-        "not counted as a false request" in shizuku_service and
+        "not counted as REQUESTED" in shizuku_service and
         "Fast watchdog recovered a verified exact-user WhatsApp conversation after Join" in shizuku_service,
     "3.4 long-run Shizuku recovery": all(token in shizuku_service for token in [
         "SHIZUKU_UI_DUMP_KILL_SELF_HEAL",
@@ -231,7 +231,7 @@ checks = {
     "3.4 pending approval post-click": "postClickApprovalVariant" in service and
         "pendingApprovalVariant" in shizuku_service,
     "3.4.1 cooldown is non-recursive": "realCommandKill: Boolean = false" in shizuku_service and
-        "mode=COMMAND_COOLDOWN; command dump suppressed" in shizuku_service,
+        "No UI dump ran during cooldown" in shizuku_service,
     "3.4.1 verification grace": all(token in shizuku_service for token in [
         "DUMP_FAILURE_MIN_INTERVAL_MS",
         "POST_ACTION_RESULT_GRACE_MS",
@@ -251,7 +251,7 @@ checks = {
     ]),
     "3.4.1 Secure persona discovery": "dumpsys persona" in main_activity and
         "personaIdRegex" in main_activity,
-    "versionCode 350": "versionCode = 350" in build,
+    "versionCode 357": "versionCode = 357" in build,
     "versionName 3.5.0": 'versionName = "3.5.0"' in build,
     "3.0.2 Shizuku shell visual recovery": all(token in shizuku_shell_service for token in [
         "/system/bin/screencap", "SHELL_SCREENCAP", "VisualActionButtonPolicy", "BitmapFactory.decodeByteArray"

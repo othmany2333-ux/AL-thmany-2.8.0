@@ -56,9 +56,12 @@ object AccessibilityJoinMatcher {
 
     private val requestLabels = normalizedSetOf(
         "request to join", "request to join group", "ask to join", "ask to join group", "send join request",
+        "request membership", "request group access", "ask for access", "send request to join",
         "request to join community", "ask to join community", "send request", "submit request", "request access",
         "طلب الانضمام", "طلب الانضمام إلى المجموعة", "طلب الانضمام الى المجموعة",
-        "طلب الانضمام إلى المجتمع", "طلب الانضمام الى المجتمع", "طلب الانضمام إلى هذه المجموعة", "طلب الانضمام الى هذه المجموعة", "اطلب الانضمام", "طلب انضمام",
+        "طلب الانضمام إلى المجتمع", "طلب الانضمام الى المجتمع", "طلب الانضمام إلى هذه المجموعة", "طلب الانضمام الى هذه المجموعة",
+        "طلب الانضمام إلى القروب", "طلب الانضمام الى القروب", "طلب الانضمام للقروب",
+        "اطلب الانضمام", "اطلب الانضمام إلى المجموعة", "اطلب الانضمام الى المجموعة", "طلب انضمام", "طلب دخول",
         "إرسال طلب الانضمام", "ارسال طلب الانضمام", "إرسال الطلب", "ارسال الطلب"
     )
 

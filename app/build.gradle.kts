@@ -11,7 +11,7 @@ android {
         applicationId = "com.althmany.groupmanager"
         minSdk = 26
         targetSdk = 36
-        versionCode = 350
+        versionCode = 357
         versionName = "3.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -140,6 +140,11 @@ class ShizukuAutomationService : Service() {
     private var visualActionTappedAtElapsed = 0L
     private var visualTapAttempts = 0
     private var visualExpectedAction: AccessibilityJoinAction? = null
+    // Same-link proof that foreground loss was caused by our own verified X/Back.
+    private var controlledExitLinkId = -1L
+    private var controlledExitAtElapsed = 0L
+    private var controlledExitReason = ""
+
 
     private var communityHomeStableScans = 0
     private var communityEmptyStableScans = 0
@@ -1205,12 +1210,8 @@ class ShizukuAutomationService : Service() {
             )
             val remaining = (commandDumpSuppressedUntilElapsed - commandDumpNow).coerceAtLeast(1L)
             delay(minOf(COMMAND_DUMP_COOLDOWN_POLL_MS, remaining))
-            return handleDumpFailure(
-                current,
-                targetPackage,
-                "mode=COMMAND_COOLDOWN; command dump suppressed; remainingMs=$remaining",
-                realCommandKill = false
-            )
+            // No UI dump ran during cooldown, so do not inflate consecutiveDumpFailures.
+            return null
         }
 
         var result = ShizukuBridge.execute(
@@ -1861,6 +1862,30 @@ class ShizukuAutomationService : Service() {
         return snapshot
     }
 
+    private fun markAutomationControlledExit(current: GroupLink, reason: String) {
+        controlledExitLinkId = current.id
+        controlledExitAtElapsed = SystemClock.elapsedRealtime()
+        controlledExitReason = reason
+    }
+
+    private fun automationControlledExitReason(current: GroupLink): String? {
+        if (controlledExitLinkId != current.id || controlledExitAtElapsed <= 0L) return null
+        val age = (SystemClock.elapsedRealtime() - controlledExitAtElapsed).coerceAtLeast(0L)
+        if (age > CONTROLLED_EXIT_HANDOFF_GRACE_MS) return null
+        return controlledExitReason.ifBlank { "AUTOMATION_EXIT" }
+    }
+
+    /*
+     * Persistent UiAutomation is fastest on owner user 0. On Work/Dual/Secure
+     * and some OEM secondary users it can remain scoped to owner UI even while
+     * the exact uNN WhatsApp activity is visibly resumed.
+     */
+    private suspend fun preferProfileSafeShellInput(targetPackage: String): Boolean {
+        val targetUser = cachedAndroidUserId ?: resolveAndroidUserId(targetPackage) ?: return true
+        val hostUser = Process.myUid() / ANDROID_UID_USER_RANGE
+        return targetUser != 0 || targetUser != hostUser
+    }
+
     private suspend fun pressResultBack(
         targetPackage: String,
         current: GroupLink,
@@ -1871,12 +1896,19 @@ class ShizukuAutomationService : Service() {
             !isTargetForeground(targetPackage, forceProbe = true)
         ) return false
         waitInputCooldown()
-        val persistent = ShizukuBridge.fastBack(this)
-        val shell = if (!persistent) {
-            ShizukuBridge.execute(this, "input keyevent 4", 2_500)
-        } else null
+        val profileShellFirst = preferProfileSafeShellInput(targetPackage)
+        var persistent = false
+        var shell: ShizukuBridge.ShellResult? = null
+        if (profileShellFirst) {
+            shell = ShizukuBridge.execute(this, "input keyevent 4", 2_500)
+            if (shell?.success != true) persistent = ShizukuBridge.fastBack(this)
+        } else {
+            persistent = ShizukuBridge.fastBack(this)
+            if (!persistent) shell = ShizukuBridge.execute(this, "input keyevent 4", 2_500)
+        }
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true
+        if (success) markAutomationControlledExit(current, purpose)
         runtimeDiagnostic(
             current,
             "SHIZUKU_RESULT_BACK",
@@ -1917,6 +1949,7 @@ class ShizukuAutomationService : Service() {
                 "found=true; clicked=$closed; semantic=${close.labels().any(AccessibilityJoinMatcher::isSafeClose)}"
             )
             if (closed) {
+                markAutomationControlledExit(current, "RESULT_SAFE_CLOSE")
                 delay(ShizukuFastUiPolicy.TERMINAL_ESCAPE_SETTLE_MS)
                 val after = quickResultSnapshot(targetPackage)
                 if (after == null) return true
@@ -1955,6 +1988,7 @@ class ShizukuAutomationService : Service() {
                 "RESULT_SAFE_CANCEL"
             )
             if (dismissed) {
+                markAutomationControlledExit(current, "RESULT_SAFE_CANCEL")
                 delay(runtimeSpeed().postTapWaitMs.coerceIn(6L, 120L))
                 val afterCancel = quickResultSnapshot(targetPackage)
                 if (afterCancel == null) return true
@@ -2548,27 +2582,39 @@ class ShizukuAutomationService : Service() {
 
             val expected = visualExpectedAction ?: readPendingAction(current)
             val joinedConversation = probeJoinedConversationActivityWithGrace(targetPackage, current)
-            dismissVisualActionSurface(targetPackage, current, "VISUAL_ACTION_COMPLETED")
 
             when {
-                joinedConversation -> completeCurrent(
-                    current,
-                    LinkStatus.JOINED,
-                    LinkResultCode.JOIN_ACTION_COMPLETED,
-                    "Wide WhatsApp action disappeared and the exact-user conversation activity proved Join success"
-                )
-                expected == AccessibilityJoinAction.REQUEST -> completeCurrent(
-                    current,
-                    LinkStatus.REQUESTED,
-                    LinkResultCode.REQUEST_SENT,
-                    "Known Request action disappeared after protected input; recorded as requested"
-                )
-                else -> completeCurrent(
-                    current,
-                    LinkStatus.FAILED,
-                    LinkResultCode.UNKNOWN_SCREEN,
-                    "Visual positive action disappeared but its Join/Request result could not be proved; not counted as a false request"
-                )
+                joinedConversation -> {
+                    exitConversationBeforeDirectHandoff(targetPackage, current)
+                    completeCurrent(
+                        current,
+                        LinkStatus.JOINED,
+                        LinkResultCode.JOIN_ACTION_COMPLETED,
+                        "Wide WhatsApp action disappeared and the exact-user conversation activity proved Join success"
+                    )
+                }
+                expected == AccessibilityJoinAction.REQUEST -> {
+                    dismissVisualActionSurface(targetPackage, current, "VISUAL_REQUEST_UNVERIFIED")
+                    completeCurrent(
+                        current,
+                        LinkStatus.FAILED,
+                        LinkResultCode.UNKNOWN_SCREEN,
+                        "Known Request action disappeared without request-sent/cancel-request evidence; not counted as REQUESTED"
+                    )
+                }
+                else -> {
+                    runtimeDiagnostic(
+                        current,
+                        "SHIZUKU_VISUAL_AMBIGUOUS_NO_BACK",
+                        "positive action disappeared; result unproved; no blind Back sent before direct handoff"
+                    )
+                    completeCurrent(
+                        current,
+                        LinkStatus.FAILED,
+                        LinkResultCode.UNKNOWN_SCREEN,
+                        "Visual positive action disappeared but its result could not be proved; WhatsApp was left untouched and the queue advanced safely"
+                    )
+                }
             }
             return true
         }
@@ -2634,10 +2680,19 @@ class ShizukuAutomationService : Service() {
             !isTargetForeground(targetPackage, forceProbe = true)
         ) return false
         waitInputCooldown()
-        val persistent = ShizukuBridge.fastBack(this)
-        val shell = if (!persistent) ShizukuBridge.execute(this, "input keyevent 4", 2_500) else null
+        val profileShellFirst = preferProfileSafeShellInput(targetPackage)
+        var persistent = false
+        var shell: ShizukuBridge.ShellResult? = null
+        if (profileShellFirst) {
+            shell = ShizukuBridge.execute(this, "input keyevent 4", 2_500)
+            if (shell?.success != true) persistent = ShizukuBridge.fastBack(this)
+        } else {
+            persistent = ShizukuBridge.fastBack(this)
+            if (!persistent) shell = ShizukuBridge.execute(this, "input keyevent 4", 2_500)
+        }
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true
+        if (success) markAutomationControlledExit(current, purpose)
         runtimeDiagnostic(
             current,
             "SHIZUKU_VISUAL_SURFACE_CLOSE",
@@ -2663,22 +2718,71 @@ class ShizukuAutomationService : Service() {
             purpose.contains("REQUEST", ignoreCase = true) ||
             purpose.contains("CONFIRM", ignoreCase = true) ||
             purpose.startsWith("VISUAL_POSITIVE")
+        val profileShellFirst = preferProfileSafeShellInput(targetPackage)
         var nodeClick = false
         var persistentTap = false
-        if (fastUiMode == FastUiMode.ACTIVE) {
-            if (directTouchFirst) {
+        var shell: ShizukuBridge.ShellResult? = null
+
+        if (profileShellFirst) {
+            shell = ShizukuBridge.execute(
+                this,
+                "input tap ${bounds.centerX} ${bounds.centerY}",
+                2_500
+            )
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_PROFILE_SAFE_TAP",
+                "$purpose; user=${cachedAndroidUserId ?: -1}; " +
+                    "x=${bounds.centerX}; y=${bounds.centerY}; exit=${shell?.exitCode ?: -1}"
+            )
+            if (shell?.success != true && fastUiMode == FastUiMode.ACTIVE) {
                 persistentTap = ShizukuBridge.fastTap(this, bounds.centerX, bounds.centerY)
                 if (!persistentTap) {
-                    nodeClick = ShizukuBridge.fastClickNode(this, targetPackage, bounds.centerX, bounds.centerY)
+                    nodeClick = ShizukuBridge.fastClickNode(
+                        this,
+                        targetPackage,
+                        bounds.centerX,
+                        bounds.centerY
+                    )
                 }
-            } else {
-                nodeClick = ShizukuBridge.fastClickNode(this, targetPackage, bounds.centerX, bounds.centerY)
-                if (!nodeClick) persistentTap = ShizukuBridge.fastTap(this, bounds.centerX, bounds.centerY)
+            }
+        } else {
+            if (fastUiMode == FastUiMode.ACTIVE) {
+                if (directTouchFirst) {
+                    persistentTap = ShizukuBridge.fastTap(this, bounds.centerX, bounds.centerY)
+                    if (!persistentTap) {
+                        nodeClick = ShizukuBridge.fastClickNode(
+                            this,
+                            targetPackage,
+                            bounds.centerX,
+                            bounds.centerY
+                        )
+                    }
+                } else {
+                    nodeClick = ShizukuBridge.fastClickNode(
+                        this,
+                        targetPackage,
+                        bounds.centerX,
+                        bounds.centerY
+                    )
+                    if (!nodeClick) {
+                        persistentTap = ShizukuBridge.fastTap(
+                            this,
+                            bounds.centerX,
+                            bounds.centerY
+                        )
+                    }
+                }
+            }
+            if (!nodeClick && !persistentTap) {
+                shell = ShizukuBridge.execute(
+                    this,
+                    "input tap ${bounds.centerX} ${bounds.centerY}",
+                    2_500
+                )
             }
         }
-        val shell = if (!nodeClick && !persistentTap) {
-            ShizukuBridge.execute(this, "input tap ${bounds.centerX} ${bounds.centerY}", 2_500)
-        } else null
+
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = nodeClick || persistentTap || shell?.success == true
         if (!success) {
@@ -2721,16 +2825,33 @@ class ShizukuAutomationService : Service() {
         val endY = bounds.top + ((bounds.bottom - bounds.top) * 30 / 100)
         if (startY <= endY) return false
         val selectedGestureMs = runtimeSpeed().gestureDurationMs.coerceIn(8L, 72L)
-        val persistent = fastUiMode == FastUiMode.ACTIVE &&
-            ShizukuBridge.fastSwipe(this, x, startY, x, endY, selectedGestureMs.toInt())
-        val shell = if (!persistent) {
-            val shellGestureMs = (selectedGestureMs * 4L).coerceIn(60L, 160L)
-            ShizukuBridge.execute(
+        val profileShellFirst = preferProfileSafeShellInput(targetPackage)
+        var persistent = false
+        var shell: ShizukuBridge.ShellResult? = null
+        val shellGestureMs = (selectedGestureMs * 4L).coerceIn(60L, 160L)
+
+        if (profileShellFirst) {
+            shell = ShizukuBridge.execute(
                 this,
                 "input swipe $x $startY $x $endY $shellGestureMs",
                 3_000
             )
-        } else null
+            if (shell?.success != true && fastUiMode == FastUiMode.ACTIVE) {
+                persistent = ShizukuBridge.fastSwipe(
+                    this, x, startY, x, endY, selectedGestureMs.toInt()
+                )
+            }
+        } else {
+            persistent = fastUiMode == FastUiMode.ACTIVE &&
+                ShizukuBridge.fastSwipe(this, x, startY, x, endY, selectedGestureMs.toInt())
+            if (!persistent) {
+                shell = ShizukuBridge.execute(
+                    this,
+                    "input swipe $x $startY $x $endY $shellGestureMs",
+                    3_000
+                )
+            }
+        }
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true
         if (!success) runtimeDiagnostic(current, "SHIZUKU_SCROLL_FAILED", "persistent=$persistent; exit=${shell?.exitCode ?: -1}")
@@ -2742,8 +2863,18 @@ class ShizukuAutomationService : Service() {
         if (communityReturnBackSteps >= CommunityTraversalPolicy.MAX_RETURN_BACK_STEPS) return false
         if (!isTargetForeground(targetPackage)) return false
         waitInputCooldown()
-        val persistent = fastUiMode == FastUiMode.ACTIVE && ShizukuBridge.fastBack(this)
-        val shell = if (!persistent) ShizukuBridge.execute(this, "input keyevent 4", 2_500) else null
+        val profileShellFirst = preferProfileSafeShellInput(targetPackage)
+        var persistent = false
+        var shell: ShizukuBridge.ShellResult? = null
+        if (profileShellFirst) {
+            shell = ShizukuBridge.execute(this, "input keyevent 4", 2_500)
+            if (shell?.success != true && fastUiMode == FastUiMode.ACTIVE) {
+                persistent = ShizukuBridge.fastBack(this)
+            }
+        } else {
+            persistent = fastUiMode == FastUiMode.ACTIVE && ShizukuBridge.fastBack(this)
+            if (!persistent) shell = ShizukuBridge.execute(this, "input keyevent 4", 2_500)
+        }
         lastInputAtElapsed = SystemClock.elapsedRealtime()
         val success = persistent || shell?.success == true
         if (success) {
@@ -2866,10 +2997,13 @@ class ShizukuAutomationService : Service() {
 
         updateNotification(getString(R.string.shizuku_service_completed_link, state.processed))
 
-        // Commit current result, but never reserve/open the NEXT link if the user has left WhatsApp.
+        val foregroundAfterResult = isTargetForeground(targetPackage, forceProbe = true)
+        val controlledExit = automationControlledExitReason(current)
+
         if (prefs.autoPauseOutsideWhatsApp &&
             currentLaunchSawTargetForeground &&
-            !isTargetForeground(targetPackage, forceProbe = true)
+            !foregroundAfterResult &&
+            controlledExit == null
         ) {
             prefs.pauseAccessibilityBatch(
                 diagnostic = "Paused automatically because the user left the selected WhatsApp target",
@@ -2878,11 +3012,19 @@ class ShizukuAutomationService : Service() {
             runtimeDiagnostic(
                 current,
                 "SHIZUKU_NEXT_HANDOFF_PAUSED_OUTSIDE_TARGET",
-                "current committed; next remains pending; forced return blocked"
+                "current committed; next remains pending; real foreground loss was not caused by automation"
             )
             resetPerLinkEvidence()
             updateNotification("Paused: user left WhatsApp • next link preserved")
             return
+        }
+
+        if (!foregroundAfterResult && controlledExit != null) {
+            runtimeDiagnostic(
+                current,
+                "SHIZUKU_CONTROLLED_EXIT_HANDOFF",
+                "automationExit=$controlledExit; current committed; direct next-link launch remains allowed"
+            )
         }
 
         if (!NetworkStateMonitor.isValidatedOnline(this, force = true)) {
@@ -3015,6 +3157,9 @@ class ShizukuAutomationService : Service() {
         visualActionTappedAtElapsed = 0L
         visualTapAttempts = 0
         visualExpectedAction = null
+        controlledExitLinkId = -1L
+        controlledExitAtElapsed = 0L
+        controlledExitReason = ""
     }
 
     private suspend fun armFastEventSequence(targetPackage: String) {
@@ -3249,6 +3394,7 @@ class ShizukuAutomationService : Service() {
     private enum class FastUiMode { UNKNOWN, ACTIVE, DISABLED }
 
     companion object {
+        private const val ANDROID_UID_USER_RANGE = 100_000
         private const val ACTION_START = "com.althmany.groupmanager.action.START_SHIZUKU_AUTOMATION"
         private const val ACTION_STOP = "com.althmany.groupmanager.action.STOP_SHIZUKU_AUTOMATION"
         private const val CHANNEL_ID = "shizuku_automation_v2"
@@ -3288,7 +3434,7 @@ class ShizukuAutomationService : Service() {
         private const val COMMAND_DUMP_COOLDOWN_POLL_MS = 120L
         private const val DUMP_FAILURE_MIN_INTERVAL_MS = 120L
         private const val UI_TREE_FAILURE_MAX = 8
-        private const val POST_ACTION_RESULT_GRACE_MS = 140L
+        private const val POST_ACTION_RESULT_GRACE_MS = 650L
         private const val VERIFY_RESULT_POLL_MS = 90L
         private const val USER_SERVICE_RESTART_MAX = 1
         private const val NETWORK_PAUSE_POLL_MS = 650L
@@ -3296,6 +3442,7 @@ class ShizukuAutomationService : Service() {
         private const val PERIODIC_UI_REFRESH_EVERY = 100
         private const val USER_EXIT_LAUNCH_GRACE_MS = 650L
         private const val USER_EXIT_CONFIRM_MS = 140L
+        private const val CONTROLLED_EXIT_HANDOFF_GRACE_MS = 2_500L
         private const val USER_EXIT_PROBE_INTERVAL_MS = 70L
         private const val USER_RETURN_PROBE_INTERVAL_MS = 180L
         private const val NOTIFICATION_THROTTLE_MS = 500L
