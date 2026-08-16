@@ -1,0 +1,44 @@
+name: Build Al-othmany R4 APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - universal-3.5.0-r1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle executable
+        run: chmod +x gradlew
+
+      - name: Validate source
+        run: python3 scripts/validate_source.py
+
+      - name: Build Debug APK
+        run: ./gradlew --no-daemon --no-configuration-cache :app:assembleDebug --console=plain
+
+      - name: Rename APK
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk Al-othmany-Sender-3.5.0-R4.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Al-othmany-Sender-3.5.0-R4
+          path: Al-othmany-Sender-3.5.0-R4.apk
+          if-no-files-found: error
